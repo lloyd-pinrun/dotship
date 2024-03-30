@@ -10,16 +10,24 @@
   options.canivete.opentofu = with lib; {
     plugins = mkOption {
       type = with types;
-        listOf (submodule {
-          options.owner = mkOption {type = str;};
-          options.repo = mkOption {type = str;};
-        });
+        listOf (coercedTo str (path: let
+            parts = lib.strings.splitString "/" path;
+          in {
+            owner = builtins.elemAt parts 0;
+            repo = builtins.elemAt parts 1;
+          }) (submodule {
+            options.owner = mkOption {type = str;};
+            options.repo = mkOption {type = str;};
+          }));
       default = {};
-      description = mdDoc "";
-      example = lists.toList {
-        owner = "opentofu";
-        plugin = "google";
-      };
+      description = mdDoc "Providers to pull";
+      example = [
+        "opentofu/google"
+        {
+          owner = "opentofu";
+          repo = "null";
+        }
+      ];
     };
     registry = mkOption {
       default = inputs.opentofu-registry;
@@ -37,10 +45,9 @@
         repo,
         version,
         src,
-        registry ? "registry.opentofu.org",
       }: let
         inherit (pkgs.go) GOARCH GOOS;
-        provider-source-address = "${registry}/${owner}/${repo}";
+        source = "registry.opentofu.org/${owner}/${repo}";
       in
         pkgs.stdenv.mkDerivation {
           pname = "terraform-provider-${repo}";
@@ -50,14 +57,11 @@
           buildPhase = ":";
           # The upstream terraform wrapper assumes the provider filename here.
           installPhase = ''
-            dir=$out/libexec/terraform-providers/${provider-source-address}/${version}/${GOOS}_${GOARCH}
+            dir=$out/libexec/terraform-providers/${source}/${version}/${GOOS}_${GOARCH}
             mkdir -p "$dir"
             mv terraform-* "$dir/"
           '';
-
-          passthru = {
-            inherit provider-source-address;
-          };
+          passthru.source = source;
         };
 
       # fetch the latest version for the respective os and arch from the opentofu registry input
@@ -81,7 +85,9 @@
             sha256 = target.shasum;
           };
         };
+
+      plugins = lib.lists.forEach config.canivete.opentofu.plugins (plugin: providerFor plugin.owner plugin.repo);
     in
-      pkgs.opentofu.withPlugins (_: lib.lists.forEach config.canivete.opentofu.plugins (plugin: providerFor plugin.owner plugin.repo));
+      pkgs.opentofu.withPlugins (_: plugins);
   };
 }
