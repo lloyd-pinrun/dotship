@@ -20,41 +20,47 @@ flake @ {...}: {
           hash = "sha256-JKY2HUV6ui9PlRA0+/k1QNdi9+IOHvKKl7kNiJxiJX8=";
         };
       };
+      terranixModule = mkOption {
+        type = deferredModule;
+        default.terraform.required_providers = listToAttrs (forEach config.canivete.opentofu.plugins (pkg:
+          nameValuePair pkg.repo {
+            inherit source version;
+          }));
+      };
       finalPackage = mkOption {
         type = package;
-        default = pkgs.opentofu.withPlugins (_: attrValues config.canivete.opentofu.plugins);
+        default = pkgs.opentofu.withPlugins (_: config.canivete.opentofu.plugins);
         description = mdDoc "Final package with plugins";
       };
       plugins = mkOption {
         default = [];
         description = mdDoc "Providers to pull";
         example = ["opentofu/google"];
-        type = coercedTo (listOf str) (
-          paths: let
-            inherit (pkgs.go) GOARCH GOOS;
+        type = listOf (coercedTo str (
+            source: let
+              inherit (pkgs.go) GOARCH GOOS;
 
-            # Map nix system to registry labels
-            arches = {
-              x86_64 = "amd64";
-              aarch64 = "arm64";
-            };
-            systemParts = strings.splitString "-" system;
-            arch = arches.${elemAt systemParts 0};
-            os = elemAt systemParts 1;
+              # Map nix system to registry labels
+              arches = {
+                x86_64 = "amd64";
+                aarch64 = "arm64";
+              };
+              systemParts = strings.splitString "-" system;
+              arch = arches.${elemAt systemParts 0};
+              os = elemAt systemParts 1;
 
-            mkProvider = path: let
               # Parse registry reference from path
-              pathParts = strings.splitString "/" path;
-              owner = elemAt pathParts 0;
-              repo = elemAt pathParts 1;
-              source = "registry.opentofu.org/${owner}/${repo}";
+              sourceParts = strings.splitString "/" source;
+              owner = elemAt sourceParts 0;
+              repo = elemAt sourceParts 1;
+              path = "registry.opentofu.org/${source}";
 
               # Target latest system version
-              file = config.canivete.opentofu.registry + "/providers/${substring 0 1 owner}/${owner}/${repo}.json";
+              file = config.canivete.opentofu.registry + "/providers/${substring 0 1 owner}/${source}.json";
               latest = head (importJSON file).versions;
               target = head (filter (e: e.arch == arch && e.os == os) latest.targets);
             in
-              nameValuePair path (pkgs.stdenv.mkDerivation rec {
+              pkgs.stdenv.mkDerivation rec {
                 pname = "terraform-provider-${repo}";
                 version = latest.version;
                 src = pkgs.fetchurl {
@@ -66,15 +72,14 @@ flake @ {...}: {
                 buildPhase = ":";
                 # The upstream terraform wrapper assumes the provider filename here
                 installPhase = ''
-                  dir=$out/libexec/terraform-providers/${source}/${version}/${GOOS}_${GOARCH}
+                  dir=$out/libexec/terraform-providers/${path}/${version}/${GOOS}_${GOARCH}
                   mkdir -p "$dir"
                   mv terraform-* "$dir/"
                 '';
-                passthru.source = source;
-              });
-          in
-            listToAttrs (map mkProvider paths)
-        ) (attrsOf package);
+                passthru = {inherit repo source;};
+              }
+          )
+          package);
       };
     };
   };
