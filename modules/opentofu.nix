@@ -7,8 +7,8 @@
   lib,
   ...
 }: {
-  options.canivete.opentofu = with lib; {
-    plugins = mkOption {
+  options.canivete.opentofu.plugins = with lib;
+    mkOption {
       type = with types;
         listOf (coercedTo str (path: let
             parts = lib.strings.splitString "/" path;
@@ -19,7 +19,7 @@
             options.owner = mkOption {type = str;};
             options.repo = mkOption {type = str;};
           }));
-      default = {};
+      default = [];
       description = mdDoc "Providers to pull";
       example = [
         "opentofu/google"
@@ -29,10 +29,6 @@
         }
       ];
     };
-    registry = mkOption {
-      default = inputs.opentofu-registry;
-    };
-  };
   config.perSystem = {
     pkgs,
     inputs',
@@ -40,6 +36,17 @@
     ...
   }: {
     packages.opentofu = let
+      registry = pkgs.fetchFromGitHub {
+        owner = "opentofu";
+        repo = "registry";
+        rev = "main";
+        hash = "sha256-JKY2HUV6ui9PlRA0+/k1QNdi9+IOHvKKl7kNiJxiJX8=";
+      };
+      arches = {
+        x86_64 = "amd64";
+        aarch64 = "arm64";
+      };
+      systemParts = lib.strings.splitString "-" system;
       mkTerraformProvider = {
         owner,
         repo,
@@ -66,12 +73,9 @@
 
       # fetch the latest version for the respective os and arch from the opentofu registry input
       providerFor = owner: repo: let
-        file = config.canivete.opentofu.registry + "/providers/${lib.substring 0 1 owner}/${owner}/${repo}.json";
+        file = registry + "/providers/${lib.substring 0 1 owner}/${owner}/${repo}.json";
         latest = lib.head (lib.trivial.importJSON file).versions;
 
-        arches.x86_64 = "amd64";
-        arches.aarch64 = "arm64";
-        systemParts = lib.strings.splitString "-" system;
         arch = arches.${builtins.elemAt systemParts 0};
         os = builtins.elemAt systemParts 1;
 
