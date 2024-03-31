@@ -1,8 +1,8 @@
 # Adapted from https://gist.github.com/bcd2b4e0d3a30abbdec19573083b34b7.git
 # OpenTofu has issues finding Terraform plugins added with .withPlugins, so this module will patch that
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
-flake @ {...}: {
-  perSystem = {
+{flake-parts-lib, ...}: {
+  options.perSystem = flake-parts-lib.mkPerSystemOption ({
     config,
     lib,
     pkgs,
@@ -24,7 +24,7 @@ flake @ {...}: {
         type = deferredModule;
         default.terraform.required_providers = listToAttrs (forEach config.canivete.opentofu.plugins (pkg:
           nameValuePair pkg.repo {
-            inherit source version;
+            inherit (pkg) source version;
           }));
       };
       finalPackage = mkOption {
@@ -82,5 +82,5 @@ flake @ {...}: {
           package);
       };
     };
-  };
+  });
 }
