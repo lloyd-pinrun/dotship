@@ -27,8 +27,5 @@
               ])))
             listToAttrs
           ];
-        perSystem = {self', ...}: {
-          devShells.default = self'.devShells.pre-commit;
-        };
       };
 }
