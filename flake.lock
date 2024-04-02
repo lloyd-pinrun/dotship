@@ -107,6 +107,23 @@
         "type": "github"
       }
     },
+    "opentofu-registry": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1712078392,
+        "narHash": "sha256-NJ/qZk6/haV+VMitb5tO85CDddmTCPuB29borYdhr0I=",
+        "owner": "opentofu",
+        "repo": "registry",
+        "rev": "ef991a928b6938dec3888cc62627d12b0cf74f07",
+        "type": "github"
+      },
+      "original": {
+        "owner": "opentofu",
+        "ref": "main",
+        "repo": "registry",
+        "type": "github"
+      }
+    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -138,6 +155,7 @@
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs",
         "nixpkgs-stable": "nixpkgs-stable",
+        "opentofu-registry": "opentofu-registry",
         "pre-commit": "pre-commit",
         "systems": "systems_2"
       }

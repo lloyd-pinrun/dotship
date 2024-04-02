@@ -1,7 +1,11 @@
 # Adapted from https://gist.github.com/bcd2b4e0d3a30abbdec19573083b34b7.git
 # OpenTofu has issues finding Terraform plugins added with .withPlugins, so this module will patch that
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
-{flake-parts-lib, ...}: {
+{
+  flake-parts-lib,
+  inputs,
+  ...
+}: {
   options.perSystem = flake-parts-lib.mkPerSystemOption ({
     config,
     lib,
@@ -11,15 +15,6 @@
   }: {
     options.canivete.opentofu = with lib;
     with types; {
-      registry = mkOption {
-        type = package;
-        default = pkgs.fetchFromGitHub {
-          owner = "opentofu";
-          repo = "registry";
-          rev = "main";
-          hash = "sha256-JKY2HUV6ui9PlRA0+/k1QNdi9+IOHvKKl7kNiJxiJX8=";
-        };
-      };
       terranixModule = mkOption {
         type = deferredModule;
         default.terraform.required_providers = listToAttrs (forEach config.canivete.opentofu.plugins (pkg:
@@ -56,7 +51,7 @@
               path = "registry.opentofu.org/${source}";
 
               # Target latest system version
-              file = config.canivete.opentofu.registry + "/providers/${substring 0 1 owner}/${source}.json";
+              file = inputs.opentofu-registry + "/providers/${substring 0 1 owner}/${source}.json";
               latest = head (importJSON file).versions;
               target = head (filter (e: e.arch == arch && e.os == os) latest.targets);
             in

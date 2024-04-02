@@ -11,6 +11,9 @@
     pre-commit.url = github:cachix/pre-commit-hooks.nix;
     pre-commit.inputs.nixpkgs.follows = "nixpkgs";
     pre-commit.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+
+    opentofu-registry.url = github:opentofu/registry/main;
+    opentofu-registry.flake = false;
   };
   outputs = inputs:
     with inputs;
