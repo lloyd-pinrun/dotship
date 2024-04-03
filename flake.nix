@@ -14,6 +14,8 @@
     pre-commit.inputs.nixpkgs.follows = "nixpkgs";
     pre-commit.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
 
+    terranix.url = github:terranix/terranix;
+    terranix.inputs.nixpkgs.follows = "nixpkgs";
     opentofu-registry.url = github:opentofu/registry/main;
     opentofu-registry.flake = false;
   };

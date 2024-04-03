@@ -13,8 +13,19 @@
     system,
     ...
   }: {
+    config.apps.tofu = {
+      type = "app";
+      program = pkgs.writeShellApplication {
+        name = "tofu";
+        runtimeInputs = with pkgs; [bash coreutils git config.options.canivete.opentofu];
+        text = builtins.readFile ./tofu.sh;
+      };
+    };
     options.canivete.opentofu = with lib;
     with types; {
+      workspaces = mkOption {
+        type = attrsOf (coercedTo deferredModule (module: pkgs.stdenv.mkDerivation {}) package);
+      };
       terranixModule = mkOption {
         type = deferredModule;
         default.terraform.required_providers = listToAttrs (forEach config.canivete.opentofu.plugins (pkg:
