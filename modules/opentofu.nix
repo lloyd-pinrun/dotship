@@ -4,11 +4,11 @@
 {
   flake-parts-lib,
   inputs,
+  lib,
   ...
 }: {
   options.perSystem = flake-parts-lib.mkPerSystemOption ({
     config,
-    lib,
     pkgs,
     system,
     ...
@@ -67,8 +67,8 @@
               target = head (filter (e: e.arch == arch && e.os == os) latest.targets);
             in
               pkgs.stdenv.mkDerivation rec {
+                inherit (latest) version;
                 pname = "terraform-provider-${repo}";
-                version = latest.version;
                 src = pkgs.fetchurl {
                   url = target.download_url;
                   sha256 = target.shasum;

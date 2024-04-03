@@ -8,9 +8,11 @@
     flake-parts.url = github:hercules-ci/flake-parts;
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
 
-    pre-commit.url = github:cachix/pre-commit-hooks.nix;
-    pre-commit.inputs.nixpkgs.follows = "nixpkgs";
-    pre-commit.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+    pre-commit = {
+      url = github:cachix/git-hooks.nix;
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+    };
 
     terranix.url = github:terranix/terranix;
     terranix.inputs.nixpkgs.follows = "nixpkgs";
@@ -19,11 +21,15 @@
   };
   outputs = inputs:
     with inputs;
-      flake-parts.lib.mkFlake {inherit inputs;} {
+      flake-parts.lib.mkFlake {inherit inputs;} ({
+        config,
+        lib,
+        ...
+      }: {
         imports = [./modules];
-        flake.flakeModules = with self.lib;
+        flake.flakeModules = with lib;
           pipe ./modules [
-            filesets.nix.files
+            config.canivete.filesets.nix.files
             (map (file:
               flip nameValuePair file (pipe file [
                 baseNameOf
@@ -32,5 +38,6 @@
               ])))
             listToAttrs
           ];
-      };
+        perSystem.canivete.pre-commit.shell.enable = true;
+      });
 }
