@@ -1,7 +1,7 @@
 {lib, ...}:
 with lib; {
   options.flake.lib = mkOption {type = with types; lazyAttrsOf anything;};
-  config.flake.lib = mkMerge [
+  config.flake.lib = fold recursiveUpdate {} [
     builtins
     lib
     {
@@ -15,6 +15,11 @@ with lib; {
         inherit program;
         type = "app";
       };
+      mkIfElse = condition: yes: no:
+        mkMerge [
+          (mkIf condition yes)
+          (mkIf (!condition) no)
+        ];
     }
   ];
   config.perSystem = {pkgs, ...}: {
