@@ -1,7 +1,6 @@
 {lib, ...}:
 with lib; {
-  options.canivete.filesets = mkOption {type = with types; lazyAttrsOf anything;};
-  config.canivete.filesets = rec {
+  flake.lib.filesets = rec {
     # List absolute path of files in <root> that satisfy <f>
     filter = f: root:
       pipe root [

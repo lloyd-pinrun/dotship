@@ -21,15 +21,11 @@
   };
   outputs = inputs:
     with inputs;
-      flake-parts.lib.mkFlake {inherit inputs;} ({
-        config,
-        lib,
-        ...
-      }: {
+      flake-parts.lib.mkFlake {inherit inputs;} {
         imports = [./modules];
-        flake.flakeModules = with lib;
+        flake.flakeModules = with self.lib;
           pipe ./modules [
-            config.canivete.filesets.nix.files
+            filesets.nix.files
             (map (file:
               flip nameValuePair file (pipe file [
                 baseNameOf
@@ -39,5 +35,5 @@
             listToAttrs
           ];
         perSystem.canivete.pre-commit.shell.enable = true;
-      });
+      };
 }
