@@ -12,12 +12,28 @@ flake @ {
     pkgs,
     ...
   }:
-    with lib; {
+    with lib; let
+      cfg = config.canivete.opentofu;
+    in {
       config = {
-        packages = mapAttrs (_: getAttr "configuration") config.canivete.opentofu.workspaces;
-        apps = mapAttrs (_: flip pipe [(getAttr "script") flake.config.flake.lib.mkApp]) config.canivete.opentofu.workspaces;
+        devShells.canivete-opentofu = pkgs.mkShell {
+          packages = with pkgs; [cfg.finalPackage terranix];
+        };
+        packages = mapAttrs (_: getAttr "configuration") cfg.workspaces;
+        apps = mapAttrs (_: flip pipe [(getAttr "script") flake.config.flake.lib.mkApp]) cfg.workspaces;
+
+        # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
+        canivete.opentofu.sharedModules.plugins.terraform.required_providers = pipe cfg.plugins [
+          (map (pkg: nameValuePair pkg.repo {inherit (pkg) source version;}))
+          listToAttrs
+        ];
       };
       options.canivete.opentofu = with types; {
+        sharedModules = mkOption {
+          type = attrsOf deferredModule;
+          default = {};
+          description = mdDoc "Terranix modules that every workspace should include";
+        };
         workspaces = mkOption {
           default = {};
           description = mdDoc "Full OpenTofu configurations";
@@ -32,15 +48,7 @@ flake @ {
                 description = mdDoc "OpenTofu configuration file for workspace";
                 default = inputs.terranix.lib.terranixConfiguration {
                   inherit pkgs;
-                  modules = [
-                    workspace.config.module
-                    {
-                      terraform.required_providers = pipe config.canivete.opentofu.plugins [
-                        (map (pkg: nameValuePair pkg.repo {inherit (pkg) source version;}))
-                        listToAttrs
-                      ];
-                    }
-                  ];
+                  modules = concat (attrValues cfg.sharedModules) [workspace.config.module];
                 };
               };
               script = mkOption {
@@ -48,7 +56,7 @@ flake @ {
                 description = mdDoc "Script to run OpenTofu on the workspace configuration";
                 default = pkgs.writeShellApplication {
                   name = "tofu-${name}";
-                  runtimeInputs = with pkgs; [bash coreutils git vals config.canivete.opentofu.finalPackage];
+                  runtimeInputs = with pkgs; [bash coreutils git vals cfg.finalPackage];
                   text = "${./utils.sh} ${./tofu.sh} --workspace ${name} --config ${workspace.config.configuration} -- \"$@\"";
                 };
               };
@@ -57,7 +65,7 @@ flake @ {
         };
         finalPackage = mkOption {
           type = package;
-          default = pkgs.opentofu.withPlugins (_: config.canivete.opentofu.plugins);
+          default = pkgs.opentofu.withPlugins (_: cfg.plugins);
           description = mdDoc "Final package with plugins";
         };
         plugins = mkOption {
