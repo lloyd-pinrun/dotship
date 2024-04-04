@@ -2,6 +2,7 @@
 with lib; {
   options.flake.lib = mkOption {type = with types; lazyAttrsOf anything;};
   config.flake.lib = mkMerge [
+    builtins
     lib
     {
       mkMergeTopLevel = names:

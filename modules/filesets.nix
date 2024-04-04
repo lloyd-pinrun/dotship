@@ -4,7 +4,7 @@ with lib; {
     # List absolute path of files in <root> that satisfy <f>
     filter = f: root:
       pipe root [
-        readDir
+        builtins.readDir
         (attrsets.filterAttrs f)
         attrNames
         (map (file: root + "/${file}"))
@@ -20,11 +20,11 @@ with lib; {
         (map (everything f) (dirs root))
       ];
     in
-      flip pipe [lists.toList (map filesAndDirs) lists.flatten];
+      flip pipe [toList (map filesAndDirs) flatten];
     # Filter out <exclude> paths from "everything" in <roots>
     everythingBut = f: roots: exclude: filter (_path: all (prefix: ! path.hasPrefix prefix _path) exclude) (everything f roots);
     nix = {
-      filter = name: _: match ".+\.nix$" name != null;
+      filter = name: _: builtins.match ".+\.nix$" name != null;
       files = files nix.filter;
       everything = everything nix.filter;
       everythingBut = everythingBut nix.filter;
