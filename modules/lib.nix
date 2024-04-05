@@ -1,5 +1,6 @@
 {
   config,
+  flake-parts-lib,
   inputs,
   lib,
   options,
@@ -15,6 +16,7 @@ with lib; {
     flake.lib = config.canivete.lib;
     canivete.lib = fold recursiveUpdate {} [
       builtins
+      flake-parts-lib
       lib
       {
         # Fileset collectors
@@ -51,7 +53,7 @@ with lib; {
       }
       rec {
         # Common options
-        mkOverrideOption = args: pipe' [(trivial.mergeAttrs args) mkOption];
+        mkOverrideOption = args: pipe' [(mergeAttrs args) mkOption];
         mkEnabledOption = doc:
           mkOption {
             type = types.bool;
@@ -83,6 +85,12 @@ with lib; {
             (mapAttrs (_: mkMerge))
             (getAttrs names)
           ];
+        mkFlake = args:
+          inputs.flake-parts.lib.mkFlake (recursiveUpdate {
+              inherit inputs;
+              specialArgs.nix = inputs.self.lib;
+            }
+            args);
       }
     ];
   };
