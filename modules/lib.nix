@@ -55,7 +55,7 @@ with lib; {
       }
       rec {
         # Common options
-        mkOverrideOption = args: pipe' [(mergeAttrs args) mkOption];
+        mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];
         mkEnabledOption = doc:
           mkOption {
             type = types.bool;
