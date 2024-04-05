@@ -10,12 +10,13 @@ with lib; {
     default = {};
     description = mdDoc "Nixpkgs configuration (i.e. allowUnfree, etc.)";
   };
-  config.flake.overlays.fromYAML = _: prev: {
+  config.flake.overlays.canivete = final: _: {
     fromYAML = flip pipe [
-      (file: "${prev.yq}/bin/yq '.' ${file} > $out")
-      (prev.runCommand "from-yaml" {})
+      (file: "${final.yq}/bin/yq '.' ${file} > $out")
+      (final.runCommand "from-yaml" {})
       importJSON
     ];
+    execBash = cmd: [(getExe final.bash) "-c" cmd];
   };
   config.perSystem = {system, ...}: {
     _module.args.pkgs = import inputs.nixpkgs {
