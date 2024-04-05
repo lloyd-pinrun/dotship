@@ -2,17 +2,17 @@
 # OpenTofu has issues finding Terraform plugins added with .withPlugins, so this module will patch that
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
 flake @ {
+  nix,
   flake-parts-lib,
   inputs,
   ...
 }: {
   options.perSystem = flake-parts-lib.mkPerSystemOption ({
     config,
-    lib,
     pkgs,
     ...
   }:
-    with lib; let
+    with nix; let
       cfg = config.canivete.opentofu;
     in {
       config = {
@@ -20,7 +20,7 @@ flake @ {
           packages = with pkgs; [cfg.finalPackage terranix];
         };
         packages = mapAttrs (_: getAttr "configuration") cfg.workspaces;
-        apps = mapAttrs (_: flip pipe [(getAttr "script") flake.config.canivete.lib.mkApp]) cfg.workspaces;
+        apps = mapAttrs (_: flip pipe [(getAttr "script") mkApp]) cfg.workspaces;
 
         # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
         canivete.opentofu.sharedModules.plugins.terraform.required_providers = pipe cfg.plugins [
@@ -41,6 +41,7 @@ flake @ {
             options = {
               module = mkOption {
                 type = deferredModule;
+                default = {};
                 description = mdDoc "Terranix module to generate unique workspace configuration";
               };
               configuration = mkOption {

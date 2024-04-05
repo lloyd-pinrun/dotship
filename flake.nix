@@ -21,19 +21,37 @@
   };
   outputs = inputs:
     with inputs;
-      flake-parts.lib.mkFlake {inherit inputs;} {
+      flake-parts.lib.mkFlake {inherit inputs;} (flake @ {config, ...}: let
+        nix = import ./lib.nix flake;
+      in {
         imports = [./modules];
-        flake.flakeModules = with self.lib;
-          pipe ./modules [
-            filesets.nix.files
-            (map (file:
-              flip nameValuePair file (pipe file [
-                baseNameOf
-                (match "^(.+)\.nix$")
-                head
-              ])))
-            listToAttrs
-          ];
+        _module.args.nix = nix;
+        flake = {
+          lib.mkFlake = with nix;
+            args @ {
+              specialArgs ? {},
+              everything ? [],
+              ...
+            }: module:
+              flake-parts.lib.mkFlake {
+                inputs = inputs // args.inputs;
+                specialArgs = {inherit nix;} // specialArgs;
+              } {
+                imports = concat [module self.flakeModule] (nix.filesets.nix.everything everything);
+              };
+          flakeModule = config.flake.flakeModules.default;
+          flakeModules = with nix;
+            pipe ./modules [
+              filesets.nix.files
+              (map (file:
+                flip nameValuePair file (pipe file [
+                  baseNameOf
+                  (match "^(.+)\.nix$")
+                  head
+                ])))
+              listToAttrs
+            ];
+        };
         perSystem.canivete.pre-commit.shell.enable = true;
-      };
+      });
 }
