@@ -85,12 +85,14 @@ with lib; {
             (mapAttrs (_: mkMerge))
             (getAttrs names)
           ];
-        mkFlake = args:
+        mkFlake = args @ {everything ? [], ...}: module:
           inputs.flake-parts.lib.mkFlake (recursiveUpdate {
               inherit inputs;
               specialArgs.nix = inputs.self.lib;
             }
-            args);
+            (removeAttrs args ["everything"])) {
+            imports = concat [module inputs.self.flakeModules.default] (inputs.self.lib.filesets.nix.everything everything);
+          };
       }
     ];
   };
