@@ -18,6 +18,8 @@ with lib; {
       builtins
       flake-parts-lib
       lib
+      lib.types
+      lib.licenses
       {
         # Fileset collectors
         filesets = rec {
