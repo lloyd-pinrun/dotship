@@ -56,7 +56,7 @@
               statix.enable = true;
               statix.raw.args = [
                 "--config"
-                (pkgs.writers.writeTOML "statix.toml" {disabled = ["unquoted_uri"];})
+                (pkgs.writers.writeTOML "statix.toml" {disabled = ["unquoted_uri" "repeated_keys"];})
               ];
             }
             (mkIf cfg.python.enable {
