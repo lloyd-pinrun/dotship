@@ -1,7 +1,7 @@
 # Adapted from https://gist.github.com/bcd2b4e0d3a30abbdec19573083b34b7.git
 # OpenTofu has issues finding Terraform plugins added with .withPlugins, so this module will patch that
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
-flake @ {
+{
   nix,
   flake-parts-lib,
   inputs,
@@ -9,47 +9,45 @@ flake @ {
 }: {
   options.perSystem = flake-parts-lib.mkPerSystemOption ({
     config,
+    options,
     pkgs,
     ...
   }:
     with nix; let
-      cfg = config.canivete.opentofu;
+      tofu = config.canivete.opentofu;
     in {
-      config = {
-        devShells.canivete-opentofu = pkgs.mkShell {
-          packages = with pkgs; [cfg.finalPackage terranix];
-        };
-        packages = mapAttrs (_: getAttr "configuration") cfg.workspaces;
-        apps = mapAttrs (_: flip pipe [(getAttr "script") mkApp]) cfg.workspaces;
-
-        # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
-        canivete.opentofu.sharedModules.plugins.terraform.required_providers = pipe cfg.plugins [
-          (map (pkg: nameValuePair pkg.repo {inherit (pkg) source version;}))
-          listToAttrs
-        ];
-      };
-      options.canivete.opentofu = with types; {
-        sharedModules = mkOption {
-          type = attrsOf deferredModule;
-          default = {};
-          description = mdDoc "Terranix modules that every workspace should include";
-        };
+      config.packages = mapAttrs (_: getAttr "configuration") tofu.workspaces;
+      config.apps = mapAttrs (_: flip pipe [(getAttr "script") mkApp]) tofu.workspaces;
+      options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};
           description = mdDoc "Full OpenTofu configurations";
-          type = attrsOf (submodule (workspace @ {name, ...}: {
+          type = attrsOf (submodule ({
+            name,
+            config,
+            ...
+          }: let
+            workspace = config;
+          in {
             options = {
-              module = mkOption {
-                type = deferredModule;
-                default = {};
-                description = mdDoc "Terranix module to generate unique workspace configuration";
+              plugins = options.canivete.opentofu.sharedPlugins;
+              modules = options.canivete.opentofu.sharedModules;
+              package = mkOption {
+                type = package;
+                default = pkgs.opentofu;
+                description = mdDoc "Final package with plugins";
+              };
+              finalPackage = mkOption {
+                type = package;
+                default = workspace.package.withPlugins (_: workspace.plugins);
+                description = mdDoc "Final package with plugins";
               };
               configuration = mkOption {
                 type = package;
                 description = mdDoc "OpenTofu configuration file for workspace";
                 default = inputs.terranix.lib.terranixConfiguration {
                   inherit pkgs;
-                  modules = concat (attrValues cfg.sharedModules) [workspace.config.module];
+                  modules = attrValues workspace.modules;
                 };
               };
               script = mkOption {
@@ -57,24 +55,35 @@ flake @ {
                 description = mdDoc "Script to run OpenTofu on the workspace configuration";
                 default = pkgs.writeShellApplication {
                   name = "tofu-${name}";
-                  runtimeInputs = with pkgs; [bash coreutils git vals cfg.finalPackage];
-                  text = "${./utils.sh} ${./tofu.sh} --workspace ${name} --config ${workspace.config.configuration} -- \"$@\"";
+                  runtimeInputs = with pkgs; [bash coreutils git vals workspace.finalPackage];
+                  text = "${./utils.sh} ${./tofu.sh} --workspace ${name} --config ${workspace.configuration} -- \"$@\"";
                 };
               };
             };
+            config.plugins = tofu.sharedPlugins;
+            config.modules =
+              tofu.sharedModules
+              // {
+                # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
+                plugins.terraform.required_providers = pipe workspace.plugins [
+                  (map (pkg: nameValuePair pkg.repo {inherit (pkg) source version;}))
+                  listToAttrs
+                ];
+              };
           }));
         };
-        finalPackage = mkOption {
-          type = package;
-          default = pkgs.opentofu.withPlugins (_: cfg.plugins);
-          description = mdDoc "Final package with plugins";
+        sharedModules = mkOption {
+          type = attrsOf deferredModule;
+          default = {};
+          description = mdDoc "Terranix modules";
         };
-        plugins = mkOption {
+        sharedPlugins = mkOption {
           default = [];
           description = mdDoc "Providers to pull";
           example = ["opentofu/google"];
           type = listOf (coercedTo str (
               source: let
+                # TODO add all systems to allowing operating on different workstations
                 inherit (pkgs.go) GOARCH GOOS;
 
                 # Parse registry reference from path

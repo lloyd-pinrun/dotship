@@ -15,7 +15,7 @@ with nix; {
     ...
   }: {
     packages.default = pkgs.writeShellApplication {
-      name = config.canivete.devShell.name;
+      inherit (config.canivete.devShell) name;
       excludeShellChecks = ["SC2015"];
       text = ''
         nixCmd() { nix --extra-experimental-features "nix-command flakes" "$@"; }
