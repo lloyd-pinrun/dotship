@@ -59,8 +59,7 @@ with lib;
         default = {};
       };
       mkSystemOption = args: mkOption ({type = types.enum (import inputs.systems);} // args);
-    }
-    {
+
       # Convenience utilities
       flatMap = f: flip pipe [(map f) flatten];
       mkApp = program: {
@@ -72,6 +71,7 @@ with lib;
           (mkIf condition yes)
           (mkIf (!condition) no)
         ];
+      mkUnless = condition: flip (mkIfElse condition);
       mkMergeTopLevel = names:
         flip pipe [
           (foldAttrs (this: those: [this] ++ those) [])
