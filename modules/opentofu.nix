@@ -15,6 +15,7 @@
   }:
     with nix; let
       tofu = config.canivete.opentofu;
+      tofuOpts = options.canivete.opentofu;
     in {
       config.packages = mapAttrs (_: getAttr "configuration") tofu.workspaces;
       config.apps = mapAttrs (_: flip pipe [(getAttr "script") mkApp]) tofu.workspaces;
@@ -30,11 +31,36 @@
             workspace = config;
           in {
             options = {
-              plugins = options.canivete.opentofu.sharedPlugins;
-              modules = options.canivete.opentofu.sharedModules;
+              encryptedState.enable = mkEnabledOption "encrypted state (alpha prerelease)";
+              encryptedState.passphrase =
+                tofuOpts.sharedEncryptedStatePassphrase
+                // {
+                  default = tofu.sharedEncryptedStatePassphrase;
+                };
+              plugins = tofuOpts.sharedPlugins;
+              modules = tofuOpts.sharedModules;
               package = mkOption {
                 type = package;
-                default = pkgs.opentofu;
+                default =
+                  if ! workspace.encryptedState.enable
+                  then pkgs.opentofu
+                  else
+                    (
+                      pkgs.opentofu.override {
+                        buildGoModule = args:
+                          pkgs.buildGoModule (args
+                            // rec {
+                              version = "1.7.0-alpha1";
+                              src = pkgs.fetchFromGitHub {
+                                owner = "opentofu";
+                                repo = "opentofu";
+                                rev = "v${version}";
+                                hash = "sha256-tg3RsYWTvAL5sVMPHCwzTHe8EipdS3QdYmv6Jah1M1o=";
+                              };
+                              vendorHash = "sha256-N9csHGxUg8y+PshjPzEFOsdGF1cZch5UW3ISofQX9oE=";
+                            });
+                      }
+                    );
                 description = mdDoc "Final package with plugins";
               };
               finalPackage = mkOption {
@@ -61,16 +87,32 @@
               };
             };
             config.plugins = tofu.sharedPlugins;
-            config.modules =
+            config.modules = mkMerge [
               tofu.sharedModules
-              // {
-                # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
+              # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
+              {
                 plugins.terraform.required_providers = pipe workspace.plugins [
                   (map (pkg: nameValuePair pkg.repo {inherit (pkg) source version;}))
                   listToAttrs
                 ];
-              };
+              }
+              (mkIf workspace.encryptedState.enable {
+                state.terraform.encryption = {
+                  key_provider.pbkdf2.default.passphrase = mkDefault workspace.encryptedState.passphrase;
+                  method.aes_gcm.default.keys = "\${ key_provider.pbkdf2.default }";
+                  state.method = mkDefault "\${ method.aes_gcm.default }";
+                  state.fallback = mkDefault {method = "\${ method.aes_gcm.default }";};
+                  plan.method = mkDefault "\${ method.aes_gcm.default }";
+                  plan.fallback = mkDefault {method = "\${ method.aes_gcm.default }";};
+                };
+              })
+            ];
           }));
+        };
+        sharedEncryptedStatePassphrase = mkOption {
+          type = str;
+          default = "ref+sops://dev/sops/default.yaml#/opentofu_pw";
+          description = mdDoc "Value or vals-like reference (i.e. ref+sops://...) to secret to decrypt state";
         };
         sharedModules = mkOption {
           type = attrsOf deferredModule;
