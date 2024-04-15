@@ -103,4 +103,10 @@ has_intersection() {
 	has_duplicates has_intersection_array
 }
 
+CANIVETE_VCS_DIR="$(git rev-parse --show-toplevel)/.canivete"
+export CANIVETE_VCS_DIR
+mkdir -p "$CANIVETE_VCS_DIR"
+ignore_file="$CANIVETE_VCS_DIR/.gitignore"
+[[ ! -f $ignore_file ]] && printf '.terraform/\nconfig.tf.json\n' >"$ignore_file"
+
 "$@"
