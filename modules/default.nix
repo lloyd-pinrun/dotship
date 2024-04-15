@@ -5,5 +5,6 @@
     ./systems.nix
     ./devShell.nix
     ./pkgs.nix
+    ./schemas.nix
   ];
 }
