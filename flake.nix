@@ -38,6 +38,7 @@
                 specialArgs = {inherit nix;} // specialArgs;
               } {
                 imports = concat [module self.flakeModule] (nix.filesets.nix.everything everything);
+                perSystem._module.args.nix = nix;
               };
           flakeModule = config.flake.flakeModules.default;
           flakeModules = with nix;
