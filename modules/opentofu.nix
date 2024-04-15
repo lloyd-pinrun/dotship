@@ -111,7 +111,7 @@
         };
         sharedEncryptedStatePassphrase = mkOption {
           type = str;
-          default = "ref+sops://dev/sops/default.yaml#/opentofu_pw";
+          default = "ref+sops://.canivete/sops/default.yaml#/opentofu_pw";
           description = mdDoc "Value or vals-like reference (i.e. ref+sops://...) to secret to decrypt state";
         };
         sharedModules = mkOption {
