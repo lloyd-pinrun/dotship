@@ -73,6 +73,7 @@
                 description = mdDoc "OpenTofu configuration file for workspace";
                 default = inputs.terranix.lib.terranixConfiguration {
                   inherit pkgs;
+                  extraArgs = {inherit nix;};
                   modules = attrValues workspace.modules;
                 };
               };
