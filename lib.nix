@@ -18,7 +18,7 @@ with lib;
         filter = f: root:
           pipe root [
             builtins.readDir
-            (attrsets.filterAttrs f)
+            (filterAttrs f)
             attrNames
             (map (file: root + "/${file}"))
           ];
@@ -45,6 +45,16 @@ with lib;
       };
     }
     rec {
+      # Useful functions
+      eval = arg: f: f arg;
+      majorMinorVersion = flip pipe [splitVersion (sublist 0 2) (concatStringsSep ".") (replaceStrings ["."] [""])];
+      functions.defaultArgs = flip pipe [
+        functionArgs
+        (filterAttrs (_: id))
+        attrNames
+      ];
+      functions.nonDefaultArgs = f: removeAttrs (functionArgs f) (functions.defaultArgs f);
+
       # Common options
       mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];
       mkEnabledOption = doc:
