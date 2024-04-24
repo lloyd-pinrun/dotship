@@ -59,6 +59,24 @@ with lib;
         default = {};
       };
       mkSystemOption = args: mkOption ({type = types.enum (import inputs.systems);} // args);
+      mkSubdomainOption = mkOverrideOption {
+        type = types.strMatching "^[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]$";
+        example = "my-TEST-subdomain1";
+      };
+      mkDomainOption = mkOverrideOption {
+        type = types.strMatching "^([a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]\.)+[a-z]{2,10}$";
+        example = "something.like.this";
+      };
+      mkEmailOption = mkOverrideOption {
+        type = types.strMatching "^[a-zA-Z0-9][a-zA-Z0-9_.%+\-]{0,61}[a-zA-Z0-9]@([a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]\.)+[a-zA-Z]{2,10}$";
+        example = "my_email-address+%@something.like.this";
+      };
+      mkLatestVersionOption = mkOverrideOption {
+        type = types.str;
+        default = "latest";
+        example = "0.0.1";
+        description = mdDoc "Set the version. Defaults to null (i.e. latest)";
+      };
 
       # Convenience utilities
       flatMap = f: flip pipe [(map f) flatten];
