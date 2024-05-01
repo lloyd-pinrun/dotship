@@ -18,6 +18,9 @@
     terranix.inputs.nixpkgs.follows = "nixpkgs";
     opentofu-registry.url = github:opentofu/registry/main;
     opentofu-registry.flake = false;
+
+    dream2nix.url = github:nix-community/dream2nix;
+    dream2nix.inputs.nixpkgs.follows = "nixpkgs";
   };
   outputs = inputs:
     with inputs;

@@ -6,5 +6,6 @@
     ./devShell.nix
     ./pkgs.nix
     ./schemas.nix
+    ./dream2nix.nix
   ];
 }
