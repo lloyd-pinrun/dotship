@@ -22,7 +22,7 @@
       options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};
-          description = mdDoc "Full OpenTofu configurations";
+          description = "Full OpenTofu configurations";
           type = attrsOf (submodule ({
             name,
             config,
@@ -61,16 +61,16 @@
                             });
                       }
                     );
-                description = mdDoc "Final package with plugins";
+                description = "Final package with plugins";
               };
               finalPackage = mkOption {
                 type = package;
                 default = workspace.package.withPlugins (_: workspace.plugins);
-                description = mdDoc "Final package with plugins";
+                description = "Final package with plugins";
               };
               configuration = mkOption {
                 type = package;
-                description = mdDoc "OpenTofu configuration file for workspace";
+                description = "OpenTofu configuration file for workspace";
                 default = inputs.terranix.lib.terranixConfiguration {
                   inherit pkgs;
                   extraArgs = {inherit nix;};
@@ -79,7 +79,7 @@
               };
               script = mkOption {
                 type = package;
-                description = mdDoc "Script to run OpenTofu on the workspace configuration";
+                description = "Script to run OpenTofu on the workspace configuration";
                 default = pkgs.writeShellApplication {
                   name = "tofu-${name}";
                   runtimeInputs = with pkgs; [bash coreutils git vals workspace.finalPackage];
@@ -113,16 +113,16 @@
         sharedEncryptedStatePassphrase = mkOption {
           type = str;
           default = "ref+sops://.canivete/sops/default.yaml#/opentofu_pw";
-          description = mdDoc "Value or vals-like reference (i.e. ref+sops://...) to secret to decrypt state";
+          description = "Value or vals-like reference (i.e. ref+sops://...) to secret to decrypt state";
         };
         sharedModules = mkOption {
           type = attrsOf deferredModule;
           default = {};
-          description = mdDoc "Terranix modules";
+          description = "Terranix modules";
         };
         sharedPlugins = mkOption {
           default = [];
-          description = mdDoc "Providers to pull";
+          description = "Providers to pull";
           example = ["opentofu/google"];
           type = listOf (coercedTo str (
               source: let

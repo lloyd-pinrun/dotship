@@ -10,7 +10,7 @@ with nix; {
   options.canivete.pkgs.config = mkOption {
     type = attrsOf anything;
     default = {};
-    description = mdDoc "Nixpkgs configuration (i.e. allowUnfree, etc.)";
+    description = "Nixpkgs configuration (i.e. allowUnfree, etc.)";
   };
   options.perSystem = mkPerSystemOption ({
     pkgs,

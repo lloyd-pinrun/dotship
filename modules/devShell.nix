@@ -7,7 +7,7 @@ with nix; {
   options.canivete.devShell.name = mkOption {
     type = str;
     default = "can";
-    description = mdDoc "Name of the primary project executable";
+    description = "Name of the primary project executable";
   };
   config.perSystem = {
     pkgs,

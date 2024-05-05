@@ -62,7 +62,7 @@ with lib;
           type = types.bool;
           default = true;
           example = false;
-          description = mdDoc "Whether to enable ${doc}";
+          description = "Whether to enable ${doc}";
         };
       mkModulesOption = mkOverrideOption {
         type = with types; attrsOf deferredModule;
@@ -85,7 +85,7 @@ with lib;
         type = types.str;
         default = "latest";
         example = "0.0.1";
-        description = mdDoc "Set the version. Defaults to null (i.e. latest)";
+        description = "Set the version. Defaults to null (i.e. latest)";
       };
 
       # Convenience utilities

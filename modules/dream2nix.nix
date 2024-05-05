@@ -11,24 +11,24 @@ with nix; {
       sharedModules = mkOption {
         type = listOf deferredModule;
         default = [];
-        description = mdDoc "Dream2Nix modules used in all packages";
+        description = "Dream2Nix modules used in all packages";
       };
       sharedShells = mkOption {
         type = listOf package;
         default = [];
-        description = mdDoc "Shells shared by package devShells";
+        description = "Shells shared by package devShells";
       };
       packages = mkOption {
         type = attrsOf (submodule ({config, ...}: {
           options = {
             module = mkOption {
               type = deferredModule;
-              description = mdDoc "Primary module to pass specific package config";
+              description = "Primary module to pass specific package config";
             };
             modules = mkOption {
               type = listOf deferredModule;
               default = concat cfg.sharedModules [config.module];
-              description = mdDoc "All modules used to build package";
+              description = "All modules used to build package";
             };
             package = mkOption {
               type = package;
@@ -36,19 +36,19 @@ with nix; {
                 inherit (config) modules;
                 packageSets.nixpkgs = pkgs;
               };
-              description = mdDoc "Final package built with Dream2Nix";
+              description = "Final package built with Dream2Nix";
             };
             devShell = mkOption {
               type = nullOr package;
               default = pkgs.mkShell {
                 inputsFrom = concat cfg.sharedShells (toList (config.package.devShell or []));
               };
-              description = mdDoc "Development shell for this package";
+              description = "Development shell for this package";
             };
           };
         }));
         default = {};
-        description = mdDoc "Dream2Nix packages";
+        description = "Dream2Nix packages";
       };
     };
     config = mkMerge [
