@@ -21,6 +21,14 @@
 
     dream2nix.url = github:nix-community/dream2nix;
     dream2nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    arion = {
+      url = github:hercules-ci/arion;
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.hercules-ci-effects.inputs.flake-parts.follows = "arion/flake-parts";
+      inputs.hercules-ci-effects.inputs.nixpkgs.follows = "arion/nixpkgs";
+    };
   };
   outputs = inputs:
     with inputs;

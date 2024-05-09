@@ -7,5 +7,6 @@
     ./pkgs.nix
     ./schemas.nix
     ./dream2nix.nix
+    ./arion.nix
   ];
 }
