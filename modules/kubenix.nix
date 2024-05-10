@@ -21,7 +21,8 @@ with nix; {
         options = {
           k3d = mkEnableOption "Deploy cluster locally with k3d";
           opentofu = mkOption {
-            type = deferredModule;
+            # Can't use deferredModule here because it breaks merging with OpenTofu workspaces
+            type = lazyAttrsOf anything;
             default = {};
             description = "OpenTofu workspace to deploy";
           };

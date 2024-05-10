@@ -236,9 +236,8 @@
         "type": "github"
       },
       "original": {
-        "owner": "hercules-ci",
-        "repo": "hercules-ci-effects",
-        "type": "github"
+        "id": "hercules-ci-effects",
+        "type": "indirect"
       }
     },
     "kubenix": {
