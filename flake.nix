@@ -29,6 +29,9 @@
       inputs.hercules-ci-effects.inputs.flake-parts.follows = "arion/flake-parts";
       inputs.hercules-ci-effects.inputs.nixpkgs.follows = "arion/nixpkgs";
     };
+
+    kubenix.url = github:hall/kubenix;
+    kubenix.inputs.nixpkgs.follows = "nixpkgs";
   };
   outputs = inputs:
     with inputs;

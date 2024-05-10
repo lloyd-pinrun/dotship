@@ -8,5 +8,6 @@
     ./schemas.nix
     ./dream2nix.nix
     ./arion.nix
+    ./kubenix.nix
   ];
 }

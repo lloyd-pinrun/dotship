@@ -107,6 +107,6 @@ CANIVETE_VCS_DIR="$(git rev-parse --show-toplevel)/.canivete"
 export CANIVETE_VCS_DIR
 mkdir -p "$CANIVETE_VCS_DIR"
 ignore_file="$CANIVETE_VCS_DIR/.gitignore"
-[[ ! -f $ignore_file ]] && printf '.terraform/\nconfig.tf.json\n' >"$ignore_file"
+[[ ! -f $ignore_file ]] && printf '.terraform/\nconfig.tf.json\nconfig.yaml\nkubeconfig\n' >"$ignore_file"
 
 "$@"
