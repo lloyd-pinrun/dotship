@@ -3,22 +3,22 @@
 cluster=
 config=
 while [[ $# -gt 0 ]]; do
-    case $1 in
-    --cluster)
-        cluster=$2
-        shift
-        ;;
-    --config)
-        config=$2
-        shift
-        ;;
-    --)
-        shift
-        break
-        ;;
-    *) logfx exit_status=FAILURE level=ERROR <<<"Not a valid option: $1" ;;
-    esac
-    shift
+	case $1 in
+	--cluster)
+		cluster=$2
+		shift
+		;;
+	--config)
+		config=$2
+		shift
+		;;
+	--)
+		shift
+		break
+		;;
+	*) logfx exit_status=FAILURE level=ERROR <<<"Not a valid option: $1" ;;
+	esac
+	shift
 done
 [[ -z ${config-} ]] && logfx exit_status=FAILURE level=ERROR <<<"Must specify a --config file"
 [[ -z ${cluster-} ]] && logfx exit_status=FAILURE level=ERROR <<<"Must specify a --cluster name"
@@ -38,6 +38,6 @@ vals eval -s -f "$enc_kube" | yq "." --yaml-output >"$dec_kube"
 
 args=(--kubeconfig "$dec_kube" "$@")
 if contains apply args; then
-    args+=(--filename "$dec_file")
+	args+=(--filename "$dec_file")
 fi
 kubectl "${args[@]}"
