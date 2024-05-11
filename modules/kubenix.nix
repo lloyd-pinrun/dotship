@@ -60,7 +60,7 @@ with nix; {
               agents = mkDefault 3;
             };
             data.external.encrypt-kubeconfig = {
-              program = pkgs.execBash "echo '\${ k3d_cluster.main.credentials.raw }' | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
+              program = pkgs.execBash "echo '\${ k3d_cluster.main.credentials[0].raw }' | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
             };
             resource.local_file.encrypted-kubeconfig = {
               content = "\${ data.external.encrypt-kubeconfig.result.kubeconfig }";
