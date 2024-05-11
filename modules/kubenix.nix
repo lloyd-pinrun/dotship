@@ -12,7 +12,7 @@ with nix; {
   }: {
     config.apps.kubectl = mkApp (pkgs.writeShellApplication {
       name = "kubectl";
-      text = "nixCmd run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
+      text = "${./utils.sh} nixCmd run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
     });
     options.canivete.kubenix.clusters = mkOption {
       type = attrsOf (submodule ({

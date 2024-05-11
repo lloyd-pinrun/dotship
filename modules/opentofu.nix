@@ -20,7 +20,7 @@
     in {
       config.apps.tofu = mkApp (pkgs.writeShellApplication {
         name = "tofu";
-        text = "nixCmd run \".#canivete.${system}.opentofu.workspaces.$1.script\" -- \"\${@:2}\"";
+        text = "${./utils.sh} nixCmd run \".#canivete.${system}.opentofu.workspaces.$1.script\" -- \"\${@:2}\"";
       });
       options.canivete.opentofu = {
         workspaces = mkOption {

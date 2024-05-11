@@ -103,6 +103,13 @@ has_intersection() {
 	has_duplicates has_intersection_array
 }
 
+nixCmd() {
+	nix --show-trace \
+		--allow-import-from-derivation \
+		--extra-experimental-features "nix-command flakes auto-allocate-uids configurable-impure-env" \
+		"$@"
+}
+
 CANIVETE_VCS_DIR="$(git rev-parse --show-toplevel)/.canivete"
 export CANIVETE_VCS_DIR
 mkdir -p "$CANIVETE_VCS_DIR"
