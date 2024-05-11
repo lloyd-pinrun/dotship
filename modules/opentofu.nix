@@ -11,14 +11,17 @@
     config,
     options,
     pkgs,
+    system,
     ...
   }:
     with nix; let
       tofu = config.canivete.opentofu;
       tofuOpts = options.canivete.opentofu;
     in {
-      config.packages = mapAttrs (_: getAttr "configuration") tofu.workspaces;
-      config.apps = mapAttrs (_: flip pipe [(getAttr "script") mkApp]) tofu.workspaces;
+      config.apps.tofu = mkApp (pkgs.writeShellApplication {
+        name = "tofu";
+        text = "nixCmd run \".#canivete.${system}.opentofu.workspaces.$1.script\" -- \"\${@:2}\"";
+      });
       options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};
