@@ -67,6 +67,6 @@
               listToAttrs
             ];
         };
-        perSystem.canivete.pre-commit.shell.enable = true;
+        perSystem.canivete.pre-commit.languages.shell.enable = true;
       });
 }

@@ -2,6 +2,7 @@
 with nix; {
   options.perSystem = mkPerSystemOption ({
     config,
+    options,
     pkgs,
     self',
     ...
@@ -17,6 +18,12 @@ with nix; {
         default = [];
         description = "Packages to include in development shell";
       };
+      shells = mkOption {
+        type = listOf package;
+        default = attrValues (removeAttrs self'.devShells ["default"]);
+        description = "Development shells to include in the default";
+      };
+      inputsFrom = options.canivete.devShell.shells // {default = config.canivete.devShell.shells;};
     };
     config = let
       program = pkgs.writeShellApplication {
@@ -34,8 +41,7 @@ with nix; {
       canivete.devShell.packages = [pkgs.sops program];
       apps.default = mkApp program;
       devShells.default = pkgs.mkShell {
-        inputsFrom = attrValues (removeAttrs self'.devShells ["default"]);
-        inherit (config.canivete.devShell) name packages;
+        inherit (config.canivete.devShell) name packages inputsFrom;
       };
     };
   });
