@@ -61,7 +61,6 @@ with nix; {
             resource.k3d_cluster.main = {
               inherit name;
               servers = 1;
-              agents = mkDefault 3;
             };
             data.external.encrypt-kubeconfig = {
               program = pkgs.execBash "echo '\${ k3d_cluster.main.credentials[0].raw }' | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
