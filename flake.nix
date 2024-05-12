@@ -16,7 +16,7 @@
 
     terranix.url = github:terranix/terranix;
     terranix.inputs.nixpkgs.follows = "nixpkgs";
-    opentofu-registry.url = github:opentofu/registry/main;
+    opentofu-registry.url = github:opentofu/registry;
     opentofu-registry.flake = false;
 
     dream2nix.url = github:nix-community/dream2nix;
