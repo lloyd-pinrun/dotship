@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 
+# shellcheck disable=SC1090
+source "$CANIVETE_UTILS"
+
 workspace=
 config=
 while [[ $# -gt 0 ]]; do
