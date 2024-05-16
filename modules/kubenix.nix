@@ -38,7 +38,7 @@ with nix; {
               (inputs.kubenix.evalModules.${system} {
                 specialArgs = {inherit nix;};
                 module = {kubenix, ...}: {
-                  imports = [kubenix.modules.k8s] ++ attrValues cluster.modules;
+                  imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
                 };
               })
               .config
