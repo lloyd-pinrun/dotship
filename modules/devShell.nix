@@ -5,6 +5,7 @@ with nix; {
     options,
     pkgs,
     self',
+    system,
     ...
   }: {
     options.canivete.devShell = {
@@ -12,6 +13,31 @@ with nix; {
         type = str;
         default = "can";
         description = "Name of the primary project executable";
+      };
+      apps = mkOption {
+        type = attrsOf (submodule ({
+          config,
+          name,
+          ...
+        }: {
+          options.dependencies = mkOption {
+            type = listOf package;
+            default = [];
+          };
+          options.script = mkOption {
+            type = coercedTo str (script:
+              pkgs.writeShellApplication {
+                inherit name;
+                runtimeInputs = config.dependencies;
+                excludeShellChecks = ["SC1091"];
+                text = "source ${./utils.sh} && ${script}";
+              })
+            package;
+          };
+          config.dependencies = with pkgs; [bash coreutils git];
+        }));
+        default = {};
+        description = "Subcommands for primary executable";
       };
       packages = mkOption {
         type = listOf package;
@@ -25,21 +51,12 @@ with nix; {
       };
       inputsFrom = options.canivete.devShell.shells // {default = config.canivete.devShell.shells;};
     };
-    config = let
-      program = pkgs.writeShellApplication {
-        inherit (config.canivete.devShell) name;
-        text = ''
-          if [[ -z ''${1-} || $1 == default ]]; then
-              args=(flake show)
-          else
-              args=(run ".#$1" -- "''${@:2}")
-          fi
-          ${./utils.sh} nixCmd "''${args[@]}"
-        '';
+    config = {
+      canivete.devShell = {
+        packages = [pkgs.sops (with config.canivete.devShell; apps.${name}.script)];
+        apps.help.script = "nix flake show";
+        apps.${config.canivete.devShell.name}.script = "nix run \".#canivete.${system}.devShell.apps.\${1:-help}.script\" -- \"\${@:2}\"";
       };
-    in {
-      canivete.devShell.packages = [pkgs.sops program];
-      apps.default = mkApp program;
       devShells.default = pkgs.mkShell {
         inherit (config.canivete.devShell) name packages inputsFrom;
       };

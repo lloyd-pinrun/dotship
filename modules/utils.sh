@@ -103,8 +103,8 @@ has_intersection() {
 	has_duplicates has_intersection_array
 }
 
-nixCmd() {
-	nix --show-trace \
+nix() {
+	command nix --show-trace \
 		--allow-import-from-derivation \
 		--extra-experimental-features "nix-command flakes auto-allocate-uids configurable-impure-env" \
 		"$@"
@@ -114,6 +114,6 @@ CANIVETE_VCS_DIR="$(git rev-parse --show-toplevel)/.canivete"
 export CANIVETE_VCS_DIR
 mkdir -p "$CANIVETE_VCS_DIR"
 ignore_file="$CANIVETE_VCS_DIR/.gitignore"
-[[ ! -f $ignore_file ]] && printf '.terraform/\nconfig.tf.json\nconfig.yaml\nkubeconfig\n' >"$ignore_file"
-
-"$@"
+if [[ ! -f $ignore_file ]]; then
+	printf '.terraform/\nconfig.tf.json\nconfig.yaml\nkubeconfig\n' >"$ignore_file"
+fi

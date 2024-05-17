@@ -10,10 +10,8 @@ with nix; {
     system,
     ...
   }: {
-    config.apps.kubectl = mkApp (pkgs.writeShellApplication {
-      name = "kubectl";
-      text = "${./utils.sh} nixCmd run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
-    });
+    config.canivete.devShell.apps.kubectl.script = "nix run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
+    config.canivete.opentofu.workspaces = mapAttrs' (name: cluster: nameValuePair "kubenix-${name}" cluster.opentofu) config.canivete.kubenix.clusters;
     options.canivete.kubenix.clusters = mkOption {
       type = attrsOf (submodule ({
         config,
@@ -76,6 +74,5 @@ with nix; {
       default = {};
       description = "Kubernetes clusters";
     };
-    config.canivete.opentofu.workspaces = mapAttrs' (name: cluster: nameValuePair "kubenix-${name}" cluster.opentofu) config.canivete.kubenix.clusters;
   });
 }
