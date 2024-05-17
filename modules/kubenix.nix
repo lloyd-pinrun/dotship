@@ -21,7 +21,9 @@ with nix; {
         cluster = config;
       in {
         options = {
-          k3d = mkEnableOption "Deploy cluster locally with k3d";
+          deploy = {
+            k3d = mkEnableOption "Deploy cluster locally with k3d";
+          };
           opentofu = mkOption {
             # Can't use deferredModule here because it breaks merging with OpenTofu workspaces
             type = lazyAttrsOf anything;
@@ -54,22 +56,24 @@ with nix; {
             };
           };
         };
-        config = mkIf cluster.k3d {
-          opentofu.plugins = ["pvotal-tech/k3d" "opentofu/external" "opentofu/local"];
-          opentofu.modules.k3d = {
-            resource.k3d_cluster.main = {
-              inherit name;
-              servers = 1;
+        config = mkMerge [
+          (mkIf cluster.deploy.k3d {
+            opentofu.plugins = ["pvotal-tech/k3d" "opentofu/external" "opentofu/local"];
+            opentofu.modules.k3d = {
+              resource.k3d_cluster.main = {
+                inherit name;
+                servers = 1;
+              };
+              data.external.encrypt-kubeconfig = {
+                program = pkgs.execBash "echo '\${ k3d_cluster.main.credentials[0].raw }' | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
+              };
+              resource.local_file.encrypted-kubeconfig = {
+                content = "\${ data.external.encrypt-kubeconfig.result.kubeconfig }";
+                filename = "\${ path.module }/kubeconfig.enc";
+              };
             };
-            data.external.encrypt-kubeconfig = {
-              program = pkgs.execBash "echo '\${ k3d_cluster.main.credentials[0].raw }' | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
-            };
-            resource.local_file.encrypted-kubeconfig = {
-              content = "\${ data.external.encrypt-kubeconfig.result.kubeconfig }";
-              filename = "\${ path.module }/kubeconfig.enc";
-            };
-          };
-        };
+          })
+        ];
       }));
       default = {};
       description = "Kubernetes clusters";
