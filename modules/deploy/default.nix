@@ -13,4 +13,8 @@ with nix; {
     nix.extraOptions = "experimental-features = nix-command flakes";
     nix.package = pkgs.nixVersions.latest;
   };
+  config.perSystem = {system, ...}: {
+    apps.deploy = inputs.deploy-rs.apps.${system}.default;
+    canivete.devShell.apps.deploy.script = "nix run .#deploy -- \"$@\"";
+  };
 }
