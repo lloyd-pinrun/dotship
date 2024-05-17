@@ -32,6 +32,9 @@
 
     kubenix.url = github:hall/kubenix;
     kubenix.inputs.nixpkgs.follows = "nixpkgs";
+
+    # TODO check in to see if this is supported yet
+    flake-schemas.url = github:DeterminateSystems/flake-schemas;
   };
   outputs = inputs:
     with inputs;
