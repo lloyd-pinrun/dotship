@@ -133,15 +133,29 @@ with nix; {
                         default = "";
                       };
                     };
+                    target = {
+                      host = mkOption {
+                        type = str;
+                        default = node.name;
+                      };
+                      sshFlags = mkOption {
+                        type = str;
+                        default = "";
+                      };
+                    };
                   };
                   config.raw = with profile.config; builder build;
                   config.opentofu = {pkgs, ...}: {
                     config = let
-                      sshFlags = "-o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=60 -o StrictHostKeyChecking=accept-new ${profile.config.remoteBuild.sshFlags}";
+                      sshFlags = "-o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=60 -o StrictHostKeyChecking=accept-new";
                       nixFlags = "--extra-experimental-features \"nix-command flakes\"";
                       name = concatStringsSep "_" [type.name node.name profile.name];
                       path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "raw.config" profile.config.attr];
                       drv = "\${ data.external.${name}.result.drv }";
+                      buildHost = profile.config.remoteBuild.host;
+                      buildSshFlags = profile.config.remoteBuild.sshFlags;
+                      targetHost = profile.config.target.host;
+                      targetSshFlags = profile.config.target.sshFlags;
                     in
                       mkMerge [
                         {
@@ -153,11 +167,22 @@ with nix; {
                             triggers.drv = drv;
                             # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
                             provisioner.local-exec.command = ''
-                              export NIX_SSHOPTS="${sshFlags}"
-                              nix ${nixFlags} copy --derivation --to ssh-ng://${profile.config.remoteBuild.host} ${drv}
-                              closure=$(ssh ${sshFlags} ${profile.config.remoteBuild.host} nix-store --verbose --realise ${drv})
-                              nix ${nixFlags} copy --from ssh-ng://${profile.config.remoteBuild.host} --to ssh-ng://${node.name} "$closure"
-                              ${concatStringsSep "\n" (forEach profile.config.cmds (cmd: "ssh ${sshFlags} ${node.name} ${cmd}"))}
+                              if [[ $(hostname) == ${buildHost} ]]; then
+                                  closure=$(nix-store --verbose --realise ${drv})
+                              else
+                                  export NIX_SSHOPTS="${sshFlags} ${buildSshFlags}"
+                                  nix ${nixFlags} copy --derivation --to ssh-ng://${buildHost} ${drv}
+                                  closure=$(ssh ${sshFlags} ${buildHost} nix-store --verbose --realise ${drv})
+                                  nix ${nixFlags} copy --from ssh-ng://${buildHost} "$closure"
+                              fi
+
+                              if [[ $(hostname) == ${targetHost} ]]; then
+                                  ${concatStringsSep "\n" profile.config.cmds}
+                              else
+                                  export NIX_SSHOPTS="${sshFlags} ${targetSshFlags}"
+                                  nix ${nixFlags} copy --to ssh-ng://${targetHost} "$closure"
+                                  ${concatStringsSep "\n" (forEach profile.config.cmds (cmd: "ssh ${sshFlags} ${node.name} ${cmd}"))}
+                              fi
                             '';
                           };
                         }
