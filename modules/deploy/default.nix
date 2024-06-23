@@ -103,6 +103,7 @@ with nix; {
                   builder = module: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs module);
                   build = module;
                   cmds = ["\"$closure/activate\""];
+                  inherit (node.config.profiles.system) remoteBuild target;
                 });
               }
             ];
