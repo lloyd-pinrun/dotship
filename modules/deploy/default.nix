@@ -125,7 +125,7 @@ with nix; {
                     remoteBuild = {
                       host = mkOption {
                         type = nullOr str;
-                        default = null;
+                        default = node.name;
                       };
                       sshFlags = mkOption {
                         type = str;
@@ -152,9 +152,9 @@ with nix; {
                             # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
                             provisioner.local-exec.command = ''
                               export NIX_SSHOPTS="${sshFlags}"
-                              nix ${nixFlags} copy --derivation --to ssh-ng://${profile.config.buildHost} ${drv}
-                              closure=$(ssh ${sshFlags} ${profile.config.buildHost} nix-store --verbose --realise ${drv})
-                              nix ${nixFlags} copy --from ssh-ng://${profile.config.buildHost} --to ssh-ng://${node.name} "$closure"
+                              nix ${nixFlags} copy --derivation --to ssh-ng://${profile.config.remoteBuild.host} ${drv}
+                              closure=$(ssh ${sshFlags} ${profile.config.remoteBuild.host} nix-store --verbose --realise ${drv})
+                              nix ${nixFlags} copy --from ssh-ng://${profile.config.remoteBuild.host} --to ssh-ng://${node.name} "$closure"
                               ${concatStringsSep "\n" (forEach profile.config.cmds (cmd: "ssh ${sshFlags} ${node.name} ${cmd}"))}
                             '';
                           };
