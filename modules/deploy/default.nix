@@ -119,7 +119,8 @@ with nix; {
                   options = {
                     attr = mkOption {type = str;};
                     builder = mkOption {type = functionTo raw;};
-                    build = mkOption {type = coercedTo deferredModule profile.config.builder raw;};
+                    build = mkOption {type = deferredModule;};
+                    raw = mkOption {type = raw;};
                     opentofu = mkOption {type = deferredModule;};
                     cmds = mkOption {type = listOf str;};
                     remoteBuild = {
@@ -133,12 +134,13 @@ with nix; {
                       };
                     };
                   };
+                  config.raw = with profile.config; builder build;
                   config.opentofu = {pkgs, ...}: {
                     config = let
                       sshFlags = "-o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=60 -o StrictHostKeyChecking=accept-new ${profile.config.remoteBuild.sshFlags}";
                       nixFlags = "--extra-experimental-features \"nix-command flakes\"";
                       name = concatStringsSep "_" [type.name node.name profile.name];
-                      path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "build.config" profile.config.attr];
+                      path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "raw.config" profile.config.attr];
                       drv = "\${ data.external.${name}.result.drv }";
                     in
                       mkMerge [
