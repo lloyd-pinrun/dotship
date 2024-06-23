@@ -138,7 +138,7 @@ with nix; {
                       sshFlags = "-o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=60 -o StrictHostKeyChecking=accept-new ${profile.config.remoteBuild.sshFlags}";
                       nixFlags = "--extra-experimental-features \"nix-command flakes\"";
                       name = concatStringsSep "_" [type.name node.name profile.name];
-                      path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "config" profile.config.attr];
+                      path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "build.config" profile.config.attr];
                       drv = "\${ data.external.${name}.result.drv }";
                     in
                       mkMerge [
