@@ -40,20 +40,15 @@ with nix; {
           (mapAttrsToList (_:
             flip pipe [
               (getAttr "profiles")
-              # TODO figure out why I can't pass imports/options
-              (mapAttrsToList (_: flip pipe [
-                (getAttr "opentofu")
-                # (flip removeAttrs ["imports"])
-              ]))
+              (mapAttrsToList (_: getAttr "opentofu"))
             ]))
         ]))
       flatten
-      # mkMerge
     ];
   };
   options.canivete.deploy = mkOption {
     default = {};
-    type = attrsOf (submodule (type@{name, ...}: {
+    type = attrsOf (submodule (type @ {name, ...}: {
       config.specialArgs = {inherit nix;} // (with inputs.self.nixos-flake.lib; specialArgsFor.${type.name} or specialArgsFor.common);
       options = {
         specialArgs = mkOption {type = attrsOf anything;};
@@ -71,7 +66,7 @@ with nix; {
         modules = mkModulesOption {};
         nodes = mkOption {
           default = {};
-          type = attrsOf (submodule (node@{name, ...}: {
+          type = attrsOf (submodule (node @ {name, ...}: {
             config = mkMerge [
               {
                 profiles.system = {
@@ -120,7 +115,7 @@ with nix; {
               };
               profiles = mkOption {
                 default = {};
-                type = attrsOf (submodule (profile@{name, ...}: {
+                type = attrsOf (submodule (profile @ {name, ...}: {
                   options = {
                     attr = mkOption {type = str;};
                     builder = mkOption {type = functionTo raw;};
