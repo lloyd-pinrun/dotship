@@ -27,7 +27,7 @@ with nix; {
     ];
     darwin.defaultSystem = "aarch64-darwin";
     darwin.systemBuilder = inputs.nix-darwin.lib.darwinSystem;
-    darwin.systemActivationCommands = ["HOME=/var/root \"$closure/activate\""];
+    darwin.systemActivationCommands = ["sudo HOME=/var/root \"$closure/activate\""];
     droid.defaultSystem = "aarch64-linux";
     droid.systemBuilder = inputs.nix-on-droid.lib.nixOnDroidConfiguration;
   };
