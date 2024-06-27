@@ -23,6 +23,10 @@ with nix; {
         options = {
           deploy = {
             k3d = mkEnableOption "Deploy cluster locally with k3d";
+            fetchKubeconfig = mkOption {
+              type = str;
+              description = "Script to fetch the kubeconfig of an externally managed Kubernetes cluster. Stdout is the contents of the file";
+            };
           };
           opentofu = mkOption {
             # Can't use deferredModule here because it breaks merging with OpenTofu workspaces
@@ -57,20 +61,22 @@ with nix; {
           };
         };
         config = mkMerge [
-          (mkIf cluster.deploy.k3d {
-            opentofu.plugins = ["pvotal-tech/k3d" "opentofu/external" "opentofu/local"];
-            opentofu.modules.k3d = {
-              resource.k3d_cluster.main = {
-                inherit name;
-                servers = 1;
-              };
-              data.external.encrypt-kubeconfig = {
-                program = pkgs.execBash "echo '\${ k3d_cluster.main.credentials[0].raw }' | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
-              };
+          {
+            opentofu.plugins = ["opentofu/external" "opentofu/local"];
+            opentofu.modules.kubeconfig = {
               resource.local_file.encrypted-kubeconfig = {
                 content = "\${ data.external.encrypt-kubeconfig.result.kubeconfig }";
                 filename = "\${ path.module }/kubeconfig.enc";
               };
+              data.external.encrypt-kubeconfig.program = pkgs.execBash "${cluster.deploy.fetchKubeconfig} | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
+            };
+          }
+          (mkIf cluster.deploy.k3d {
+            deploy.fetchKubeconfig = "echo '\${ k3d_cluster.main.credentials[0].raw }'";
+            opentofu.plugins = ["pvotal-tech/k3d"];
+            opentofu.modules.k3d.resource.k3d_cluster.main = {
+              inherit name;
+              servers = 1;
             };
           })
         ];
