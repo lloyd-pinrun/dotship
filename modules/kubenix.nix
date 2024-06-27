@@ -11,7 +11,7 @@ with nix; {
     ...
   }: {
     config.canivete.devShell.apps.kubectl.script = "nix run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
-    config.canivete.opentofu.workspaces = mapAttrs' (name: cluster: nameValuePair "kubenix-${name}" cluster.opentofu) config.canivete.kubenix.clusters;
+    config.canivete.opentofu.workspaces = mapAttrs (name: getAttr "opentofu") config.canivete.kubenix.clusters;
     options.canivete.kubenix.clusters = mkOption {
       type = attrsOf (submodule ({
         config,
