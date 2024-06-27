@@ -65,7 +65,7 @@ with nix; {
             opentofu.plugins = ["opentofu/external" "opentofu/local"];
             opentofu.modules.kubeconfig = {
               resource.local_file.encrypted-kubeconfig = {
-                content = "\${ data.external.encrypt-kubeconfig.result.kubeconfig }";
+                content = "\${ yamlencode(jsondecode(data.external.encrypt-kubeconfig.result.kubeconfig)) }";
                 filename = "\${ path.module }/kubeconfig.enc";
               };
               data.external.encrypt-kubeconfig.program = pkgs.execBash ''
