@@ -68,7 +68,7 @@ with nix; {
                 content = "\${ data.external.encrypt-kubeconfig.result.kubeconfig }";
                 filename = "\${ path.module }/kubeconfig.enc";
               };
-              data.external.encrypt-kubeconfig.program = pkgs.execBash "${cluster.deploy.fetchKubeconfig} | ${getExe pkgs.sops} --encrypt --input-type yaml --output-type yaml /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
+              data.external.encrypt-kubeconfig.program = pkgs.execBash "${cluster.deploy.fetchKubeconfig} | ${getExe pkgs.sops} --encrypt --input-type binary --output-type binary /dev/stdin | ${getExe pkgs.yq} '{\"kubeconfig\":.}'";
             };
           }
           (mkIf cluster.deploy.k3d {
