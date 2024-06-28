@@ -37,10 +37,11 @@ vals eval -s -f "$enc_file" | yq "." --yaml-output >"$dec_file"
 
 enc_kube="$run_dir/kubeconfig.enc"
 dec_kube="$run_dir/kubeconfig"
-sops --decrypt --input-type yaml --output-type binary "$enc_kube" --output "$dec_kube"
+sops --decrypt --input-type yaml --output-type binary "$enc_kube" --output "$dec_kube" &>/dev/null
 
 args=(--kubeconfig "$dec_kube" "$@")
 if contains apply args; then
 	args+=(--filename "$dec_file")
 fi
+logfx <<<"Running 'kubectl ${args[*]}'"
 kubectl "${args[@]}"
