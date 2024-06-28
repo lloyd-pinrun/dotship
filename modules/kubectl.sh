@@ -37,7 +37,7 @@ vals eval -s -f "$enc_file" | yq "." --yaml-output >"$dec_file"
 
 enc_kube="$run_dir/kubeconfig.enc"
 dec_kube="$run_dir/kubeconfig"
-vals eval -s -f "$enc_kube" | yq "." --yaml-output >"$dec_kube"
+sops --decrypt --input-type yaml --output-type binary "$enc_kube" --output "$dec_kube"
 
 args=(--kubeconfig "$dec_kube" "$@")
 if contains apply args; then

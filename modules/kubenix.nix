@@ -54,7 +54,7 @@ with nix; {
             description = "Kubectl wrapper script for managing cluster";
             default = pkgs.writeShellApplication {
               name = "kubectl-${name}";
-              runtimeInputs = with pkgs; [bash coreutils git vals kubectl yq];
+              runtimeInputs = with pkgs; [bash coreutils git vals sops kubectl yq];
               runtimeEnv.CANIVETE_UTILS = ./utils.sh;
               text = "${./kubectl.sh} --cluster ${name} --config ${cluster.configuration} -- \"$@\"";
             };
