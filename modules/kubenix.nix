@@ -56,6 +56,9 @@ with nix; {
                           specialArgs = {inherit nix;};
                           module = {kubenix, ...}: {
                             imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
+                            options.kubernetes.api = mkOption {
+                              type = submodule {freeformType = attrsOf anything;};
+                            };
                           };
                         };
                       in
