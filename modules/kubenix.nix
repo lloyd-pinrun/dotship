@@ -9,7 +9,18 @@ with nix; {
     pkgs,
     system,
     ...
-  }: {
+  }: let
+    # TODO is there an even simpler way to do this?
+    kubenix-patched = pkgs.stdenv.mkDerivation rec {
+      inherit (src) name;
+      src = inputs.kubenix;
+      patches = [./kubenix.patch];
+      buildPhase = ''
+        mkdir -p $out
+        cp -r $src/* $out
+      '';
+    };
+  in {
     config.canivete.devShell.apps.kubectl.script = "nix run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
     config.canivete.opentofu.workspaces = mapAttrs (_: getAttr "opentofu") config.canivete.kubenix.clusters;
     options.canivete.kubenix.clusters = mkOption {
@@ -39,7 +50,7 @@ with nix; {
             type = package;
             description = "Kubernetes configuration file for cluster";
             default =
-              (inputs.kubenix.evalModules.${system} {
+              (kubenix-patched.evalModules.${system} {
                 specialArgs = {inherit nix;};
                 module = {
                   kubenix,
@@ -77,7 +88,7 @@ with nix; {
 
                     # Generate resource definitions with IFD x 2
                     definitions = let
-                      generated = import "${inputs.kubenix}/pkgs/generators/k8s" {
+                      generated = import "${kubenix-patched}/pkgs/generators/k8s" {
                         name = "kubenix-generated-for-crds";
                         inherit pkgs lib;
                         # Mirror K8s OpenAPI spec

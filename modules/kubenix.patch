@@ -1,0 +1,5 @@
+--- a/modules/generated/v1.30.nix
++++ a/modules/generated/v1.30.nix
+@@ -6305,1 +6305,1 @@
+-          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ContainerPort" "name" [ "containerPort" "protocol" ]));
++          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ContainerPort" "name" [ "containerPort" ]));
