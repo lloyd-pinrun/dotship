@@ -59,16 +59,17 @@
     },
     "call-flake": {
       "locked": {
-        "lastModified": 1719711426,
-        "narHash": "sha256-ythzL6iO/eE6r1IA6dflpWx0vC4JBGBlHLTK3BpYhrQ=",
+        "lastModified": 1708219133,
+        "narHash": "sha256-bmhE1TmrJG4ba93l9WQTLuYM53kwGQAjYHRvHOeuxWU=",
         "owner": "divnix",
         "repo": "call-flake",
-        "rev": "4262cd2c088576de675007359b814fac9609e50f",
+        "rev": "a9bc85f5bd939734655327a824b4e7ceb4ccaba9",
         "type": "github"
       },
       "original": {
         "owner": "divnix",
         "repo": "call-flake",
+        "rev": "a9bc85f5bd939734655327a824b4e7ceb4ccaba9",
         "type": "github"
       }
     },
