@@ -106,5 +106,63 @@ with lib;
           (mapAttrs (_: mkMerge))
           (getAttrs names)
         ];
+
+      # Patch underlying flake source tree
+      # NOTE https://discourse.nixos.org/t/apply-a-patch-to-an-input-flake/36904
+      applyPatches = {
+        pkgs,
+        name,
+        src,
+        patches,
+        lockFileEntries ? {},
+      }: let
+        numOfPatches = length patches;
+
+        patchedFlake = let
+          patched =
+            (pkgs.applyPatches {
+              inherit name src;
+              patches = map pkgs.fetchpatch2 patches;
+            })
+            .overrideAttrs (_: prevAttrs: {
+              outputs = ["out" "narHash"];
+              installPhase = concatStringsSep "\n" [
+                prevAttrs.installPhase
+                ''
+                  ${getExe pkgs.nix} \
+                    --extra-experimental-features nix-command \
+                    --offline \
+                    hash path ./ \
+                    > $narHash
+                ''
+              ];
+            });
+
+          lockFilePath = "${patched.outPath}/flake.lock";
+
+          lockFile = builtins.unsafeDiscardStringContext (generators.toJSON {} (
+            if pathExists lockFilePath
+            then let
+              original = importJSON lockFilePath;
+            in {
+              inherit (original) root;
+              nodes = original.nodes // lockFileEntries;
+            }
+            else {
+              nodes.root = {};
+              root = "root";
+            }
+          ));
+
+          flake = {
+            inherit (patched) outPath;
+            narHash = fileContents patched.narHash;
+          };
+        in
+          (import "${inputs.call-flake}/call-flake.nix") lockFile flake "";
+      in
+        if numOfPatches == 0
+        then trace "applyPatches: skipping ${name}, no patches" src
+        else trace "applyPatches: creating ${name}, number of patches: ${toString numOfPatches}" patchedFlake;
     }
   ]

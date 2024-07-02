@@ -10,15 +10,11 @@ with nix; {
     system,
     ...
   }: let
-    # TODO is there an even simpler way to do this?
-    kubenix-patched = pkgs.stdenv.mkDerivation rec {
-      inherit (src) name;
+    kubenix-patched = applyPatches {
+      inherit pkgs;
+      name = "kubenix-patched-src";
       src = inputs.kubenix;
       patches = [./kubenix.patch];
-      buildPhase = ''
-        mkdir -p $out
-        cp -r $src/* $out
-      '';
     };
   in {
     config.canivete.devShell.apps.kubectl.script = "nix run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";

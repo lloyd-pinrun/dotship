@@ -88,6 +88,9 @@
     # Declarative disk partitioning and formatting
     disko.url = github:nix-community/disko;
     disko.inputs.nixpkgs.follows = "nixpkgs";
+
+    # Robust derivation for referening a flake
+    call-flake.url = github:divnix/call-flake;
   };
   outputs = inputs:
     with inputs;
