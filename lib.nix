@@ -122,7 +122,7 @@ with lib;
           patched =
             (pkgs.applyPatches {
               inherit name src;
-              patches = map pkgs.fetchpatch2 patches;
+              patches = forEach patches (patch: if isAttrs patch then pkgs.fetchpatch2 patch else patch);
             })
             .overrideAttrs (_: prevAttrs: {
               outputs = ["out" "narHash"];
