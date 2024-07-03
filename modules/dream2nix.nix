@@ -40,9 +40,7 @@ with nix; {
             };
             devShell = mkOption {
               type = nullOr package;
-              default = pkgs.mkShell {
-                inputsFrom = concat cfg.sharedShells (toList (config.package.devShell or []));
-              };
+              default = pkgs.mkShell {inputsFrom = concat cfg.sharedShells [config.package.devShell];};
               description = "Development shell for this package";
             };
           };
@@ -51,17 +49,13 @@ with nix; {
         description = "Dream2Nix packages";
       };
     };
-    config = mkMerge [
-      {
-        packages = mapAttrs (_: getAttr "package") cfg.packages;
-        canivete.dream2nix.sharedModules = toList {
-          paths.projectRoot = toString inputs.self;
-          paths.projectRootFile = "flake.nix";
-        };
-      }
-      (mkIf (perSystem.config.canivete ? devShell) {
-        devShells = mapAttrs (_: getAttr "devShell") cfg.packages;
-      })
-    ];
+    config = {
+      devShells = mapAttrs (_: getAttr "devShell") cfg.packages;
+      packages = mapAttrs (_: getAttr "package") cfg.packages;
+      canivete.dream2nix.sharedModules = toList {
+        paths.projectRoot = toString inputs.self;
+        paths.projectRootFile = "flake.nix";
+      };
+    };
   });
 }
