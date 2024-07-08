@@ -6,8 +6,8 @@
 with nix; {
   options.perSystem = mkPerSystemOption ({
     config,
-    inputs',
     pkgs,
+    system,
     ...
   }: {
     options.canivete.arion.modules = mkModulesOption {};
@@ -15,6 +15,6 @@ with nix; {
     config.canivete.devShell.apps.arion.script = let
       modules = attrValues config.canivete.arion.modules;
       docker-compose-yaml = inputs.arion.lib.build {inherit modules pkgs;};
-    in "${getExe inputs'.arion.packages.arion} --prebuilt-file ${docker-compose-yaml} \"$@\"";
+    in "${getExe inputs.arion.packages.${system}.arion} --prebuilt-file ${docker-compose-yaml} \"$@\"";
   });
 }
