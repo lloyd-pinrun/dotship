@@ -6,6 +6,12 @@
 with nix; {
   options.perSystem = mkPerSystemOption (perSystem @ {pkgs, ...}: let
     cfg = perSystem.config.canivete.dream2nix;
+    dream2nix-patched = applyPatches {
+      inherit pkgs;
+      name = "dream2nix-patched-src";
+      src = inputs.dream2nix;
+      patches = [./dream2nix.patch];
+    };
   in {
     options.canivete.dream2nix = {
       sharedModules = mkOption {
@@ -32,7 +38,7 @@ with nix; {
             };
             package = mkOption {
               type = package;
-              default = inputs.dream2nix.lib.evalModules {
+              default = dream2nix-patched.lib.evalModules {
                 inherit (config) modules;
                 packageSets.nixpkgs = pkgs;
               };
