@@ -32,5 +32,14 @@ with nix; {
       importJSON
     ];
     execBash = cmd: [(getExe final.bash) "-c" cmd];
+    wrapProgram = srcs: name: exe: args: overrides:
+      final.symlinkJoin ({
+          inherit name;
+          buildInputs = [final.makeWrapper];
+          paths = toList srcs;
+          postBuild = "wrapProgram \"$out/bin/${exe}\" ${args}";
+          meta.mainProgram = exe;
+        }
+        // overrides);
   };
 }
