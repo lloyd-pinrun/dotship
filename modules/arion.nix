@@ -19,7 +19,7 @@ with nix; {
       project.name = mkDefault config.canivete.devShell.name;
     };
     config.canivete.devShell.apps.arion.script = let
-      inherit (flake.config.canivete.${system''}.pkgs) pkgs;
+      inherit (inputs.self.canivete.${system''}.pkgs) pkgs;
       modules = attrValues config.canivete.arion.modules;
       docker-compose-yaml = inputs.arion.lib.build {inherit modules pkgs;};
     in "${getExe inputs.arion.packages.${system}.arion} --prebuilt-file ${docker-compose-yaml} \"$@\"";
