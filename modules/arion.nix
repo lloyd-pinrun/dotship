@@ -1,4 +1,4 @@
-{
+flake @ {
   inputs,
   nix,
   ...
@@ -6,7 +6,6 @@
 with nix; {
   options.perSystem = mkPerSystemOption ({
     config,
-    flake,
     system,
     ...
   }: let
