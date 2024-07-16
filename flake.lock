@@ -404,11 +404,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1720845312,
-        "narHash": "sha256-yPhAsJTpyoIPQZJGC8Fw8W2lAXyhLoTn+HP20bmfkfk=",
+        "lastModified": 1721086468,
+        "narHash": "sha256-OF642LVDj5Icr0tXlY9P54vna4OP10IMhIhhiKwIRpw=",
         "owner": "LnL7",
         "repo": "nix-darwin",
-        "rev": "5ce8503cf402cf76b203eba4b7e402bea8e44abc",
+        "rev": "7522a30d328f885d20c2815bd05eb711bc69644c",
         "type": "github"
       },
       "original": {
@@ -708,11 +708,11 @@
     "opentofu-registry": {
       "flake": false,
       "locked": {
-        "lastModified": 1721083635,
-        "narHash": "sha256-6+Nsx3523wdHCKy4Y8eSiPEoHb4iIrcs6jGlNIEkcZQ=",
+        "lastModified": 1721088167,
+        "narHash": "sha256-Wm56/gNISdfztYgTgK9XSVl6n18z+7vl14k8UWdtKlY=",
         "owner": "opentofu",
         "repo": "registry",
-        "rev": "8f996e5f3983aa40e0e581f55786d62371bab502",
+        "rev": "39ceb6e1794fa56136dd23120bb78d2a4b3b864d",
         "type": "github"
       },
       "original": {
