@@ -9,7 +9,7 @@ with nix; {
   imports = [./nixos-anywhere.nix];
   config.canivete.deploy = {
     system.modules.nix = {pkgs, ...}: {
-      nix.extraOptions = "experimental-features = nix-command flakes";
+      nix.extraOptions = "experimental-features = nix-command flakes auto-allocate-uids configurable-impure-env";
       nix.package = pkgs.nixVersions.latest;
     };
     nixos.defaultSystem = "x86_64-linux";
