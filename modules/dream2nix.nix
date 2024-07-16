@@ -6,8 +6,7 @@
 with nix; {
   options.perSystem = mkPerSystemOption (perSystem @ {pkgs, ...}: let
     cfg = perSystem.config.canivete.dream2nix;
-    dream2nix-patched = applyPatches {
-      inherit pkgs;
+    dream2nix-patched = pkgs.applyPatches {
       name = "dream2nix-patched-src";
       src = inputs.dream2nix;
       patches = [./dream2nix.patch];

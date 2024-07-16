@@ -10,8 +10,7 @@ with nix; {
     system,
     ...
   }: let
-    kubenix-patched = applyPatches {
-      inherit pkgs;
+    kubenix-patched = pkgs.applyPatches {
       name = "kubenix-patched-src";
       src = inputs.kubenix;
       patches = [./kubenix.patch];
