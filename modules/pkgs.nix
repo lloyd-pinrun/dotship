@@ -25,7 +25,7 @@ with nix; {
       overlays = attrValues inputs.self.overlays;
     };
   });
-  config.flake.overlays.canivete = final: _: {
+  config.flake.overlays.canivete = final: prev: {
     fromYAML = flip pipe [
       (file: "${final.yq}/bin/yq '.' ${file} > $out")
       (final.runCommand "from-yaml" {})
@@ -53,11 +53,11 @@ with nix; {
       numOfPatches = length patches;
       patchedFlake = let
         patched =
-          (final.applyPatches {
+          (prev.applyPatches {
             inherit name src;
             patches = forEach patches (patch:
               if isAttrs patch
-              then final.fetchpatch2 patch
+              then prev.fetchpatch2 patch
               else patch);
           })
           .overrideAttrs (_: prevAttrs: {
@@ -65,7 +65,7 @@ with nix; {
             installPhase = concatStringsSep "\n" [
               prevAttrs.installPhase
               ''
-                ${getExe final.nix} \
+                ${getExe prev.nix} \
                   --extra-experimental-features nix-command \
                   --offline \
                   hash path ./ \
