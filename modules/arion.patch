@@ -1,0 +1,46 @@
+--- a/src/nix/modules/service/image.nix
++++ a/src/nix/modules/service/image.nix
+@@ -24,8 +24,9 @@
+     useHostStore does not achieve the intended speedup.
+   '' {};
+
+-  buildOrStreamLayeredImage = args:
++  buildOrStreamLayeredImage = _args:
+     let
++      args = removeAttrs _args ["asStream"];
+       args_base = builtins.intersectAttrs
+         {
+           name = null; tag = null; contents = null; config = null;
+@@ -41,7 +42,7 @@
+       );
+       args_streamLayered = args_base // args_no_store;
+     in
+-      if dockerTools?streamLayeredImage
++      if dockerTools?streamLayeredImage && _args.asStream
+       then dockerTools.streamLayeredImage args_streamLayered // { isExe = true; }
+       else dockerTools.buildLayeredImage args_base;
+
+@@ -50,6 +51,7 @@
+       name
+       contents
+       includeStorePaths
++      asStream
+       ;
+     config = config.image.rawConfig;
+     maxLayers = 100;
+@@ -105,6 +107,15 @@
+         the service name.
+       '';
+     };
++    image.asStream = mkOption {
++      type = bool;
++      default = true;
++      description = ''
++        Whether to export image as a stream script to bypass archiving in store.
++        It may be helpful to deactivate this when building and running on MacOS
++        because the stream script can't be run on the host system.
++      '';
++    };
+     image.name = mkOption {
+       type = str;
+       default = "localhost/" + config.service.name;
