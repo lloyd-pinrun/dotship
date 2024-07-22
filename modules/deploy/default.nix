@@ -7,6 +7,14 @@
 }:
 with nix; {
   imports = [./nixos-anywhere.nix];
+  config.flake = let
+    nodeAttr = getAttrFromPath ["profiles" "system" "raw"];
+    nodes = type: mapAttrs (_: nodeAttr) config.canivete.deploy.${type}.nodes;
+  in {
+    nixosConfigurations = nodes "nixos";
+    darwinConfigurations = nodes "darwin";
+    nixOnDroidConfigurations = nodes "droid";
+  };
   config.canivete.deploy = {
     system.modules.nix = {pkgs, ...}: {
       nix.extraOptions = "experimental-features = nix-command flakes auto-allocate-uids configurable-impure-env";
