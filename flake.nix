@@ -18,11 +18,9 @@
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
 
     # Git hook framework
-    pre-commit = {
-      url = github:cachix/git-hooks.nix;
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-stable.follows = "nixpkgs-stable";
-    };
+    pre-commit.url = github:cachix/git-hooks.nix;
+    pre-commit.inputs.nixpkgs.follows = "nixpkgs";
+    pre-commit.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
 
     # Terraform manifest generation
     terranix.url = github:terranix/terranix;
@@ -75,11 +73,9 @@
     nixos-generators.inputs.nixpkgs.follows = "nixpkgs";
 
     # Bootstrap a new NixOS machine
-    nixos-anywhere = {
-      url = github:nix-community/nixos-anywhere;
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-parts.follows = "flake-parts";
-    };
+    nixos-anywhere.url = github:nix-community/nixos-anywhere;
+    nixos-anywhere.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-anywhere.inputs.flake-parts.follows = "flake-parts";
 
     # Common configuration modules for NixOS servers
     srvos.url = github:nix-community/srvos;
@@ -93,8 +89,14 @@
     # NOTE pinned due to this unresolved issue https://github.com/divnix/call-flake/issues/4
     call-flake.url = github:divnix/call-flake/a9bc85f5bd939734655327a824b4e7ceb4ccaba9;
 
+    # Local service definitions (like docker without containers)
     process-compose-flake.url = github:Platonic-Systems/process-compose-flake;
     services-flake.url = github:juspay/services-flake;
+
+    # Diagram generation for infrastructure dependencies
+    nix-topology.url = github:oddlama/nix-topology;
+    nix-topology.inputs.nixpkgs.follows = "nixpkgs";
+    nix-topology.inputs.pre-commit-hooks.follows = "pre-commit";
   };
   outputs = inputs:
     with inputs;
