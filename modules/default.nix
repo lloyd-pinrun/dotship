@@ -10,5 +10,6 @@
     ./arion.nix
     ./kubenix.nix
     ./deploy
+    ./services.nix
   ];
 }

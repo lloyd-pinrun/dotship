@@ -89,9 +89,12 @@
     disko.url = github:nix-community/disko;
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Robust derivation for referening a flake
+    # Robust derivation for referencing a flake
     # NOTE pinned due to this unresolved issue https://github.com/divnix/call-flake/issues/4
     call-flake.url = github:divnix/call-flake/a9bc85f5bd939734655327a824b4e7ceb4ccaba9;
+
+    process-compose-flake.url = github:Platonic-Systems/process-compose-flake;
+    services-flake.url = github:juspay/services-flake;
   };
   outputs = inputs:
     with inputs;
