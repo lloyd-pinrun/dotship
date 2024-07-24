@@ -1,16 +1,17 @@
 {
   imports = [
-    ./opentofu.nix
-    ./pre-commit.nix
-    ./systems.nix
-    ./devShell.nix
-    ./pkgs.nix
-    ./schemas.nix
-    ./dream2nix.nix
-    ./arion.nix
-    ./kubenix.nix
+    ./arion
     ./deploy
-    ./services.nix
+    ./dream2nix
+    ./kubenix
+    ./opentofu
+
+    ./devShell.nix
     ./just.nix
+    ./pkgs.nix
+    ./pre-commit.nix
+    ./schemas.nix
+    ./services.nix
+    ./systems.nix
   ];
 }
