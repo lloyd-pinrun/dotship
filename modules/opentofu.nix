@@ -113,8 +113,8 @@
         };
         sharedEncryptedStatePassphrase = mkOption {
           type = str;
-          default = "ref+sops://.canivete/sops/default.yaml#/opentofu_pw";
-          description = "Value or vals-like reference (i.e. ref+sops://...) to secret to decrypt state";
+          default = vals.sops "default.yaml#/opentofu_pw";
+          description = "Value or vals-like reference (i.e. ref+sops://... or with nix.vals.sops) to secret to decrypt state";
         };
         sharedModules = mkOption {
           type = attrsOf deferredModule;

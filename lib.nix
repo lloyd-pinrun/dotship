@@ -106,5 +106,8 @@ with lib;
           (mapAttrs (_: mkMerge))
           (getAttrs names)
         ];
+
+      # Vals shorthand
+      vals.sops = attr: "ref+sops://.canivete/sops/${attr}";
     }
   ]
