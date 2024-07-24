@@ -11,5 +11,6 @@
     ./kubenix.nix
     ./deploy
     ./services.nix
+    ./just.nix
   ];
 }
