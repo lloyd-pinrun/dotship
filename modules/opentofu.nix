@@ -18,7 +18,7 @@
       tofu = config.canivete.opentofu;
       tofuOpts = options.canivete.opentofu;
     in {
-      config.canivete.devShell.apps.tofu.script = "nix run \".#canivete.${system}.opentofu.workspaces.$1.script\" -- \"\${@:2}\"";
+      config.canivete.devShell.apps.tofu.script = "nix run \".#canivete.${system}.opentofu.workspaces.$1.finalScript\" -- \"\${@:2}\"";
       options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};
@@ -79,13 +79,23 @@
               };
               script = mkOption {
                 type = package;
-                description = "Script to run OpenTofu on the workspace configuration";
+                description = "Basic script to run OpenTofu on the workspace configuration";
                 default = pkgs.writeShellApplication {
                   name = "tofu-${name}";
                   runtimeInputs = with pkgs; [bash coreutils git vals workspace.finalPackage];
                   runtimeEnv.CANIVETE_UTILS = ./utils.sh;
                   text = "${./tofu.sh} --workspace ${name} --config ${workspace.configuration} -- \"$@\"";
                 };
+              };
+              scriptOverride = mkOption {
+                type = functionTo package;
+                description = "Function to map script to finalScript";
+                default = id;
+              };
+              finalScript = mkOption {
+                type = package;
+                description = "Final script to run OpenTofu on the workspace configuration";
+                default = workspace.scriptOverride workspace.script;
               };
             };
             config.plugins = tofu.sharedPlugins;
