@@ -82,7 +82,7 @@
                 default = pkgs.writeShellApplication {
                   name = "tofu-${name}";
                   runtimeInputs = with pkgs; [bash coreutils git vals workspace.finalPackage];
-                  runtimeEnv.CANIVETE_UTILS = ./utils.sh;
+                  runtimeEnv.CANIVETE_UTILS = ../utils.sh;
                   text = "${./tofu.sh} --workspace ${name} --config ${workspace.configuration} -- \"$@\"";
                 };
               };
