@@ -106,7 +106,7 @@ has_intersection() {
 nix() {
 	command nix --show-trace \
 		--allow-import-from-derivation \
-		--extra-experimental-features "nix-command flakes auto-allocate-uids configurable-impure-env" \
+		--extra-experimental-features "nix-command flakes auto-allocate-uids" \
 		"$@"
 }
 
