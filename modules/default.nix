@@ -5,6 +5,7 @@
     ./dream2nix
     ./kubenix
     ./opentofu
+    ./scripts
 
     ./devShell.nix
     ./just.nix

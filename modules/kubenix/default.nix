@@ -16,6 +16,7 @@ with nix; {
       patches = [./kubenix.patch];
     };
   in {
+    config.canivete.scripts.tofu = ./kubectl.sh;
     config.canivete.just.recipes."kube CLUSTER *ARGS" = ''
       nix run ${inputs.self}#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.script -- {{ ARGS }}
     '';
@@ -27,6 +28,12 @@ with nix; {
         ...
       }: let
         cluster = config;
+        bins = makeBinPath (with pkgs; [vals sops kubectl yq]);
+        flags = concatStringsSep " " [
+          "--cluster {name}"
+          "--configuration ${cluster.configuration}"
+        ];
+        args = "--prefix PATH : ${bins} --add-flags \"${flags}\"";
       in {
         options = {
           deploy = {
@@ -120,12 +127,7 @@ with nix; {
           script = mkOption {
             type = package;
             description = "Kubectl wrapper script for managing cluster";
-            default = pkgs.writeShellApplication {
-              name = "kubectl-${name}";
-              runtimeInputs = with pkgs; [bash coreutils git vals sops kubectl yq];
-              runtimeEnv.CANIVETE_UTILS = ../utils.sh;
-              text = "${./kubectl.sh} --cluster ${name} --config ${cluster.configuration} -- \"$@\"";
-            };
+            default = pkgs.wrapProgram config.canivete.scripts.kube.package "kube" "kubectl" args {};
           };
         };
         config = mkMerge [

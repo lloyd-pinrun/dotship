@@ -17,6 +17,7 @@
       tofu = config.canivete.opentofu;
       tofuOpts = options.canivete.opentofu;
     in {
+      config.canivete.scripts.tofu = ./tofu.sh;
       config.canivete.just.recipes."tofu WORKSPACE *ARGS" = ''
         nix run ${inputs.self}#canivete.${system}.opentofu.workspaces.{{ WORKSPACE }}.finalScript -- {{ ARGS }}
       '';
@@ -30,6 +31,12 @@
             ...
           }: let
             workspace = config;
+            bins = makeBinPath [pkgs.vals workspace.finalPackage];
+            flags = concatStringsSep " " [
+              "--workspace ${name}"
+              "--configuration ${workspace.configuration}"
+            ];
+            args = "--prefix PATH : ${bins} --add-flags \"${flags}\"";
           in {
             options = {
               encryptedState.enable = mkEnabledOption "encrypted state (alpha prerelease)";
@@ -62,12 +69,7 @@
               script = mkOption {
                 type = package;
                 description = "Basic script to run OpenTofu on the workspace configuration";
-                default = pkgs.writeShellApplication {
-                  name = "tofu-${name}";
-                  runtimeInputs = with pkgs; [bash coreutils git vals workspace.finalPackage];
-                  runtimeEnv.CANIVETE_UTILS = ../utils.sh;
-                  text = "${./tofu.sh} --workspace ${name} --config ${workspace.configuration} -- \"$@\"";
-                };
+                default = pkgs.wrapProgram config.canivete.scripts.tofu.package "tofu" "tofu" args {};
               };
               scriptOverride = mkOption {
                 type = functionTo package;
