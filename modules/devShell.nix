@@ -2,10 +2,7 @@
 with nix; {
   perSystem = {
     config,
-    options,
     pkgs,
-    self',
-    system,
     ...
   }: let
     cfg = config.canivete.devShell;

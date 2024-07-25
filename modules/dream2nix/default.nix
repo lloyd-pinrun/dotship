@@ -4,7 +4,11 @@
   ...
 }:
 with nix; {
-  perSystem = {config, pkgs, ...}: let
+  perSystem = {
+    config,
+    pkgs,
+    ...
+  }: let
     cfg = config.canivete.dream2nix;
     dream2nix-patched = pkgs.applyPatches {
       name = "dream2nix-patched-src";
