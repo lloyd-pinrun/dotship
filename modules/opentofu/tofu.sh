@@ -27,7 +27,7 @@ done
 [[ -z ${workspace-} ]] && logfx exit_status=FAILURE level=ERROR <<<"Must specify a --workspace name"
 
 # shellcheck disable=SC2154
-run_dir="$CANIVETE_VCS_DIR/opentofu/$workspace"
+run_dir="$CANIVETE_GIT_DIR/opentofu/$workspace"
 enc_file="$run_dir/config.tf.enc.json"
 dec_file="$run_dir/config.tf.json"
 mkdir -p "$run_dir"

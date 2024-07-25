@@ -110,10 +110,11 @@ nix() {
 		"$@"
 }
 
-CANIVETE_VCS_DIR="$(git rev-parse --show-toplevel)/.canivete"
-export CANIVETE_VCS_DIR
-mkdir -p "$CANIVETE_VCS_DIR"
-ignore_file="$CANIVETE_VCS_DIR/.gitignore"
+GIT_DIR="$(git rev-parse --show-toplevel)"
+CANIVETE_GIT_DIR="$GIT_DIR/.canivete"
+export GIT_DIR CANIVETE_GIT_DIR
+mkdir -p "$CANIVETE_GIT_DIR"
+ignore_file="$CANIVETE_GIT_DIR/.gitignore"
 if [[ ! -f $ignore_file ]]; then
 	printf '.terraform/\nconfig.tf.json\nconfig.yaml\nkubeconfig\n' >"$ignore_file"
 fi

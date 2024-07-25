@@ -27,7 +27,7 @@ done
 [[ -z ${cluster-} ]] && logfx exit_status=FAILURE level=ERROR <<<"Must specify a --cluster name"
 
 # shellcheck disable=SC2154
-run_dir="$CANIVETE_VCS_DIR/opentofu/$cluster"
+run_dir="$CANIVETE_GIT_DIR/opentofu/$cluster"
 enc_file="$run_dir/config.enc.yaml"
 dec_file="$run_dir/config.yaml"
 mkdir -p "$run_dir"
