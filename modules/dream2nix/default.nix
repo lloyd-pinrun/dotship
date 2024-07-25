@@ -4,8 +4,8 @@
   ...
 }:
 with nix; {
-  options.perSystem = mkPerSystemOption (perSystem @ {pkgs, ...}: let
-    cfg = perSystem.config.canivete.dream2nix;
+  perSystem = {config, pkgs, ...}: let
+    cfg = config.canivete.dream2nix;
     dream2nix-patched = pkgs.applyPatches {
       name = "dream2nix-patched-src";
       src = inputs.dream2nix;
@@ -62,5 +62,5 @@ with nix; {
         paths.projectRootFile = "flake.nix";
       };
     };
-  });
+  };
 }

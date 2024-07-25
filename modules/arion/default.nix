@@ -4,7 +4,7 @@ flake @ {
   ...
 }:
 with nix; {
-  options.perSystem = mkPerSystemOption ({
+  perSystem = {
     config,
     pkgs,
     system,
@@ -36,5 +36,5 @@ with nix; {
       modules = attrValues config.canivete.arion.modules;
       docker-compose-yaml = arion-patched.lib.build {inherit modules pkgs;};
     in "${getExe arion-patched.packages.${system}.arion} --prebuilt-file ${docker-compose-yaml} \"$@\"";
-  });
+  };
 }

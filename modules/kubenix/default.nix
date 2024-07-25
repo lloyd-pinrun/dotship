@@ -4,7 +4,7 @@
   ...
 }:
 with nix; {
-  options.perSystem = mkPerSystemOption ({
+  perSystem = {
     config,
     pkgs,
     system,
@@ -154,5 +154,5 @@ with nix; {
       default = {};
       description = "Kubernetes clusters";
     };
-  });
+  };
 }

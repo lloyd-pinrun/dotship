@@ -1,13 +1,15 @@
 {nix, ...}:
 with nix; {
-  options.perSystem = mkPerSystemOption ({
+  perSystem = {
     config,
     options,
     pkgs,
     self',
     system,
     ...
-  }: {
+  }: let
+    cfg = config.canivete.devShell;
+  in {
     options.canivete.devShell = {
       name = mkOption {
         type = str;
@@ -57,9 +59,7 @@ with nix; {
         apps.help.script = "nix flake show";
         apps.${config.canivete.devShell.name}.script = "nix run \".#canivete.${system}.devShell.apps.\${1:-help}.script\" -- \"\${@:2}\"";
       };
-      devShells.default = pkgs.mkShell {
-        inherit (config.canivete.devShell) name packages inputsFrom;
-      };
+      devShells.default = pkgs.mkShell {inherit (cfg) name packages inputsFrom;};
     };
-  });
+  };
 }

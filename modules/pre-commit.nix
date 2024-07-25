@@ -1,12 +1,10 @@
 {
-  flake-parts-lib,
   inputs,
-  lib,
+  nix,
   ...
-}: {
+}: with nix; {
   imports = [inputs.pre-commit.flakeModule];
-  options.perSystem = with lib;
-    flake-parts-lib.mkPerSystemOption ({
+  perSystem = {
       config,
       options,
       pkgs,
@@ -90,5 +88,5 @@
           ];
         };
       };
-    });
+    };
 }

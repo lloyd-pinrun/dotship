@@ -12,7 +12,7 @@ with nix; {
     default = {};
     description = "Nixpkgs configuration (i.e. allowUnfree, etc.)";
   };
-  options.perSystem = mkPerSystemOption ({
+  config.perSystem = {
     pkgs,
     system,
     ...
@@ -24,7 +24,7 @@ with nix; {
       inherit (config.canivete.pkgs) config;
       overlays = attrValues inputs.self.overlays;
     };
-  });
+  };
   config.flake.overlays.canivete = final: prev: {
     fromYAML = flip pipe [
       (file: "${final.yq}/bin/yq '.' ${file} > $out")

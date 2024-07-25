@@ -3,11 +3,10 @@
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
 {
   nix,
-  flake-parts-lib,
   inputs,
   ...
 }: {
-  options.perSystem = flake-parts-lib.mkPerSystemOption ({
+  perSystem = {
     config,
     options,
     pkgs,
@@ -173,5 +172,5 @@
             package);
         };
       };
-    });
+    };
 }
