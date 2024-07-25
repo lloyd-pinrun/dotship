@@ -105,6 +105,7 @@
       in {
         imports = [./modules];
         _module.args.nix = nix;
+        templates.default.path = ./template;
         flake = {
           lib.mkFlake = with nix;
             args @ {
