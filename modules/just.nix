@@ -69,7 +69,7 @@ with nix; {
     config.canivete.devShell.inputsFrom = [cfg.devShell];
     config.canivete.just.recipes = {
       list = "@just --list";
-      "changelog *ARGS" = "@${getExe pkgs.convco} changelog -p \"\" {{ ARGS }}";
+      "changelog *ARGS" = "${getExe pkgs.convco} changelog --prefix \"\" {{ ARGS }}";
       flake = "nix flake show";
     };
   };
