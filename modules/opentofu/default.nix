@@ -42,26 +42,7 @@
               modules = tofuOpts.sharedModules;
               package = mkOption {
                 type = package;
-                default =
-                  if ! workspace.encryptedState.enable
-                  then pkgs.opentofu
-                  else
-                    (
-                      pkgs.opentofu.override {
-                        buildGoModule = args:
-                          pkgs.buildGoModule (args
-                            // rec {
-                              version = "1.7.0-alpha1";
-                              src = pkgs.fetchFromGitHub {
-                                owner = "opentofu";
-                                repo = "opentofu";
-                                rev = "v${version}";
-                                hash = "sha256-tg3RsYWTvAL5sVMPHCwzTHe8EipdS3QdYmv6Jah1M1o=";
-                              };
-                              vendorHash = "sha256-N9csHGxUg8y+PshjPzEFOsdGF1cZch5UW3ISofQX9oE=";
-                            });
-                      }
-                    );
+                default = pkgs.opentofu;
                 description = "Final package with plugins";
               };
               finalPackage = mkOption {
