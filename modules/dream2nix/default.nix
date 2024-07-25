@@ -57,6 +57,7 @@ with nix; {
     config = {
       devShells = mapAttrs (_: getAttr "devShell") cfg.packages;
       packages = mapAttrs (_: getAttr "package") cfg.packages;
+      canivete.dream2nix.sharedShells = [config.devShells.default];
       canivete.dream2nix.sharedModules = toList {
         paths.projectRoot = toString inputs.self;
         paths.projectRootFile = "flake.nix";
