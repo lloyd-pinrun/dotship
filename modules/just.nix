@@ -31,12 +31,18 @@ with nix; {
         description = "Commands to include in just";
         default = {};
       };
+      defaultRecipe = mkOption {
+        type = enum (attrNames cfg.recipes);
+        description = "Recipe to run by default with just";
+        default = "list";
+      };
       justfile = mkOption {
         type = package;
         description = "Justfile with recipe commands";
         default = pipe cfg.recipes [
           (filterAttrs (_: getAttr "enable"))
-          (mapAttrsToList (_: getAttr "recipe"))
+          (recipes: toList (recipes.${cfg.defaultRecipe} or []) ++ attrValues (removeAttrs recipes [cfg.defaultRecipe]))
+          (map (getAttr "recipe"))
           (concatStringsSep "\n")
           (pkgs.writeText "justfile")
         ];
@@ -62,7 +68,7 @@ with nix; {
     };
     config.canivete.devShell.inputsFrom = [cfg.devShell];
     config.canivete.just.recipes = {
-      default = "@just --list";
+      list = "@just --list";
       "changelog *ARGS" = "@${getExe pkgs.convco} changelog -p \"\" {{ ARGS }}";
       flake = "nix flake show";
     };
