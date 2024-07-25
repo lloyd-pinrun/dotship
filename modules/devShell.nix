@@ -46,12 +46,11 @@ with nix; {
         default = [];
         description = "Packages to include in development shell";
       };
-      shells = mkOption {
+      inputsFrom = mkOption {
         type = listOf package;
-        default = attrValues (removeAttrs self'.devShells ["default"]);
+        default = [];
         description = "Development shells to include in the default";
       };
-      inputsFrom = options.canivete.devShell.shells // {default = config.canivete.devShell.shells;};
     };
     config = {
       canivete.devShell = {

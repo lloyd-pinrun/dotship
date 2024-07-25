@@ -20,7 +20,7 @@
       config = let
         cfg = config.canivete.pre-commit;
       in {
-        canivete.devShell.shells = [config.pre-commit.devShell];
+        canivete.devShell.inputsFrom = [config.pre-commit.devShell];
         canivete.pre-commit.settings = {
           default_stages = ["push" "manual"];
           excludes = [".canivete"];
