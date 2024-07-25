@@ -9,22 +9,22 @@ with nix; {
   in {
     options.canivete.just = {
       recipes = mkOption {
-        type = attrsOf (coercedTo str (setAttrByPath "command") (submodule ({
+        type = attrsOf (coercedTo str (setAttrByPath ["command"]) (submodule ({
           config,
           name,
           ...
         }: {
-          enable = mkEnabledOption name;
-          command = mkOption {
+          options.enable = mkEnabledOption name;
+          options.command = mkOption {
             type = str;
             description = "Actual command to run as part of this unique recipe";
           };
-          recipe = mkOption {
+          options.recipe = mkOption {
             type = str;
             description = "Literal recipe in justfile";
             default = ''
               ${name}:
-                ${config.command}
+                  ${config.command}
             '';
           };
         })));
