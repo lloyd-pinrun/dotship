@@ -53,6 +53,7 @@ with nix; {
           config.image.asStream = system == system'';
         });
       };
+      config.services = {};
     };
   };
 }
