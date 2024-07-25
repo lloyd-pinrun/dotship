@@ -51,8 +51,16 @@ with nix; {
         description = "Final just executable";
         default = pkgs.wrapProgram cfg.basePackage "just" "just" "--add-flags \"--justfile ${cfg.justfile}\"" {};
       };
+      devShell = mkOption {
+        type = package;
+        description = "Development shell with just executable";
+        default = pkgs.mkShell {
+          packages = [cfg.finalPackage];
+          shellHook = "export JUST_WORKING_DIRECTORY=\"$(${getExe pkgs.git} rev-parse --show-toplevel)\"";
+        };
+      };
     };
-    config.canivete.devShell.inputsFrom = [(pkgs.mkShell {packages = [cfg.finalPackage];})];
+    config.canivete.devShell.inputsFrom = [cfg.devShell];
     config.canivete.just.recipes = {
       default = "@just --list";
       "changelog *ARGS" = "@${getExe pkgs.convco} changelog -p \"\" {{ ARGS }}";
