@@ -55,7 +55,8 @@ with nix; {
     config.canivete.devShell.inputsFrom = [(pkgs.mkShell {packages = [cfg.finalPackage];})];
     config.canivete.just.recipes = {
       default = "@just --list";
-      changelog = "${getExe pkgs.convco} changelog -p \"\"";
+      "changelog *ARGS" = "@${getExe pkgs.convco} changelog -p \"\" {{ ARGS }}";
+      flake = "nix flake show";
     };
   };
 }

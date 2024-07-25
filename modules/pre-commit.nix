@@ -20,6 +20,7 @@
       config = let
         cfg = config.canivete.pre-commit;
       in {
+        canivete.just.recipes."check *ARGS" = "pre-commit run {{ ARGS }}";
         canivete.devShell.inputsFrom = [config.pre-commit.devShell];
         canivete.pre-commit.settings = {
           default_stages = ["push" "manual"];

@@ -42,6 +42,7 @@ with nix; {
         default = pkgs.wrapProgram cfg.basePackage "arion" "arion" "--add-flags \"--prebuilt-file ${cfg.yaml}\"" {};
       };
     };
+    config.canivete.just.recipes."arion *ARGS" = "${getExe cfg.finalPackage} {{ ARGS }}";
     config.canivete.arion.modules.builtin = {
       # Also share self' of the Linux system variant
       config._module.args.self'' = flake.config.perInput system'' inputs.self;
@@ -53,10 +54,5 @@ with nix; {
         });
       };
     };
-    config.canivete.devShell.apps.arion.script = let
-      inherit (inputs.self.canivete.${system''}.pkgs) pkgs;
-      modules = attrValues config.canivete.arion.modules;
-      docker-compose-yaml = arion-patched.lib.build {inherit modules pkgs;};
-    in "${getExe arion-patched.packages.${system}.arion} --prebuilt-file ${docker-compose-yaml} \"$@\"";
   };
 }

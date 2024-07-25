@@ -17,7 +17,9 @@
       tofu = config.canivete.opentofu;
       tofuOpts = options.canivete.opentofu;
     in {
-      config.canivete.devShell.apps.tofu.script = "nix run \".#canivete.${system}.opentofu.workspaces.$1.finalScript\" -- \"\${@:2}\"";
+      config.canivete.just.recipes."tofu WORKSPACE *ARGS" = ''
+        nix run ${inputs.self}#canivete.${system}.opentofu.workspaces.{{ WORKSPACE }}.finalScript -- {{ ARGS }}
+      '';
       options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};

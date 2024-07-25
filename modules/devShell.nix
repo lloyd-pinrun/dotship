@@ -53,11 +53,7 @@ with nix; {
       };
     };
     config = {
-      canivete.devShell = {
-        packages = [pkgs.sops (with config.canivete.devShell; apps.${name}.script)];
-        apps.help.script = "nix flake show";
-        apps.${config.canivete.devShell.name}.script = "nix run \".#canivete.${system}.devShell.apps.\${1:-help}.script\" -- \"\${@:2}\"";
-      };
+      canivete.devShell.packages = [pkgs.sops];
       devShells.default = pkgs.mkShell {inherit (cfg) name packages inputsFrom;};
     };
   };
