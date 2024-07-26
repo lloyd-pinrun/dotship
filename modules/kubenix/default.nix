@@ -16,7 +16,7 @@ with nix; {
       patches = [./kubenix.patch];
     };
   in {
-    config.canivete.scripts.tofu = ./kubectl.sh;
+    config.canivete.scripts.kube = ./kubectl.sh;
     config.canivete.just.recipes."kube CLUSTER *ARGS" = ''
       nix run ${inputs.self}#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.script -- {{ ARGS }}
     '';
