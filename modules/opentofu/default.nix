@@ -88,6 +88,8 @@
               # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
               {
                 plugins.terraform.required_providers = pipe workspace.plugins [
+                  # TODO why do I need to be explicit here as well?!
+                  (concat tofu.sharedPlugins)
                   (map (pkg: nameValuePair pkg.repo {inherit (pkg) source version;}))
                   listToAttrs
                 ];
