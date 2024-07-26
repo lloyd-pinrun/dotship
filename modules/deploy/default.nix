@@ -16,6 +16,7 @@ with nix; {
     nixOnDroidConfigurations = nodes "droid";
   };
   config.canivete.deploy = {
+    home.modules = {};
     system.modules.nix = {pkgs, ...}: {
       nix.extraOptions = "experimental-features = nix-command flakes auto-allocate-uids";
       nix.package = pkgs.nixVersions.latest;
@@ -108,8 +109,8 @@ with nix; {
               {
                 profiles = flip mapAttrs node.config.home (_: module: {
                   attr = "home.activationPackage";
-                  builder = module: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs module);
-                  build = module;
+                  builder = _module: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs _module);
+                  build.imports = attrValues config.canivete.deploy.home.modules ++ [module];
                   cmds = ["\"$closure/activate\""];
                   inherit (node.config.profiles.system) remoteBuild target;
                 });
