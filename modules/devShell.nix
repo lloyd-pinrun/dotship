@@ -13,31 +13,6 @@ with nix; {
         default = "can";
         description = "Name of the primary project executable";
       };
-      apps = mkOption {
-        type = attrsOf (submodule ({
-          config,
-          name,
-          ...
-        }: {
-          options.dependencies = mkOption {
-            type = listOf package;
-            default = [];
-          };
-          options.script = mkOption {
-            type = coercedTo str (script:
-              pkgs.writeShellApplication {
-                inherit name;
-                runtimeInputs = config.dependencies;
-                excludeShellChecks = ["SC1091"];
-                text = "source ${./utils.sh} && ${script}";
-              })
-            package;
-          };
-          config.dependencies = with pkgs; [bash coreutils git];
-        }));
-        default = {};
-        description = "Subcommands for primary executable";
-      };
       packages = mkOption {
         type = listOf package;
         default = [];
