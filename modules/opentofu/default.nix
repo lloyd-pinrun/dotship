@@ -34,7 +34,7 @@
             bins = makeBinPath [pkgs.vals workspace.finalPackage];
             flags = concatStringsSep " " [
               "--workspace ${name}"
-              "--configuration ${workspace.configuration}"
+              "--config ${workspace.configuration}"
             ];
             args = "--prefix PATH : ${bins} --add-flags \"${flags}\"";
           in {

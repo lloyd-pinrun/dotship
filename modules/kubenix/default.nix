@@ -31,7 +31,7 @@ with nix; {
         bins = makeBinPath (with pkgs; [vals sops kubectl yq]);
         flags = concatStringsSep " " [
           "--cluster {name}"
-          "--configuration ${cluster.configuration}"
+          "--config ${cluster.configuration}"
         ];
         args = "--prefix PATH : ${bins} --add-flags \"${flags}\"";
       in {
