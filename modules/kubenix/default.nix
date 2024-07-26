@@ -17,8 +17,8 @@ with nix; {
     };
   in {
     config.canivete.scripts.kubectl = ./kubectl.sh;
-    config.canivete.just.recipes."kube CLUSTER *ARGS" = ''
-      nix run ${inputs.self}#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.script -- -- {{ ARGS }}
+    config.canivete.just.recipes."kubectl CLUSTER *ARGS" = ''
+      nix run ${inputs.self}#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.finalScript -- -- {{ ARGS }}
     '';
     config.canivete.opentofu.workspaces = mapAttrs (_: getAttr "opentofu") config.canivete.kubenix.clusters;
     options.canivete.kubenix.clusters = mkOption {
@@ -128,6 +128,16 @@ with nix; {
             type = package;
             description = "Kubectl wrapper script for managing cluster";
             default = pkgs.wrapProgram perSystem.config.canivete.scripts.kubectl.package "kubectl" "kubectl" args {};
+          };
+          scriptOverride = mkOption {
+            type = functionTo package;
+            description = "Function to map script to finalScript";
+            default = id;
+          };
+          finalScript = mkOption {
+            type = package;
+            description = "Final script to run kubectl on the cluster configuration";
+            default = cluster.scriptOverride cluster.script;
           };
         };
         config = mkMerge [
