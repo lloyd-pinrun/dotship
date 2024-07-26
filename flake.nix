@@ -52,10 +52,6 @@
     # TODO check in to see if this is supported yet
     flake-schemas.url = github:DeterminateSystems/flake-schemas;
 
-    # Nix profile deployment framework
-    deploy-rs.url = github:serokell/deploy-rs;
-    deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
-
     # User software configuration framework
     home-manager.url = github:nix-community/home-manager;
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
