@@ -59,6 +59,7 @@ with nix; {
     default = {};
     type = attrsOf (submodule (type @ {name, ...}: {
       config.specialArgs = {inherit nix;} // (with inputs.self.nixos-flake.lib; specialArgsFor.${type.name} or specialArgsFor.common);
+      config.homeModules = config.canivete.deploy.home.modules;
       options = {
         specialArgs = mkOption {type = attrsOf anything;};
         defaultSystem = mkSystemOption {};
@@ -73,6 +74,7 @@ with nix; {
           default = [];
         };
         modules = mkModulesOption {};
+        homeModules = mkModulesOption {};
         nodes = mkOption {
           default = {};
           type = attrsOf (submodule (node @ {name, ...}: {
@@ -110,7 +112,7 @@ with nix; {
                 profiles = flip mapAttrs node.config.home (_: module: {
                   attr = "home.activationPackage";
                   builder = _module: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs _module);
-                  build.imports = attrValues config.canivete.deploy.home.modules ++ [module];
+                  build.imports = attrValues type.config.homeModules ++ [module];
                   cmds = ["\"$closure/activate\""];
                   inherit (node.config.profiles.system) remoteBuild target;
                 });
