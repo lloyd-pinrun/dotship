@@ -24,7 +24,7 @@ with nix; {
     nixos.defaultSystem = "x86_64-linux";
     nixos.systemBuilder = inputs.nixpkgs.lib.nixosSystem;
     nixos.systemActivationCommands = let
-      systemdFlags = [
+      systemdFlags = concatStringsSep " " [
         "--collect --no-ask-password --pipe --quiet --same-dir --wait"
         "--setenv LOCALE_ARCHIVE --setenv NIXOS_INSTALL_BOOTLOADER="
         # Using the full 'nixos-rebuild-switch-to-configuration' name on sirver would fail to collect/cleanup
@@ -32,7 +32,7 @@ with nix; {
       ];
     in [
       "sudo nix-env --profile /nix/var/nix/profiles/system --set \"$closure\""
-      "sudo systemd-run ${concatStringsSep " " systemdFlags} \"$closure/bin/switch-to-configuration\" switch"
+      "sudo systemd-run ${systemdFlags} \"$closure/bin/switch-to-configuration\" switch"
     ];
     darwin.defaultSystem = "aarch64-darwin";
     darwin.systemBuilder = inputs.nix-darwin.lib.darwinSystem;
