@@ -16,7 +16,7 @@ with nix; {
       patches = [./kubenix.patch];
     };
   in {
-    config.canivete.scripts.kube = ./kubectl.sh;
+    config.canivete.scripts.kubectl = ./kubectl.sh;
     config.canivete.just.recipes."kube CLUSTER *ARGS" = ''
       nix run ${inputs.self}#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.script -- -- {{ ARGS }}
     '';
@@ -127,7 +127,7 @@ with nix; {
           script = mkOption {
             type = package;
             description = "Kubectl wrapper script for managing cluster";
-            default = pkgs.wrapProgram perSystem.config.canivete.scripts.kube.package "kube" "kubectl" args {};
+            default = pkgs.wrapProgram perSystem.config.canivete.scripts.kubectl.package "kubectl" "kubectl" args {};
           };
         };
         config = mkMerge [
