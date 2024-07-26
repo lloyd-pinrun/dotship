@@ -6,7 +6,7 @@
   inputs,
   ...
 }: {
-  perSystem = {
+  perSystem = perSystem @ {
     config,
     options,
     pkgs,
@@ -69,7 +69,7 @@
               script = mkOption {
                 type = package;
                 description = "Basic script to run OpenTofu on the workspace configuration";
-                default = pkgs.wrapProgram config.canivete.scripts.tofu.package "tofu" "tofu" args {};
+                default = pkgs.wrapProgram perSystem.config.canivete.scripts.tofu.package "tofu" "tofu" args {};
               };
               scriptOverride = mkOption {
                 type = functionTo package;

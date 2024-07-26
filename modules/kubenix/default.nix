@@ -4,7 +4,7 @@
   ...
 }:
 with nix; {
-  perSystem = {
+  perSystem = perSystem @ {
     config,
     pkgs,
     system,
@@ -127,7 +127,7 @@ with nix; {
           script = mkOption {
             type = package;
             description = "Kubectl wrapper script for managing cluster";
-            default = pkgs.wrapProgram config.canivete.scripts.kube.package "kube" "kubectl" args {};
+            default = pkgs.wrapProgram perSystem.config.canivete.scripts.kube.package "kube" "kubectl" args {};
           };
         };
         config = mkMerge [
