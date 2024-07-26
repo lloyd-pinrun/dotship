@@ -17,10 +17,14 @@
       tofu = config.canivete.opentofu;
       tofuOpts = options.canivete.opentofu;
     in {
-      config.canivete.scripts.tofu = ./tofu.sh;
-      config.canivete.just.recipes."tofu WORKSPACE *ARGS" = ''
-        nix run .#canivete.${system}.opentofu.workspaces.{{ WORKSPACE }}.finalScript -- -- {{ ARGS }}
-      '';
+      config.canivete = {
+        # Such a common need that it's worth including here
+        opentofu.sharedPlugins = ["opentofu/external"];
+        scripts.tofu = ./tofu.sh;
+        just.recipes."tofu WORKSPACE *ARGS" = ''
+          nix run .#canivete.${system}.opentofu.workspaces.{{ WORKSPACE }}.finalScript -- -- {{ ARGS }}
+        '';
+      };
       options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};
