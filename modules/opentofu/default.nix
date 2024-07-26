@@ -19,7 +19,7 @@
     in {
       config.canivete.scripts.tofu = ./tofu.sh;
       config.canivete.just.recipes."tofu WORKSPACE *ARGS" = ''
-        nix run ${inputs.self}#canivete.${system}.opentofu.workspaces.{{ WORKSPACE }}.finalScript -- {{ ARGS }}
+        nix run ${inputs.self}#canivete.${system}.opentofu.workspaces.{{ WORKSPACE }}.finalScript -- -- {{ ARGS }}
       '';
       options.canivete.opentofu = {
         workspaces = mkOption {

@@ -18,7 +18,7 @@ with nix; {
   in {
     config.canivete.scripts.kube = ./kubectl.sh;
     config.canivete.just.recipes."kube CLUSTER *ARGS" = ''
-      nix run ${inputs.self}#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.script -- {{ ARGS }}
+      nix run ${inputs.self}#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.script -- -- {{ ARGS }}
     '';
     config.canivete.opentofu.workspaces = mapAttrs (_: getAttr "opentofu") config.canivete.kubenix.clusters;
     options.canivete.kubenix.clusters = mkOption {
