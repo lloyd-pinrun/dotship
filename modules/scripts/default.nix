@@ -17,6 +17,7 @@ with nix; {
             description = "Actual executable to run directly";
             default = pkgs.writeShellApplication {
               inherit name;
+              excludeShellChecks = ["SC1091"];
               runtimeInputs = with pkgs; [bash coreutils git];
               text = ''
                 source ${./utils.sh}
