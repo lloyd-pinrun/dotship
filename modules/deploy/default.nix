@@ -109,12 +109,12 @@ with nix; {
                 };
               }
               {
-                profiles = flip mapAttrs node.config.home (_: module: {
+                profiles = flip mapAttrs node.config.home (_: _module: {
                   attr = "home.activationPackage";
-                  builder = _module: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs _module);
-                  build.imports = attrValues type.config.homeModules ++ [module];
+                  builder = __module: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs __module);
+                  module.imports = attrValues type.config.homeModules ++ [_module];
                   cmds = ["\"$closure/activate\""];
-                  inherit (node.config.profiles.system) remoteBuild target;
+                  inherit (node.config.profiles.system) build target;
                 });
               }
             ];
@@ -125,38 +125,40 @@ with nix; {
                 # TODO validate user as member of "people"
                 type = attrsOf deferredModule;
               };
+              build = {
+                host = mkOption {
+                  type = nullOr str;
+                  default = node.name;
+                };
+                sshFlags = mkOption {
+                  type = str;
+                  default = "";
+                };
+              };
+              target = {
+                host = mkOption {
+                  type = str;
+                  default = node.name;
+                };
+                sshFlags = mkOption {
+                  type = str;
+                  default = "";
+                };
+              };
               profiles = mkOption {
                 default = {};
                 type = attrsOf (submodule (profile @ {name, ...}: {
                   options = {
                     attr = mkOption {type = str;};
                     builder = mkOption {type = functionTo raw;};
-                    build = mkOption {type = deferredModule;};
+                    module = mkOption {type = deferredModule;};
                     raw = mkOption {type = raw;};
                     opentofu = mkOption {type = deferredModule;};
                     cmds = mkOption {type = listOf str;};
-                    remoteBuild = {
-                      host = mkOption {
-                        type = nullOr str;
-                        default = node.name;
-                      };
-                      sshFlags = mkOption {
-                        type = str;
-                        default = "";
-                      };
-                    };
-                    target = {
-                      host = mkOption {
-                        type = str;
-                        default = node.name;
-                      };
-                      sshFlags = mkOption {
-                        type = str;
-                        default = "";
-                      };
-                    };
+                    build = node.options.build // {default = node.config.build;};
+                    target = node.options.target // {default = node.config.target;};
                   };
-                  config.raw = with profile.config; builder build;
+                  config.raw = with profile.config; builder module;
                   config.opentofu = {pkgs, ...}: {
                     config = let
                       sshFlags = "-o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=60 -o StrictHostKeyChecking=accept-new";
@@ -164,10 +166,7 @@ with nix; {
                       name = concatStringsSep "_" [type.name node.name profile.name];
                       path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "raw.config" profile.config.attr];
                       drv = "\${ data.external.${name}.result.drv }";
-                      buildHost = profile.config.remoteBuild.host;
-                      buildSshFlags = profile.config.remoteBuild.sshFlags;
-                      targetHost = profile.config.target.host;
-                      targetSshFlags = profile.config.target.sshFlags;
+                      inherit (profile.config) build target;
                     in
                       mkMerge [
                         {
@@ -179,20 +178,20 @@ with nix; {
                             triggers.drv = drv;
                             # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
                             provisioner.local-exec.command = ''
-                              if [[ $(hostname) == ${buildHost} ]]; then
+                              if [[ $(hostname) == ${build.host} ]]; then
                                   closure=$(nix-store --verbose --realise ${drv})
                               else
-                                  export NIX_SSHOPTS="${sshFlags} ${buildSshFlags}"
-                                  nix ${nixFlags} copy --derivation --to ssh-ng://${buildHost} ${drv}
-                                  closure=$(ssh ${sshFlags} ${buildHost} nix-store --verbose --realise ${drv})
-                                  nix ${nixFlags} copy --from ssh-ng://${buildHost} "$closure"
+                                  export NIX_SSHOPTS="${sshFlags} ${build.sshFlags}"
+                                  nix ${nixFlags} copy --derivation --to ssh-ng://${build.host} ${drv}
+                                  closure=$(ssh ${sshFlags} ${build.host} nix-store --verbose --realise ${drv})
+                                  nix ${nixFlags} copy --from ssh-ng://${build.host} "$closure"
                               fi
 
-                              if [[ $(hostname) == ${targetHost} ]]; then
+                              if [[ $(hostname) == ${target.host} ]]; then
                                   ${concatStringsSep "\n" profile.config.cmds}
                               else
-                                  export NIX_SSHOPTS="${sshFlags} ${targetSshFlags}"
-                                  nix ${nixFlags} copy --to ssh-ng://${targetHost} "$closure"
+                                  export NIX_SSHOPTS="${sshFlags} ${target.sshFlags}"
+                                  nix ${nixFlags} copy --to ssh-ng://${target.host} "$closure"
                                   ${concatStringsSep "\n" (forEach profile.config.cmds (cmd: "ssh ${sshFlags} ${node.name} ${cmd}"))}
                               fi
                             '';
