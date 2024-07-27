@@ -16,7 +16,6 @@ with nix; {
     nixOnDroidConfigurations = nodes "droid";
   };
   config.canivete.deploy = {
-    home.modules = {};
     system.modules.nix = {pkgs, ...}: {
       nix.extraOptions = "experimental-features = nix-command flakes auto-allocate-uids";
       nix.package = pkgs.nixVersions.latest;
@@ -57,9 +56,19 @@ with nix; {
   };
   options.canivete.deploy = mkOption {
     default = {};
-    type = attrsOf (submodule (type @ {name, ...}: {
-      config.specialArgs = {inherit nix;} // (with inputs.self.nixos-flake.lib; specialArgsFor.${type.name} or specialArgsFor.common);
-      config.homeModules = config.canivete.deploy.home.modules;
+    type = attrsOf (submodule (type @ {name, ...}: let
+      prefixAttrs = prefix: mapAttrs' (name: nameValuePair "${prefix}${name}");
+    in {
+      config = mkMerge [
+        {
+          specialArgs = {inherit nix;} // (with inputs.self.nixos-flake.lib; specialArgsFor.${type.name} or specialArgsFor.common);
+        }
+        (mkIf type.name
+          != "system" {
+            modules = prefixAttrs "system." config.canivete.deploy.system.modules;
+            homeModules = prefixAttrs "system.home." config.canivete.deploy.system.homeModules;
+          })
+      ];
       options = {
         specialArgs = mkOption {type = attrsOf anything;};
         defaultSystem = mkSystemOption {};
@@ -83,7 +92,7 @@ with nix; {
                 profiles.system = {
                   attr = "system.build.toplevel";
                   cmds = type.config.systemActivationCommands;
-                  builder = module:
+                  builder = modules:
                     withSystem node.config.system (
                       {
                         pkgs,
@@ -101,7 +110,7 @@ with nix; {
                           extraArgs
                           // {
                             inherit pkgs system;
-                            modules = attrValues config.canivete.deploy.system.modules ++ attrValues type.config.modules ++ [module];
+                            modules = attrValues modules;
                           };
                       in
                         _builder args
@@ -109,10 +118,11 @@ with nix; {
                 };
               }
               {
-                profiles = flip mapAttrs node.config.home (_: _module: {
+                profiles = flip mapAttrs node.config.home (_: module: {
+                  inherit module;
+                  modules = type.config.homeModules;
                   attr = "home.activationPackage";
-                  builder = __module: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs __module);
-                  module.imports = attrValues type.config.homeModules ++ [_module];
+                  builder = modules: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs {imports = attrValues modules;});
                   cmds = ["\"$closure/activate\""];
                   inherit (node.config.profiles.system) build target;
                 });
@@ -152,13 +162,15 @@ with nix; {
                     attr = mkOption {type = str;};
                     builder = mkOption {type = functionTo raw;};
                     module = mkOption {type = deferredModule;};
+                    modules = mkModulesOption {};
                     raw = mkOption {type = raw;};
                     opentofu = mkOption {type = deferredModule;};
                     cmds = mkOption {type = listOf str;};
                     build = node.options.build // {default = node.config.build;};
                     target = node.options.target // {default = node.config.target;};
                   };
-                  config.raw = with profile.config; builder module;
+                  config.modules.self = profile.config.module;
+                  config.raw = with profile.config; builder modules;
                   config.opentofu = {pkgs, ...}: {
                     config = let
                       sshFlags = "-o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=60 -o StrictHostKeyChecking=accept-new";
@@ -167,37 +179,34 @@ with nix; {
                       path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "raw.config" profile.config.attr];
                       drv = "\${ data.external.${name}.result.drv }";
                       inherit (profile.config) build target;
-                    in
-                      mkMerge [
-                        {
-                          data.external.${name}.program = pkgs.execBash ''
-                            nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
-                                ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
-                          '';
-                          resource.null_resource.${name} = {
-                            triggers.drv = drv;
-                            # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
-                            provisioner.local-exec.command = ''
-                              if [[ $(hostname) == ${build.host} ]]; then
-                                  closure=$(nix-store --verbose --realise ${drv})
-                              else
-                                  export NIX_SSHOPTS="${sshFlags} ${build.sshFlags}"
-                                  nix ${nixFlags} copy --derivation --to ssh-ng://${build.host} ${drv}
-                                  closure=$(ssh ${sshFlags} ${build.host} nix-store --verbose --realise ${drv})
-                                  nix ${nixFlags} copy --from ssh-ng://${build.host} "$closure"
-                              fi
+                    in {
+                      data.external.${name}.program = pkgs.execBash ''
+                        nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
+                            ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
+                      '';
+                      resource.null_resource.${name} = {
+                        triggers.drv = drv;
+                        # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
+                        provisioner.local-exec.command = ''
+                          if [[ $(hostname) == ${build.host} ]]; then
+                              closure=$(nix-store --verbose --realise ${drv})
+                          else
+                              export NIX_SSHOPTS="${sshFlags} ${build.sshFlags}"
+                              nix ${nixFlags} copy --derivation --to ssh-ng://${build.host} ${drv}
+                              closure=$(ssh ${sshFlags} ${build.host} nix-store --verbose --realise ${drv})
+                              nix ${nixFlags} copy --from ssh-ng://${build.host} "$closure"
+                          fi
 
-                              if [[ $(hostname) == ${target.host} ]]; then
-                                  ${concatStringsSep "\n" profile.config.cmds}
-                              else
-                                  export NIX_SSHOPTS="${sshFlags} ${target.sshFlags}"
-                                  nix ${nixFlags} copy --to ssh-ng://${target.host} "$closure"
-                                  ${concatStringsSep "\n" (forEach profile.config.cmds (cmd: "ssh ${sshFlags} ${node.name} ${cmd}"))}
-                              fi
-                            '';
-                          };
-                        }
-                      ];
+                          if [[ $(hostname) == ${target.host} ]]; then
+                              ${concatStringsSep "\n" profile.config.cmds}
+                          else
+                              export NIX_SSHOPTS="${sshFlags} ${target.sshFlags}"
+                              nix ${nixFlags} copy --to ssh-ng://${target.host} "$closure"
+                              ${concatStringsSep "\n" (forEach profile.config.cmds (cmd: "ssh ${sshFlags} ${node.name} ${cmd}"))}
+                          fi
+                        '';
+                      };
+                    };
                   };
                 }));
               };
