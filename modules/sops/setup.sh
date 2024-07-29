@@ -9,14 +9,14 @@ sops_repo_file="$(git rev-parse --show-toplevel)/.canivete/sops/$key_name"
 mkdir -p "$(dirname "$age_key_file")"
 
 # Generate a passwordless SSH key
-ssh-keygen -t ed25519 -P "" -f "$ssh_key_file" &> /dev/null
+ssh-keygen -t ed25519 -P "" -f "$ssh_key_file" &>/dev/null
 
 # Create private and public age key from SSH key
-ssh-to-age -private-key -i "$ssh_key_file" > "$age_key_file" 2> /dev/null
+ssh-to-age -private-key -i "$ssh_key_file" >"$age_key_file" 2>/dev/null
 age_key_public="$(age-keygen -y "$age_key_file")"
 
 # Prompt user
-logfx -<<EOT
+logfx - <<EOT
     Your public age key is $age_key_public
 
     Ensure the following in .sops.yaml before running 'nix run .#encrypt':

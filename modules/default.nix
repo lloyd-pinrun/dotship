@@ -13,7 +13,7 @@
     ./pre-commit.nix
     ./schemas.nix
     ./services.nix
-    ./sops.nix
+    ./sops
     ./systems.nix
   ];
 }
