@@ -46,8 +46,12 @@ in {
     darwin.defaultSystem = "aarch64-darwin";
     darwin.systemBuilder = inputs.nix-darwin.lib.darwinSystem;
     darwin.systemActivationCommands = ["sudo HOME=/var/root \"$closure/activate\""];
-    droid.defaultSystem = "aarch64-linux";
-    droid.systemBuilder = inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+    droid = {
+      defaultSystem = "aarch64-linux";
+      systemBuilder = inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+      systemAttr = "build.activationPackage";
+      systemActivationCommands = ["$closure/activate"];
+    };
   };
   config.perSystem.canivete.opentofu.workspaces.deploy = {
     plugins = ["opentofu/null" "opentofu/external"];
@@ -79,6 +83,11 @@ in {
       options = {
         specialArgs = mkOption {type = attrsOf anything;};
         defaultSystem = mkSystemOption {};
+        systemAttr = mkOption {
+          type = str;
+          description = "Attribute of system package to build";
+          default = "system.build.toplevel";
+        };
         systemBuilder = mkOption {
           # null for common modules under "system" type
           type = nullOr (functionTo raw);
@@ -97,7 +106,7 @@ in {
             config = mkMerge [
               {
                 profiles.system = {
-                  attr = "system.build.toplevel";
+                  attr = type.config.systemAttr;
                   cmds = type.config.systemActivationCommands;
                   modules = mergeAttrs type.config.modules {hostname.networking.hostName = name;};
                   builder = modules:
