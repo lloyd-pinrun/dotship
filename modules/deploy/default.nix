@@ -110,7 +110,7 @@ in {
                 profiles.system = {
                   attr = type.config.systemAttr;
                   cmds = type.config.systemActivationCommands;
-                  modules = mergeAttrs type.config.modules {hostname.networking.hostName = name;};
+                  modules = mergeAttrs type.config.modules (if type.name != "droid" then {hostname.networking.hostName = name;} else {});
                   builder = modules:
                     withSystem node.config.system (
                       {pkgs, ...}: let
