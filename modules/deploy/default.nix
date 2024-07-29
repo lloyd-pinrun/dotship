@@ -99,7 +99,7 @@ in {
                 profiles.system = {
                   attr = "system.build.toplevel";
                   cmds = type.config.systemActivationCommands;
-                  modules.hostname.networking.hostName = name;
+                  modules = mergeAttrs type.config.modules {hostname.networking.hostName = name;};
                   builder = modules:
                     withSystem node.config.system (
                       {
