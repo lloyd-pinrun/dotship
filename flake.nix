@@ -105,19 +105,18 @@
           lib =
             nix
             // {
-              mkFlake = with nix;
-                args @ {
-                  specialArgs ? {},
-                  everything ? [],
-                  ...
-                }: module:
-                  flake-parts.lib.mkFlake {
-                    inputs = inputs // args.inputs;
-                    specialArgs = {inherit nix;} // specialArgs;
-                  } {
-                    imports = concat [module self.flakeModule] (nix.filesets.nix.everything everything);
-                    perSystem._module.args.nix = nix;
-                  };
+              mkFlake = args @ {
+                specialArgs ? {},
+                everything ? [],
+                ...
+              }: module:
+                flake-parts.lib.mkFlake {
+                  inputs = inputs // args.inputs;
+                  specialArgs = {inherit nix;} // specialArgs;
+                } {
+                  imports = nix.concat [module self.flakeModule] (nix.filesets.nix.everything everything);
+                  perSystem._module.args.nix = nix;
+                };
             };
           flakeModule = config.flake.flakeModules.default;
           flakeModules = with nix;
