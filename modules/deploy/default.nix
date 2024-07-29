@@ -119,18 +119,13 @@ in {
                         ...
                       }: let
                         _builder = type.config.systemBuilder;
-                        inherit (type.config) specialArgs;
                         # Some tools call this extraSpecialArgs for some reason...
-                        extraArgs =
-                          if (functionArgs _builder) ? extraSpecialArgs
-                          then {extraSpecialArgs = specialArgs;}
-                          else {inherit specialArgs;};
-                        args =
-                          extraArgs
-                          // {
-                            inherit pkgs system;
-                            modules = attrValues modules;
-                          };
+                        argsKey = if type.name == "droid" then "extraSpecialArgs" else "specialArgs";
+                        args = {
+                          ${argsKey} = type.config.specialArgs;
+                          inherit pkgs system;
+                          modules = attrValues modules;
+                        };
                       in
                         _builder args
                     );
