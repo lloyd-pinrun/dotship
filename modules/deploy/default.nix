@@ -67,11 +67,10 @@ with nix; {
         {
           specialArgs = {inherit nix;} // (with inputs.self.nixos-flake.lib; specialArgsFor.${type.name} or specialArgsFor.common);
         }
-        (mkIf type.name
-          != "system" {
-            modules = prefixAttrs "system." config.canivete.deploy.system.modules;
-            homeModules = prefixAttrs "system.home." config.canivete.deploy.system.homeModules;
-          })
+        (mkIf (type.name != "system") {
+          modules = prefixAttrs "system." config.canivete.deploy.system.modules;
+          homeModules = prefixAttrs "system.home." config.canivete.deploy.system.homeModules;
+        })
       ];
       options = {
         specialArgs = mkOption {type = attrsOf anything;};
