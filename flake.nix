@@ -10,9 +10,6 @@
     systems-default.url = github:nix-systems/x86_64-linux;
     systems-darwin.url = github:nix-systems/aarch64-darwin;
 
-    # Flake-parts compatibility for profiles
-    nixos-flake.url = github:srid/nixos-flake;
-
     # Nix flake framework
     flake-parts.url = github:hercules-ci/flake-parts;
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";

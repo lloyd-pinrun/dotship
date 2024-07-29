@@ -1,11 +1,17 @@
 {
   config,
   inputs,
+  self,
   nix,
   withSystem,
   ...
 }:
-with nix; {
+with nix; let
+  specialArgs = {
+    inherit nix;
+    flake = {inherit self inputs config;};
+  };
+in {
   imports = [./nixos-anywhere.nix];
   config.flake = let
     nodeAttr = getAttrFromPath ["profiles" "system" "raw"];
@@ -20,7 +26,7 @@ with nix; {
     nixos = {
       modules.home-manager = {
         imports = [inputs.home-manager.nixosModules.home-manager];
-        home-manager.extraSpecialArgs = inputs.self.nixos-flake.lib.specialArgsFor.common // {inherit nix;};
+        home-manager.extraSpecialArgs = specialArgs;
         home-manager.sharedModules = attrValues config.canivete.deploy.nixos.homeModules;
       };
       defaultSystem = "x86_64-linux";
@@ -64,9 +70,7 @@ with nix; {
       prefixAttrs = prefix: mapAttrs' (name: nameValuePair "${prefix}${name}");
     in {
       config = mkMerge [
-        {
-          specialArgs = {inherit nix;} // (with inputs.self.nixos-flake.lib; specialArgsFor.${type.name} or specialArgsFor.common);
-        }
+        {inherit specialArgs;}
         (mkIf (type.name != "system") {
           modules = prefixAttrs "system." config.canivete.deploy.system.modules;
           homeModules = prefixAttrs "system.home." config.canivete.deploy.system.homeModules;
@@ -126,7 +130,18 @@ with nix; {
                   inherit module;
                   modules = type.config.homeModules;
                   attr = "home.activationPackage";
-                  builder = modules: withSystem node.config.system ({pkgs, ...}: inputs.self.nixos-flake.lib.mkHomeConfiguration pkgs {imports = attrValues modules;});
+                  builder = modules:
+                    withSystem node.config.system (
+                      {pkgs, ...}: let
+                        _builder = inputs.home-manager.lib.homeManagerConfiguration;
+                        args = {
+                          inherit pkgs;
+                          extraSpecialArgs = specialArgs;
+                          modules = attrValues modules;
+                        };
+                      in
+                        _builder args
+                    );
                   cmds = ["\"$closure/activate\""];
                   inherit (node.config.profiles.system) build target;
                 });
