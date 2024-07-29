@@ -113,17 +113,13 @@ in {
                   modules = mergeAttrs type.config.modules {hostname.networking.hostName = name;};
                   builder = modules:
                     withSystem node.config.system (
-                      {
-                        pkgs,
-                        system,
-                        ...
-                      }: let
+                      {pkgs, ...}: let
                         _builder = type.config.systemBuilder;
                         # Some tools call this extraSpecialArgs for some reason...
                         argsKey = if type.name == "droid" then "extraSpecialArgs" else "specialArgs";
                         args = {
                           ${argsKey} = type.config.specialArgs;
-                          inherit pkgs system;
+                          inherit pkgs;
                           modules = attrValues modules;
                         };
                       in
