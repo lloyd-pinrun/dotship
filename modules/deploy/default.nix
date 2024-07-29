@@ -11,8 +11,8 @@ with nix; let
     inherit nix;
     flake = {inherit self inputs config;};
   };
+  prefixJoin = prefix: separator: concatMapStringsSep separator (option: "${prefix}${option}");
 in {
-  imports = [./nixos-anywhere.nix];
   config.flake = let
     nodeAttr = getAttrFromPath ["profiles" "system" "raw"];
     nodes = type: mapAttrs (_: nodeAttr) config.canivete.deploy.${type}.nodes;
@@ -105,6 +105,8 @@ in {
           type = attrsOf (submodule (node @ {name, ...}: {
             config = mkMerge [
               {
+                build.sshOptions = ["ControlMaster=auto" "ControlPath=/tmp/%C" "ControlPersist=60" "StrictHostKeyChecking=accept-new"];
+                target.sshOptions = node.config.build.sshOptions;
                 profiles.system = {
                   attr = type.config.systemAttr;
                   cmds = type.config.systemActivationCommands;
@@ -168,9 +170,13 @@ in {
                   type = nullOr str;
                   default = node.name;
                 };
+                sshOptions = mkOption {
+                  type = listOf str;
+                  default = [];
+                };
                 sshFlags = mkOption {
                   type = str;
-                  default = "";
+                  default = prefixJoin "-o " " " node.config.build.sshOptions;
                 };
               };
               target = {
@@ -178,9 +184,13 @@ in {
                   type = str;
                   default = node.name;
                 };
+                sshOptions = mkOption {
+                  type = listOf str;
+                  default = [];
+                };
                 sshFlags = mkOption {
                   type = str;
-                  default = "";
+                  default = prefixJoin "-o " " " node.config.target.sshOptions;
                 };
               };
               profiles = mkOption {
@@ -201,42 +211,96 @@ in {
                   };
                   config.modules.self = profile.config.module;
                   config.raw = with profile.config; builder modules;
-                  config.opentofu = {pkgs, ...}: {
+                  config.opentofu = tofu @ {pkgs, ...}: {
                     config = let
-                      sshFlags = "-o ControlMaster=auto -o ControlPath=/tmp/%C -o ControlPersist=60 -o StrictHostKeyChecking=accept-new";
+                      getPath = attr: concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "raw.config" attr];
+
                       nixFlags = "--extra-experimental-features \"nix-command flakes\"";
                       name = concatStringsSep "_" [type.name node.name profile.name];
-                      path = concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "raw.config" profile.config.attr];
+                      path = getPath profile.config.attr;
                       drv = "\${ data.external.${name}.result.drv }";
                       inherit (profile.config) build target;
-                    in {
-                      data.external.${name}.program = pkgs.execBash ''
-                        nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
-                            ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
-                      '';
-                      resource.null_resource.${name} = {
-                        triggers.drv = drv;
-                        # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
-                        provisioner.local-exec.command = ''
-                          if [[ $(hostname) == ${build.host} ]]; then
-                              closure=$(nix-store --verbose --realise ${drv})
-                          else
-                              export NIX_SSHOPTS="${sshFlags} ${build.sshFlags}"
-                              nix ${nixFlags} copy --derivation --to ssh-ng://${build.host} ${drv}
-                              closure=$(ssh ${sshFlags} ${build.host} nix-store --verbose --realise ${drv})
-                              nix ${nixFlags} copy --from ssh-ng://${build.host} "$closure"
-                          fi
 
-                          if [[ $(hostname) == ${target.host} ]]; then
-                              ${concatStringsSep "\n" profile.config.cmds}
-                          else
-                              export NIX_SSHOPTS="${sshFlags} ${target.sshFlags}"
-                              nix ${nixFlags} copy --to ssh-ng://${target.host} "$closure"
-                              ${concatStringsSep "\n" (forEach profile.config.cmds (cmd: "ssh ${sshFlags} ${node.name} ${cmd}"))}
-                          fi
-                        '';
-                      };
-                    };
+                      installPath = getPath "system.build.diskoScript";
+                    in
+                      mkMerge [
+                        (mkIf (type.name == "nixos") {
+                          # Installation
+                          data.external."${name}_install".program = pkgs.execBash ''
+                            nix ${nixFlags} path-info --derivation ${inputs.self}#${installPath} | \
+                                ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
+                          '';
+                          # Must be {name}.keys, not keys.{name} to prevent terraform cycle
+                          locals.${name}.keys."etc/ssh/authorized_keys.d/${me}" = {
+                            file = "${me}.pub";
+                            content = readFile (inputs.self + "/.canivete/sops/${me}.pub");
+                          };
+                          data.external."${name}_save-keys".program = pipe tofu.config.locals.${name}.keys [
+                            (mapAttrsToList (remote: attrs: "echo \"${attrs.content}\" > ${attrs.file}"))
+                            # Needs JSON output for this definition to be accepted
+                            (flip concat ["echo '{}'"])
+                            (concatStringsSep "\n")
+                            pkgs.execBash
+                          ];
+                          resource.null_resource."${name}_install" = {
+                            depends_on = ["data.external.${name}_save-keys"];
+                            triggers.drv = "\${ data.external.${name}_install.result.drv }";
+                            triggers.keys = "\${ sha256(jsonencode({ for k, a in local.${name}.keys: k => a.content })) }";
+                            provisioner.local-exec.command = ''
+                              set -euo pipefail
+
+                              extra_files_dir=$(mktemp -d)
+                              trap 'rm -rf "$extra_files_dir"' EXIT
+
+                              ${pipe config.locals.${name}.keys [
+                                (mapAttrsToList (path: attrs: ''
+                                  mkdir -p "$(dirname "$extra_files_dir/${path}")"
+                                  install -m444 "${attrs.file}" "$extra_files_dir/${path}"
+                                ''))
+                                (concatStringsSep "\n                ")
+                              ]}
+
+                              ${getExe inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere} \
+                                  --flake ${inputs.self}#${name} \
+                                  --extra-files "$extra_files_dir" \
+                                  --build-on-remote \
+                                  --debug \
+                                  ${prefixJoin "--ssh-option " " " target.sshOptions} \
+                                  "root@${target.host}"
+                            '';
+                          };
+                          resource.null_resource.${name}.depends_on = ["null_resource.${name}_install"];
+                        })
+                        {
+                          # Activation
+                          data.external.${name}.program = pkgs.execBash ''
+                            nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
+                                ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
+                          '';
+                          resource.null_resource.${name} = {
+                            triggers.drv = drv;
+                            # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
+                            provisioner.local-exec.command = ''
+                              if [[ $(hostname) == ${build.host} ]]; then
+                                  closure=$(nix-store --verbose --realise ${drv})
+                              else
+                                  export NIX_SSHOPTS="${build.sshFlags}"
+                                  nix ${nixFlags} copy --derivation --to ssh-ng://${build.host} ${drv}
+                                  closure=$(ssh ${build.sshFlags} ${build.host} nix-store --verbose --realise ${drv})
+                                  nix ${nixFlags} copy --from ssh-ng://${build.host} "$closure"
+                              fi
+
+                              if [[ $(hostname) == ${target.host} ]]; then
+                                  ${concatStringsSep "\n" profile.config.cmds}
+                              else
+                                  export NIX_SSHOPTS="${target.sshFlags}"
+                                  nix ${nixFlags} copy --to ssh-ng://${target.host} "$closure"
+                                  ${prefixJoin "ssh ${target.sshFlags} ${target.host} " "\n" profile.config.cmds}
+                              fi
+                            '';
+                          };
+                        }
+                      ];
                   };
                 }));
               };

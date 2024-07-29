@@ -21,3 +21,14 @@ Nix framework for common development and infrastructure tooling like:
 1. Start a new project with `nix flake init --template github:schradert/canivete`
 2. Open the project shell by entering project directory and running `nix develop`
 3. See available commands by running `just`
+
+## Notes
+
+This repo supports building and deploy system configurations with `nixos`, `nix-darwin`, `nix-on-droid`, and `home-manager`.
+Initial installation is slightly trickier, but this is accomplished in the following ways:
+
+1. On Linux, we use `nixos-anywhere` to install `nixos` profiles with `disko` partitioning remotely
+2. On Darwin and Linux without `nixos`, we assume `nix` is already installed
+3. On Android, you must install [`nix-on-droid`](https://f-droid.org/packages/com.termux.nix)
+
+In each case, SSH access is necessary and `nixos-anywhere` requires root access
