@@ -16,23 +16,27 @@ with nix; {
     nixOnDroidConfigurations = nodes "droid";
   };
   config.canivete.deploy = {
-    system.modules.nix = {pkgs, ...}: {
-      nix.extraOptions = "experimental-features = nix-command flakes auto-allocate-uids";
-      nix.package = pkgs.nixVersions.latest;
-    };
-    nixos.defaultSystem = "x86_64-linux";
-    nixos.systemBuilder = inputs.nixpkgs.lib.nixosSystem;
-    nixos.systemActivationCommands = let
-      systemdFlags = concatStringsSep " " [
-        "--collect --no-ask-password --pipe --quiet --same-dir --wait"
-        "--setenv LOCALE_ARCHIVE --setenv NIXOS_INSTALL_BOOTLOADER="
-        # Using the full 'nixos-rebuild-switch-to-configuration' name on sirver would fail to collect/cleanup
-        "--service-type exec --unit nixos-switch"
+    system = {};
+    nixos = {
+      modules.home-manager = {
+        imports = [inputs.home-manager.nixosModules.home-manager];
+        home-manager.extraSpecialArgs = inputs.self.nixos-flake.lib.specialArgsFor.common // {inherit nix;};
+        home-manager.sharedModules = attrValues config.canivete.deploy.nixos.homeModules;
+      };
+      defaultSystem = "x86_64-linux";
+      systemBuilder = inputs.nixpkgs.lib.nixosSystem;
+      systemActivationCommands = let
+        systemdFlags = concatStringsSep " " [
+          "--collect --no-ask-password --pipe --quiet --same-dir --wait"
+          "--setenv LOCALE_ARCHIVE --setenv NIXOS_INSTALL_BOOTLOADER="
+          # Using the full 'nixos-rebuild-switch-to-configuration' name on sirver would fail to collect/cleanup
+          "--service-type exec --unit nixos-switch"
+        ];
+      in [
+        "sudo nix-env --profile /nix/var/nix/profiles/system --set \"$closure\""
+        "sudo systemd-run ${systemdFlags} \"$closure/bin/switch-to-configuration\" switch"
       ];
-    in [
-      "sudo nix-env --profile /nix/var/nix/profiles/system --set \"$closure\""
-      "sudo systemd-run ${systemdFlags} \"$closure/bin/switch-to-configuration\" switch"
-    ];
+    };
     darwin.defaultSystem = "aarch64-darwin";
     darwin.systemBuilder = inputs.nix-darwin.lib.darwinSystem;
     darwin.systemActivationCommands = ["sudo HOME=/var/root \"$closure/activate\""];
