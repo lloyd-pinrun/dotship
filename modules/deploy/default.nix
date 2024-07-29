@@ -170,8 +170,10 @@ with nix; {
                     raw = mkOption {type = raw;};
                     opentofu = mkOption {type = deferredModule;};
                     cmds = mkOption {type = listOf str;};
-                    build = node.options.build // {default = node.config.build;};
-                    target = node.options.target // {default = node.config.target;};
+                    build.host = node.options.build.host // {default = node.config.build.host;};
+                    build.sshFlags = node.options.build.sshFlags // {default = node.config.build.sshFlags;};
+                    target.host = node.options.target.host // {default = node.config.target.host;};
+                    target.sshFlags = node.options.target.sshFlags // {default = node.config.target.sshFlags;};
                   };
                   config.modules.self = profile.config.module;
                   config.raw = with profile.config; builder modules;
