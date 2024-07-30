@@ -7,7 +7,8 @@ with nix; {
   }: let
     cfg = config.canivete.devShell;
   in {
-    config.devShells.default = pkgs.mkShell {inherit (cfg) name packages inputsFrom;};
+    config.canivete.devShell.shellHook = concatStringsSep "\n" cfg.shellHooks;
+    config.devShells.default = pkgs.mkShell {inherit (cfg) name packages inputsFrom shellHook;};
     options.canivete.devShell = {
       name = mkOption {
         type = str;
@@ -23,6 +24,16 @@ with nix; {
         type = listOf package;
         default = [];
         description = "Development shells to include in the default";
+      };
+      shellHook = mkOption {
+        type = str;
+        readOnly = true;
+        description = "Final hook to run in devshell";
+      };
+      shellHooks = mkOption {
+        type = listOf str;
+        description = "Hooks to run in devshell";
+        default = [];
       };
     };
   };
