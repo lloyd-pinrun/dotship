@@ -41,6 +41,7 @@ with nix; {
           meta.mainProgram = name;
         }
         // overrides);
+    wrapFlags = pkg: args: final.wrapProgram pkg pkg.name pkg.name args {};
 
     # Patch underlying flake source tree
     # NOTE Adapted from https://discourse.nixos.org/t/apply-a-patch-to-an-input-flake/36904
