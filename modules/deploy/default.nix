@@ -51,6 +51,10 @@ in {
       systemBuilder = inputs.nix-on-droid.lib.nixOnDroidConfiguration;
       systemAttr = "build.activationPackage";
       systemActivationCommands = ["$closure/activate"];
+      modules.home-manager = {
+        home-manager.extraSpecialArgs = specialArgs;
+        home-manager.sharedModules = attrValues config.canivete.deploy.droid.homeModules;
+      };
     };
   };
   config.perSystem.canivete.opentofu.workspaces.deploy = {
