@@ -43,62 +43,50 @@ with nix; {
         // overrides);
 
     # Patch underlying flake source tree
-    # NOTE https://discourse.nixos.org/t/apply-a-patch-to-an-input-flake/36904
+    # NOTE Adapted from https://discourse.nixos.org/t/apply-a-patch-to-an-input-flake/36904
     applyPatches = {
       name,
       src,
       patches,
       lockFileEntries ? {},
     }: let
-      numOfPatches = length patches;
-      patchedFlake = let
-        patched =
-          (prev.applyPatches {
-            inherit name src;
-            patches = forEach patches (patch:
-              if isAttrs patch
-              then prev.fetchpatch2 patch
-              else patch);
-          })
-          .overrideAttrs (_: prevAttrs: {
-            outputs = ["out" "narHash"];
-            installPhase = concatStringsSep "\n" [
-              prevAttrs.installPhase
-              ''
-                ${getExe prev.nix} \
-                  --extra-experimental-features nix-command \
-                  --offline \
-                  hash path ./ \
-                  > $narHash
-              ''
-            ];
-          });
+      # Patched flake source
+      patched =
+        (prev.applyPatches {
+          inherit name src;
+          patches = forEach patches (patch:
+            if isAttrs patch
+            then prev.fetchpatch2 patch
+            else patch);
+        })
+        .overrideAttrs (_: old: {
+          outputs = ["out" "narHash"];
+          installPhase = ''
+            ${old.installPhase}
+            ${getExe prev.nix} \
+              --extra-experimental-features nix-command \
+              --offline \
+              hash path ./ \
+              > $narHash
+          '';
+        });
 
+      # New lock file
+      lockFile = let
         lockFilePath = "${patched.outPath}/flake.lock";
-
-        lockFile = builtins.unsafeDiscardStringContext (generators.toJSON {} (
-          if pathExists lockFilePath
-          then let
-            original = importJSON lockFilePath;
-          in {
-            inherit (original) root;
-            nodes = original.nodes // lockFileEntries;
-          }
-          else {
-            nodes.root = {};
-            root = "root";
-          }
-        ));
-
-        flake = {
-          inherit (patched) outPath;
-          narHash = fileContents patched.narHash;
-        };
+        lockFileExists = pathExists lockFilePath;
+        original = importJSON lockFilePath;
+        root = ifElse lockFileExists original.root "root";
+        nodes = ifElse lockFileExists (mergeAttrs original.nodes lockFileEntries) {root = {};};
       in
-        (import "${inputs.call-flake}/call-flake.nix") lockFile flake "";
+        builtins.unsafeDiscardStringContext (generators.toJSON {} {inherit root nodes;});
+
+      # New flake object
+      flake = {
+        inherit (patched) outPath;
+        narHash = fileContents patched.narHash;
+      };
     in
-      if numOfPatches == 0
-      then trace "applyPatches: skipping ${name}, no patches" src
-      else trace "applyPatches: creating ${name}, number of patches: ${toString numOfPatches}" patchedFlake;
+      (import "${inputs.call-flake}/call-flake.nix") lockFile flake "";
   };
 }
