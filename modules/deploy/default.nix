@@ -47,6 +47,8 @@ in {
     darwin.systemBuilder = inputs.nix-darwin.lib.darwinSystem;
     darwin.systemActivationCommands = ["sudo HOME=/var/root \"$closure/activate\""];
     droid = {
+      # Unfortunately this still requires impure evaluation
+      nixFlags = ["--impure"];
       defaultSystem = "aarch64-linux";
       systemBuilder = inputs.nix-on-droid.lib.nixOnDroidConfiguration;
       systemAttr = "build.activationPackage";
@@ -78,13 +80,17 @@ in {
       prefixAttrs = prefix: mapAttrs' (name: nameValuePair "${prefix}${name}");
     in {
       config = mkMerge [
-        {inherit specialArgs;}
+        {
+          inherit specialArgs;
+          nixFlags = ["--extra-experimental-features \"nix-command flakes\""];
+        }
         (mkIf (type.name != "system") {
           modules = prefixAttrs "system." config.canivete.deploy.system.modules;
           homeModules = prefixAttrs "system.home." config.canivete.deploy.system.homeModules;
         })
       ];
       options = {
+        nixOptions = mkOption {type = listOf str;};
         specialArgs = mkOption {type = attrsOf anything;};
         defaultSystem = mkSystemOption {};
         systemAttr = mkOption {
@@ -210,11 +216,11 @@ in {
                     config = let
                       getPath = attr: concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "profiles" profile.name "raw.config" attr];
 
-                      nixFlags = "--extra-experimental-features \"nix-command flakes\"";
                       name = concatStringsSep "_" [type.name node.name profile.name];
                       path = getPath profile.config.attr;
                       drv = "\${ data.external.${name}.result.drv }";
                       inherit (profile.config) build target;
+                      nixFlags = concatStringsSep " " type.config.nixFlags;
 
                       installPath = getPath "system.build.diskoScript";
                     in
