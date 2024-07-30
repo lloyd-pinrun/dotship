@@ -90,7 +90,7 @@ in {
         })
       ];
       options = {
-        nixOptions = mkOption {type = listOf str;};
+        nixFlags = mkOption {type = listOf str;};
         specialArgs = mkOption {type = attrsOf anything;};
         defaultSystem = mkSystemOption {};
         systemAttr = mkOption {
