@@ -54,6 +54,10 @@ with lib;
         attrNames
       ];
       functions.nonDefaultArgs = f: removeAttrs (functionArgs f) (functions.defaultArgs f);
+      ifElse = condition: yes: no:
+        if condition
+        then yes
+        else no;
 
       # Common options
       mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];
