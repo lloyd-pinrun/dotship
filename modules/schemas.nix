@@ -5,6 +5,7 @@
   ...
 }:
 with nix; {
+  flake.inputs = inputs;
   flake.canivete = mergeAttrs config.canivete (mapAttrs (_: getAttr "canivete") config.allSystems);
   flake.schemas =
     inputs.flake-schemas.schemas

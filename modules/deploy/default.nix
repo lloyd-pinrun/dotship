@@ -225,8 +225,8 @@ in {
                       installPath = getPath "system.build.diskoScript";
                     in
                       mkMerge [
+                        # Installation
                         (mkIf (type.name == "nixos") {
-                          # Installation
                           data.external."${name}_install".program = pkgs.execBash ''
                             nix ${nixFlags} path-info --derivation ${inputs.self}#${installPath} | \
                                 ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
@@ -272,15 +272,31 @@ in {
                           };
                           resource.null_resource.${name}.depends_on = ["null_resource.${name}_install"];
                         })
-                        {
-                          # Activation
+
+                        # Activation
+                        # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
+                        (mkIfElse (type.name == "droid") {
+                          data.external.${name}.program = pkgs.execBash ''
+                            export NIX_SSHOPTS="${target.sshFlags}"
+                            nix ${nixFlags} copy --to ssh-ng://${target.host} ${inputs.self}
+                            ssh ${target.sshFlags} ${target.host} nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
+                                ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
+                          '';
+                          resource.null_resource.${name} = {
+                            triggers.drv = drv;
+                            provisioner.local-exec.command = let
+                              flake_uri = "${inputs.self}#inputs.nix-on-droid.packages.${node.config.system}.nix-on-droid";
+                            in ''
+                              ssh ${target.sshFlags} ${target.host} nix ${nixFlags} run ${flake_uri} -- switch --flake ${inputs.self}#${node.name}
+                            '';
+                          };
+                        } {
                           data.external.${name}.program = pkgs.execBash ''
                             nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
                                 ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
                           '';
                           resource.null_resource.${name} = {
                             triggers.drv = drv;
-                            # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
                             provisioner.local-exec.command = ''
                               if [[ $(hostname) == ${build.host} ]]; then
                                   closure=$(nix-store --verbose --realise ${drv})
@@ -300,7 +316,7 @@ in {
                               fi
                             '';
                           };
-                        }
+                        })
                       ];
                   };
                 }));
