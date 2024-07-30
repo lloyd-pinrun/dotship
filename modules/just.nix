@@ -70,7 +70,7 @@ with nix; {
     config.canivete.just.recipes = {
       list = "@just --list";
       "changelog *ARGS" = "${getExe pkgs.convco} changelog --prefix \"\" {{ ARGS }}";
-      flake = "nix flake show";
+      "flake *ARGS" = "nix flake show {{ ARGS }}";
     };
   };
 }
