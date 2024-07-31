@@ -37,7 +37,10 @@ with nix; {
           inherit name;
           buildInputs = [final.makeWrapper];
           paths = toList srcs;
-          postBuild = "makeWrapper \"$out/bin/${exe}\" \"$out/bin/${name}\" ${args}";
+          postBuild =
+            if name == exe
+            then "wrapProgram \"$out/bin/${exe}\" ${args}"
+            else "makeWrapper \"$out/bin/${exe}\" \"$out/bin/${name}\" ${args}";
           meta.mainProgram = name;
         }
         // overrides);
