@@ -7,6 +7,7 @@
   ...
 }:
 with nix; let
+  inherit (config.canivete.people) me;
   specialArgs = {
     inherit nix;
     flake = {inherit self inputs config;};
@@ -253,7 +254,7 @@ in {
                               extra_files_dir=$(mktemp -d)
                               trap 'rm -rf "$extra_files_dir"' EXIT
 
-                              ${pipe config.locals.${name}.keys [
+                              ${pipe tofu.config.locals.${name}.keys [
                                 (mapAttrsToList (path: attrs: ''
                                   mkdir -p "$(dirname "$extra_files_dir/${path}")"
                                   install -m444 "${attrs.file}" "$extra_files_dir/${path}"
@@ -266,7 +267,7 @@ in {
                                   --extra-files "$extra_files_dir" \
                                   --build-on-remote \
                                   --debug \
-                                  ${prefixJoin "--ssh-option " " " target.sshOptions} \
+                                  ${prefixJoin "--ssh-option " " " node.config.target.sshOptions} \
                                   "root@${target.host}"
                             '';
                           };
