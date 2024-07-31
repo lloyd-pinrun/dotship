@@ -139,9 +139,9 @@ in {
                 };
               }
               {
-                profiles = flip mapAttrs node.config.home (_: module: {
+                profiles = flip mapAttrs node.config.home (username: module: {
                   inherit module;
-                  modules = type.config.homeModules;
+                  modules = mergeAttrs type.config.homeModules {username.home = {inherit username;};};
                   attr = "home.activationPackage";
                   builder = modules:
                     withSystem node.config.system (
