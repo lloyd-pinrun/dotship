@@ -60,7 +60,9 @@ with lib;
         if condition
         then yes
         else no;
-      curry = foldl eval
+      mapAttrNames = f: mapAttrs' (name: nameValuePair (f name));
+      prefix = pre: str: concatStrings [pre str];
+      prefixAttrNames = flip pipe [prefix mapAttrNames];
 
       # Common options
       mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];

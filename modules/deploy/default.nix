@@ -77,17 +77,15 @@ in {
   };
   options.canivete.deploy = mkOption {
     default = {};
-    type = attrsOf (submodule (type @ {name, ...}: let
-      prefixAttrs = prefix: mapAttrs' (name: nameValuePair "${prefix}${name}");
-    in {
+    type = attrsOf (submodule (type @ {name, ...}: {
       config = mkMerge [
         {
           inherit specialArgs;
           nixFlags = ["--extra-experimental-features \"nix-command flakes\""];
         }
         (mkIf (type.name != "system") {
-          modules = prefixAttrs "system." config.canivete.deploy.system.modules;
-          homeModules = prefixAttrs "system.home." config.canivete.deploy.system.homeModules;
+          modules = prefixAttrNames "system." config.canivete.deploy.system.modules;
+          homeModules = prefixAttrNames "system.home." config.canivete.deploy.system.homeModules;
         })
       ];
       options = {
