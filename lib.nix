@@ -46,7 +46,9 @@ with lib;
     }
     rec {
       # Useful functions
-      eval = arg: f: f arg;
+      eval = f: arg: f arg;
+      evalWith = arg: f: f arg;
+      evalWithAll = foldl eval;
       majorMinorVersion = flip pipe [splitVersion (sublist 0 2) (concatStringsSep ".") (replaceStrings ["."] [""])];
       functions.defaultArgs = flip pipe [
         functionArgs
@@ -58,6 +60,7 @@ with lib;
         if condition
         then yes
         else no;
+      curry = foldl eval
 
       # Common options
       mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];
