@@ -61,8 +61,18 @@ with lib;
         then yes
         else no;
       mapAttrNames = f: mapAttrs' (name: nameValuePair (f name));
-      prefix = pre: str: concatStrings [pre str];
       prefixAttrNames = flip pipe [prefix mapAttrNames];
+
+      # String manipulation
+      prefix = pre: str: concatStrings [pre str];
+      pascalToCamel = str: let
+        first = substring 0 1 str;
+        rest = substring 1 (stringLength str - 1) str;
+      in toLower first + rest;
+      camelToPascal = str: let
+        first = substring 0 1 str;
+        rest = substring 1 (stringLength str - 1) str;
+      in toUpper first + rest;
 
       # Common options
       mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];
