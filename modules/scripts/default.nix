@@ -1,6 +1,7 @@
 {nix, ...}:
 with nix; {
   perSystem = {pkgs, ...}: {
+    config.canivete.devShell.shellHooks = ["source ${./utils.sh}"];
     options.canivete.scripts = mkOption {
       type = attrsOf (coercedTo pathInStore (setAttrByPath ["script"]) (submodule ({
         config,
