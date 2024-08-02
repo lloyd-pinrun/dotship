@@ -8,18 +8,29 @@ with nix; {
         name,
         ...
       }: {
+        config.runtimeInputs = with pkgs; [bash coreutils git];
+        config.excludeShellChecks = ["SC1091"];
         options = {
           script = mkOption {
             type = pathInStore;
             description = "Base script to wrap into executable";
+          };
+          excludeShellChecks = mkOption {
+            type = listOf str;
+            description = "ShellCheck rules to disable";
+            default = [];
+          };
+          runtimeInputs = mkOption {
+            type = listOf package;
+            description = "Runtime dependencies";
+            default = [];
           };
           package = mkOption {
             type = package;
             description = "Actual executable to run directly";
             default = pkgs.writeShellApplication {
               inherit name;
-              excludeShellChecks = ["SC1091"];
-              runtimeInputs = with pkgs; [bash coreutils git];
+              inherit (config) runtimeInputs excludeShellChecks;
               text = ''
                 source ${./utils.sh}
                 ${readFile config.script}
