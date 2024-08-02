@@ -20,7 +20,15 @@ with nix; {
     config.canivete.just.recipes."kubectl CLUSTER *ARGS" = ''
       nix run .#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.finalScript -- -- {{ ARGS }}
     '';
-    config.canivete.opentofu.workspaces = mapAttrs (_: getAttr "opentofu") config.canivete.kubenix.clusters;
+    config.canivete.opentofu.workspaces.deploy = pipe config.canivete.kubenix.clusters [
+      (mapAttrs (name:
+        flip pipe [
+          (getAttr "opentofu")
+          (tofu: mergeAttrs tofu {modules = prefixAttrNames "${cluster}-" tofu.modules;})
+        ]))
+      attrValues
+      mkMerge
+    ];
     options.canivete.kubenix.clusters = mkOption {
       type = attrsOf (submodule ({
         config,
