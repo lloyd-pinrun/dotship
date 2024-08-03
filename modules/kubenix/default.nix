@@ -16,19 +16,28 @@ with nix; {
       patches = [./kubenix.patch];
     };
   in {
-    config.canivete.scripts.kubectl = ./kubectl.sh;
-    config.canivete.just.recipes."kubectl CLUSTER *ARGS" = ''
-      nix run .#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.finalScript -- -- {{ ARGS }}
-    '';
-    config.canivete.opentofu.workspaces.deploy = pipe config.canivete.kubenix.clusters [
-      (mapAttrs (name:
-        flip pipe [
-          (getAttr "opentofu")
-          (tofu: mergeAttrs tofu {modules = prefixAttrNames "${cluster}-" tofu.modules;})
-        ]))
-      attrValues
-      mkMerge
-    ];
+    config.canivete = {
+      scripts.kubectl = ./kubectl.sh;
+      just.recipes."kubectl CLUSTER *ARGS" = ''
+        nix run .#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.finalScript -- -- {{ ARGS }}
+      '';
+      opentofu.workspaces.deploy = pipe config.canivete.kubenix.clusters [
+        (mapAttrs (name:
+          flip pipe [
+            (getAttr "opentofu")
+            (tofu: mergeAttrs tofu {modules = prefixAttrNames "${cluster}-" tofu.modules;})
+          ]))
+        attrValues
+        mkMerge
+      ];
+      # By default, include CRDs in Helm chart releases and set the namespace to the chart name
+      kubenix.sharedModules.helm-defaults.options.kubernetes.helm.releases = mkOption {
+        type = attrsOf (submodule ({config, ...}: {
+          namespace = mkDefault config.name;
+          includeCRDs = mkDefault true;
+        }));
+      };
+    };
     options.canivete.kubenix.sharedModules = mkModulesOption {};
     options.canivete.kubenix.clusters = mkOption {
       type = attrsOf (submodule ({
