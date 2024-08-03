@@ -30,12 +30,23 @@ with nix; {
         attrValues
         mkMerge
       ];
-      # By default, include CRDs in Helm chart releases and set the namespace to the chart name
-      kubenix.sharedModules.helm-defaults.options.kubernetes.helm.releases = mkOption {
-        type = attrsOf (submodule ({config, ...}: {
-          namespace = mkDefault config.name;
-          includeCRDs = mkDefault true;
-        }));
+      kubenix.sharedModules.defaults = {config, ...}: {
+        options.kubernetes.helm.releases = mkOption {
+          type = attrsOf (submodule ({config, ...}: {
+            # 1. include CRDs in Helm chart releases
+            includeCRDs = mkDefault true;
+            # 2. set the namespace to the chart name
+            namespace = mkDefault config.name;
+          }));
+        };
+        # 3. create namespace for each release by namespace
+        config.kubernetes.resources.namespaces = flip mapAttrs' config.kubernetes.helm.releases (_: release: nameValuePair release.namespace (mkDefault {}));
+        # 4. set the namespace of every resource to the same name by default
+        config.kubernetes.api.defaults = toList {
+          default = {config, ...}: {
+            metadata.namespace = mkDefault config.metadata.name;
+          };
+        };
       };
     };
     options.canivete.kubenix.sharedModules = mkModulesOption {};
