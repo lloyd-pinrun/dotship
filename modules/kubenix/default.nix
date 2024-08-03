@@ -25,7 +25,7 @@ with nix; {
         (mapAttrs (name:
           flip pipe [
             (getAttr "opentofu")
-            (tofu: mergeAttrs tofu {modules = prefixAttrNames "${cluster}-" tofu.modules;})
+            (tofu: mergeAttrs tofu {modules = prefixAttrNames "${name}-" tofu.modules;})
           ]))
         attrValues
         mkMerge
