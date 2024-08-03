@@ -171,7 +171,7 @@ with nix; {
         };
         config = mkMerge [
           {
-            opentofu.modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;
+            modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;
           }
           {
             opentofu.plugins = ["opentofu/external" "opentofu/local"];
