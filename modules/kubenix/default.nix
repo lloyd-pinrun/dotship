@@ -29,6 +29,7 @@ with nix; {
       attrValues
       mkMerge
     ];
+    options.canivete.kubenix.sharedModules = mkModulesOption {};
     options.canivete.kubenix.clusters = mkOption {
       type = attrsOf (submodule ({
         config,
@@ -149,6 +150,9 @@ with nix; {
           };
         };
         config = mkMerge [
+          {
+            opentofu.modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;
+          }
           {
             opentofu.plugins = ["opentofu/external" "opentofu/local"];
             opentofu.modules.kubeconfig = {
