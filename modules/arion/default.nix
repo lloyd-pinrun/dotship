@@ -26,10 +26,15 @@ with nix; {
   in {
     options.canivete.arion = {
       modules = mkModulesOption {};
+      composition = mkOption {
+        type = raw;
+        description = "Evaluated arion configuration";
+        default = arion-patched.lib.eval {inherit modules pkgs;};
+      };
       yaml = mkOption {
         type = package;
         description = "docker-compose YAML output";
-        default = arion-patched.lib.build {inherit modules pkgs;};
+        default = cfg.composition.config.out.dockerComposeYaml;
       };
       basePackage = mkOption {
         type = package;
