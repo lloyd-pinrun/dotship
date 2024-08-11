@@ -128,6 +128,6 @@ with lib;
 
       # Vals shorthand
       vals.sops = attr: "ref+sops://.canivete/sops/${attr}";
-      vals.tfstate = workspace: attr: "ref+tfstate://.canivete/${workspace}/terraform.tfstate/${attr}";
+      vals.tfstate = workspace: attr: "ref+tfstate://.canivete/opentofu/${workspace}/terraform.tfstate/${attr}";
     }
   ]
