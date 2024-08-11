@@ -80,11 +80,12 @@ with nix; {
           };
           modules = mkModulesOption {};
           composition = mkOption {
-            type = package;
+            type = raw;
             description = "Evaluated kubenix composition for cluster";
             default = kubenix-patched.evalModules.${system} {
               specialArgs = {inherit nix;};
               module = {
+                config,
                 kubenix,
                 pkgs,
                 lib,
@@ -95,7 +96,7 @@ with nix; {
                   # Extract CustomResourceDefinitions from all modules
                   crds = let
                     CRDs = let
-                      evaluation = kubenix.evalModules {
+                      evaluation = kubenix-patched.evalModules.${system} {
                         specialArgs = {inherit nix;};
                         module = {kubenix, ...}: {
                           imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
