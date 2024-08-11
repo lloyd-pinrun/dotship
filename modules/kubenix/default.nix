@@ -79,79 +79,80 @@ with nix; {
             description = "OpenTofu workspace to deploy";
           };
           modules = mkModulesOption {};
+          composition = mkOption {
+            type = package;
+            description = "Evaluated kubenix composition for cluster";
+            default = kubenix-patched.evalModules.${system} {
+              specialArgs = {inherit nix;};
+              module = {
+                kubenix,
+                pkgs,
+                lib,
+                ...
+              }: {
+                imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
+                kubernetes.customTypes = let
+                  # Extract CustomResourceDefinitions from all modules
+                  crds = let
+                    CRDs = let
+                      evaluation = kubenix.evalModules {
+                        specialArgs = {inherit nix;};
+                        module = {kubenix, ...}: {
+                          imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
+                          options.kubernetes.api = mkOption {
+                            type = submodule {freeformType = attrsOf anything;};
+                          };
+                        };
+                      };
+                    in
+                      filter (object: object.kind == "CustomResourceDefinition") evaluation.config.kubernetes.objects;
+                    CRD2crd = CRD:
+                      forEach CRD.spec.versions (_version: rec {
+                        inherit (CRD.spec) group;
+                        inherit (CRD.spec.names) kind;
+                        version = _version.name;
+                        attrName = CRD.spec.names.plural;
+                        fqdn = concatStringsSep "." [group version kind];
+                        schema = _version.schema.openAPIV3Schema;
+                      });
+                  in
+                    concatMap CRD2crd CRDs;
+
+                  # Generate resource definitions with IFD x 2
+                  definitions = let
+                    generated = import "${kubenix-patched}/pkgs/generators/k8s" {
+                      name = "kubenix-generated-for-crds";
+                      inherit pkgs lib;
+                      # Mirror K8s OpenAPI spec
+                      spec = toString (pkgs.writeTextFile {
+                        name = "generated-kubenix-crds-schema.json";
+                        text = toJSON {
+                          definitions = listToAttrs (forEach crds (crd: {
+                            name = crd.fqdn;
+                            value = crd.schema;
+                          }));
+                          paths = {};
+                        };
+                      });
+                    };
+                    evaluation = import "${generated}" {
+                      inherit config lib;
+                      options = null;
+                    };
+                  in
+                    evaluation.config.definitions;
+                in
+                  forEach crds (crd: {
+                    inherit (crd) group version kind attrName;
+                    module = submodule definitions."${crd.fqdn}";
+                  });
+              };
+            };
+          };
           configuration = mkOption {
             type = package;
             description = "Kubernetes configuration file for cluster";
-            default =
-              (kubenix-patched.evalModules.${system} {
-                specialArgs = {inherit nix;};
-                module = {
-                  kubenix,
-                  pkgs,
-                  lib,
-                  ...
-                }: {
-                  imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
-                  kubernetes.customTypes = let
-                    # Extract CustomResourceDefinitions from all modules
-                    crds = let
-                      CRDs = let
-                        evaluation = kubenix.evalModules {
-                          specialArgs = {inherit nix;};
-                          module = {kubenix, ...}: {
-                            imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
-                            options.kubernetes.api = mkOption {
-                              type = submodule {freeformType = attrsOf anything;};
-                            };
-                          };
-                        };
-                      in
-                        filter (object: object.kind == "CustomResourceDefinition") evaluation.config.kubernetes.objects;
-                      CRD2crd = CRD:
-                        forEach CRD.spec.versions (_version: rec {
-                          inherit (CRD.spec) group;
-                          inherit (CRD.spec.names) kind;
-                          version = _version.name;
-                          attrName = CRD.spec.names.plural;
-                          fqdn = concatStringsSep "." [group version kind];
-                          schema = _version.schema.openAPIV3Schema;
-                        });
-                    in
-                      concatMap CRD2crd CRDs;
-
-                    # Generate resource definitions with IFD x 2
-                    definitions = let
-                      generated = import "${kubenix-patched}/pkgs/generators/k8s" {
-                        name = "kubenix-generated-for-crds";
-                        inherit pkgs lib;
-                        # Mirror K8s OpenAPI spec
-                        spec = toString (pkgs.writeTextFile {
-                          name = "generated-kubenix-crds-schema.json";
-                          text = toJSON {
-                            definitions = listToAttrs (forEach crds (crd: {
-                              name = crd.fqdn;
-                              value = crd.schema;
-                            }));
-                            paths = {};
-                          };
-                        });
-                      };
-                      evaluation = import "${generated}" {
-                        inherit config lib;
-                        options = null;
-                      };
-                    in
-                      evaluation.config.definitions;
-                  in
-                    forEach crds (crd: {
-                      inherit (crd) group version kind attrName;
-                      module = submodule definitions."${crd.fqdn}";
-                    });
-                };
-              })
-              .config
-              .kubernetes
-              .resultYAML;
+            default = cluster.composition.config.kubernetes.resultYAML;
           };
           script = mkOption {
             type = package;
