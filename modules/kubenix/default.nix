@@ -49,7 +49,7 @@ with nix; {
         ...
       }: let
         cluster = config;
-        bins = makeBinPath (with pkgs; [vals sops kubectl yq]);
+        bins = makeBinPath (with pkgs; [vals sops kubectl yq opentofu]);
         flags = concatStringsSep " " [
           "--cluster ${name}"
           "--config ${cluster.configuration}"

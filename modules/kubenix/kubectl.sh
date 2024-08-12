@@ -25,12 +25,15 @@ done
 
 # shellcheck disable=SC2154
 run_dir="$CANIVETE_GIT_DIR/opentofu/$cluster"
+dec_tfstate="$run_dir/terraform.tfstate.dec"
 enc_file="$run_dir/config.enc.yaml"
 dec_file="$run_dir/config.yaml"
 mkdir -p "$run_dir"
 cp -L "$config" "$enc_file"
 chmod 644 "$enc_file"
+tofu "-chdir=$run_dir" state pull >"$dec_tfstate"
 vals eval -s -f "$enc_file" | yq "." --yaml-output >"$dec_file"
+rm -f "$dec_tfstate"
 
 enc_kube="$run_dir/kubeconfig.enc"
 dec_kube="$run_dir/kubeconfig"

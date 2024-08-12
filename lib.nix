@@ -68,11 +68,13 @@ with lib;
       pascalToCamel = str: let
         first = substring 0 1 str;
         rest = substring 1 (stringLength str - 1) str;
-      in toLower first + rest;
+      in
+        toLower first + rest;
       camelToPascal = str: let
         first = substring 0 1 str;
         rest = substring 1 (stringLength str - 1) str;
-      in toUpper first + rest;
+      in
+        toUpper first + rest;
 
       # Common options
       mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];
@@ -128,6 +130,6 @@ with lib;
 
       # Vals shorthand
       vals.sops = attr: "ref+sops://.canivete/sops/${attr}";
-      vals.tfstate = workspace: attr: "ref+tfstate://.canivete/opentofu/${workspace}/terraform.tfstate/${attr}";
+      vals.tfstate = workspace: attr: "ref+tfstate://.canivete/opentofu/${workspace}/terraform.tfstate.dec/${attr}";
     }
   ]
