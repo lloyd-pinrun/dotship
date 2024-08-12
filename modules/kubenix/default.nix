@@ -21,15 +21,7 @@ with nix; {
       just.recipes."kubectl CLUSTER *ARGS" = ''
         nix run .#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.finalScript -- -- {{ ARGS }}
       '';
-      opentofu.workspaces.deploy = pipe config.canivete.kubenix.clusters [
-        (mapAttrs (name:
-          flip pipe [
-            (getAttr "opentofu")
-            (tofu: mergeAttrs tofu {modules = prefixAttrNames "${name}-" tofu.modules;})
-          ]))
-        attrValues
-        mkMerge
-      ];
+      opentofu.workspaces = mapAttrs (_: getAttr "opentofu") config.canivete.kubenix.clusters;
       kubenix.sharedModules.defaults = {config, ...}: {
         options.kubernetes.helm.releases = mkOption {
           type = attrsOf (submodule ({config, ...}: {
