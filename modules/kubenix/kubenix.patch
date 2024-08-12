@@ -3,3 +3,9 @@
 @@ -6305,1 +6305,1 @@
 -          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ContainerPort" "name" [ "containerPort" "protocol" ]));
 +          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ContainerPort" "name" [ "containerPort" ]));
+@@ -6998,1 +6998,1 @@
+-          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ContainerPort" "name" [ "containerPort" "protocol" ]));
++          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ContainerPort" "name" [ "containerPort" ]));
+@@ -11354,1 +11354,1 @@
+-          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ServicePort" "name" [ "port" "protocol" ]));
++          type = (types.nullOr (coerceAttrsOfSubmodulesToListByKey "io.k8s.api.core.v1.ServicePort" "name" [ "port" ]));
