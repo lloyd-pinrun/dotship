@@ -27,12 +27,29 @@ with nix; {
           type = attrsOf (submodule ({config, ...}: {
             # 1. include CRDs in Helm chart releases
             includeCRDs = mkDefault true;
-            # 2. set the namespace to the chart name
             namespace = mkDefault config.name;
+            overrides = toList {
+              # 2. every resource gets this label to select by chart
+              metadata.labels."canivete/chart" = config.name;
+              # 3. set the namespace to the chart name
+              metadata.namespace = mkDefault config.namespace;
+            };
           }));
         };
-        # 3. create namespace for each release by namespace
-        config.kubernetes.resources.namespaces = flip mapAttrs' config.kubernetes.helm.releases (_: release: nameValuePair release.namespace (mkDefault {}));
+        # 4. create namespace for each release
+        config.kubernetes.resources.namespaces = flip mapAttrs' config.kubernetes.helm.releases (name: release:
+          nameValuePair release.namespace {
+            metadata.labels."canivete/chart" = name;
+          });
+        # 5. every resource gets a namespace label
+        config.kubernetes.api.defaults = toList {
+          default = {config, ...}: {
+            metadata.labels."canivete/namespace" =
+              if config.kind == "Namespace"
+              then config.metadata.name
+              else config.metadata.namespace;
+          };
+        };
       };
     };
     options.canivete.kubenix.sharedModules = mkModulesOption {};
