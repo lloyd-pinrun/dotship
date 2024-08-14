@@ -28,6 +28,7 @@ with nix; {
             # 1. include CRDs in Helm chart releases
             includeCRDs = mkDefault true;
             namespace = mkDefault config.name;
+            overrideNamespace = mkDefault false;
             overrides = toList {
               # 2. every resource gets this label to select by chart
               metadata.labels."canivete/chart" = config.name;
