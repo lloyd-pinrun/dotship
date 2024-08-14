@@ -197,6 +197,10 @@ with nix; {
                   ${getExe pkgs.yq} --raw-input '{"kubeconfig":.}'
               '';
             };
+            opentofu.modules.kubectl-apply.resource.null_resource.kubernetes = {
+              triggers.drv = cluster.configuration.drvPath;
+              provisioner.local-exec.command = "ssh sirver sudo k3s kubectl apply --server-side --prune -f ${cluster.configuration}";
+            };
           }
           (mkIf cluster.deploy.k3d {
             deploy.fetchKubeconfig = "echo '\${ k3d_cluster.main.credentials[0].raw }'";
