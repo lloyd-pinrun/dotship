@@ -33,12 +33,6 @@ with nix; {
         };
         # 3. create namespace for each release by namespace
         config.kubernetes.resources.namespaces = flip mapAttrs' config.kubernetes.helm.releases (_: release: nameValuePair release.namespace (mkDefault {}));
-        # 4. set the namespace of every resource to the same name by default
-        config.kubernetes.api.defaults = toList {
-          default = {config, ...}: {
-            metadata.namespace = mkDefault config.metadata.name;
-          };
-        };
       };
     };
     options.canivete.kubenix.sharedModules = mkModulesOption {};
