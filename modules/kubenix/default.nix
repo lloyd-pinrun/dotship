@@ -21,7 +21,7 @@ with nix; {
       just.recipes."kubectl CLUSTER *ARGS" = ''
         nix run .#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.finalScript -- -- {{ ARGS }}
       '';
-      opentofu.workspaces = mapAttrs (_: getAttr "opentofu") config.canivete.kubenix.clusters;
+      opentofu.workspaces = mkMerge (flip mapAttrsToList config.canivete.kubenix.clusters (_: cfg: nameValuePair cfg.opentofuWorkspace cfg.opentofu));
       kubenix.sharedModules.defaults = {config, ...}: {
         options.kubernetes.helm.releases = mkOption {
           type = attrsOf (submodule ({config, ...}: {
@@ -75,6 +75,11 @@ with nix; {
               type = str;
               description = "Script to fetch the kubeconfig of an externally managed Kubernetes cluster. Stdout is the contents of the file";
             };
+          };
+          opentofuWorkspace = mkOption {
+            type = str;
+            description = "OpenTofu workspace to include the config in";
+            default = "deploy";
           };
           opentofu = mkOption {
             # Can't use deferredModule here because it breaks merging with OpenTofu workspaces
