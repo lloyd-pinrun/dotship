@@ -116,6 +116,7 @@ in {
               {
                 build.sshOptions = ["ControlMaster=auto" "ControlPath=/tmp/%C" "ControlPersist=60" "StrictHostKeyChecking=accept-new"];
                 target.sshOptions = node.config.build.sshOptions;
+                install = mkIf (type.name == "nixos") {inherit (node.config.target) sshOptions;};
                 profiles.system = {
                   attr = type.config.systemAttr;
                   cmds = type.config.systemActivationCommands;
@@ -200,6 +201,20 @@ in {
                   default = prefixJoin "-o " " " node.config.target.sshOptions;
                 };
               };
+              install = {
+                host = mkOption {
+                  type = str;
+                  default = "";
+                };
+                sshOptions = mkOption {
+                  type = listOf str;
+                  default = [];
+                };
+                sshFlags = mkOption {
+                  type = str;
+                  default = prefixJoin "-o " " " node.config.install.sshOptions;
+                };
+              };
               profiles = mkOption {
                 default = {};
                 type = attrsOf (submodule (profile @ {name, ...}: {
@@ -268,12 +283,12 @@ in {
                               ]}
 
                               ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
-                                  --flake ${inputs.self}#${name} \
+                                  --flake ${inputs.self}#${node.name} \
                                   --extra-files "$extra_files_dir" \
                                   --build-on-remote \
                                   --debug \
-                                  ${prefixJoin "--ssh-option " " " node.config.target.sshOptions} \
-                                  "root@${target.host}"
+                                  ${prefixJoin "--ssh-option " " " node.config.install.sshOptions} \
+                                  "root@${node.config.install.host}"
                             '';
                           };
                           resource.null_resource.${name}.depends_on = ["null_resource.${name}_install"];
