@@ -267,7 +267,7 @@ in {
                                 (concatStringsSep "\n                ")
                               ]}
 
-                              ${getExe inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere} \
+                              ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
                                   --flake ${inputs.self}#${name} \
                                   --extra-files "$extra_files_dir" \
                                   --build-on-remote \
