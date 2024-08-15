@@ -35,7 +35,7 @@
             ...
           }: let
             workspace = config;
-            bins = makeBinPath [pkgs.vals workspace.finalPackage];
+            bins = makeBinPath [pkgs.vals pkgs.jq workspace.finalPackage];
             flags = concatStringsSep " " [
               "--workspace ${name}"
               "--config ${workspace.configuration}"
