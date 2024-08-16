@@ -290,14 +290,14 @@ in {
                                 root_dir=$(mktemp -d)
                                 trap 'rm -rf "$root_dir"' EXIT
 
-                                secrets_dir="$root_dir/run/secrets"
+                                secrets_dir="$root_dir/canivete/secrets"
                                 mkdir -p "$secrets_dir"
 
                                 secret_file="$secrets_dir/$FILE"
                                 echo "$SECRET" > "$secret_file"
                                 chmod 0444 "$secret_file"
 
-                                scp -rf ${target.sshFlags} "$secrets_dir/" ${target.host}:/
+                                ${getExe pkgs.rsync} --archive --verbose --compress --rsh "ssh ${target.sshFlags}" "$root_dir/" root@${target.host}:/
                               '';
                             };
                           };
