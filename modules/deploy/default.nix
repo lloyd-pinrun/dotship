@@ -259,39 +259,11 @@ in {
                             nix ${nixFlags} path-info --derivation ${inputs.self}#${installPath} | \
                                 ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
                           '';
-                          # Must be {name}.keys, not keys.{name} to prevent terraform cycle
-                          locals.${name}.keys."etc/ssh/authorized_keys.d/${me}" = {
-                            file = "${me}.pub";
-                            content = readFile (inputs.self + "/.canivete/sops/${me}.pub");
-                          };
-                          data.external."${name}_save-keys".program = pipe tofu.config.locals.${name}.keys [
-                            (mapAttrsToList (remote: attrs: "echo \"${attrs.content}\" > ${attrs.file}"))
-                            # Needs JSON output for this definition to be accepted
-                            (flip concat ["echo '{}'"])
-                            (concatStringsSep "\n")
-                            pkgs.execBash
-                          ];
                           resource.null_resource."${name}_install" = {
-                            depends_on = ["data.external.${name}_save-keys"];
                             triggers.drv = "\${ data.external.${name}_install.result.drv }";
-                            triggers.keys = "\${ sha256(jsonencode({ for k, a in local.${name}.keys: k => a.content })) }";
                             provisioner.local-exec.command = ''
-                              set -euo pipefail
-
-                              extra_files_dir=$(mktemp -d)
-                              trap 'rm -rf "$extra_files_dir"' EXIT
-
-                              ${pipe tofu.config.locals.${name}.keys [
-                                (mapAttrsToList (path: attrs: ''
-                                  mkdir -p "$(dirname "$extra_files_dir/${path}")"
-                                  install -m444 "${attrs.file}" "$extra_files_dir/${path}"
-                                ''))
-                                (concatStringsSep "\n                ")
-                              ]}
-
                               ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
                                   --flake ${inputs.self}#${node.name} \
-                                  --extra-files "$extra_files_dir" \
                                   --build-on-remote \
                                   --debug \
                                   ${prefixJoin "--ssh-option " " " node.config.install.sshOptions} \
