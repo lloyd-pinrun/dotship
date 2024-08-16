@@ -208,6 +208,7 @@ in {
                 };
               };
               install = {
+                enable = mkEnabledOption "nixos-anywhere installation";
                 host = mkOption {
                   type = str;
                   default = "";
@@ -254,7 +255,7 @@ in {
                     in
                       mkMerge [
                         # Installation
-                        (mkIf (type.name == "nixos") {
+                        (mkIf (type.name == "nixos" && node.config.install.enable) {
                           data.external."${name}_install".program = pkgs.execBash ''
                             nix ${nixFlags} path-info --derivation ${inputs.self}#${installPath} | \
                                 ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
