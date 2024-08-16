@@ -23,7 +23,13 @@ in {
     nixOnDroidConfigurations = nodes "droid";
   };
   config.canivete.deploy = {
-    system = {};
+    system.modules.secrets = {
+      options.canivete.secrets = mkOption {
+        type = attrsOf str;
+        description = "Map of terraform resource to attribute to generate a secret from in /run/secrets";
+        default = {};
+      };
+    };
     nixos = {
       modules.home-manager = {
         imports = [inputs.home-manager.nixosModules.home-manager];
@@ -232,6 +238,7 @@ in {
                     target.sshFlags = node.options.target.sshFlags // {default = node.config.target.sshFlags;};
                   };
                   config.modules.self = profile.config.module;
+                  config.modules.canivete = mkIf (profile.name != "system") {options.canivete = node.config.profiles.system.raw.options.canivete;};
                   config.raw = with profile.config; builder modules;
                   config.opentofu = tofu @ {pkgs, ...}: {
                     config = let
@@ -293,6 +300,36 @@ in {
                           };
                           resource.null_resource.${name}.depends_on = ["null_resource.${name}_install"];
                         })
+
+                        # Secrets
+                        (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: attr: let
+                          resource_name = replaceStrings ["."] ["-"] (concatStringsSep "_" [name "secrets" resource]);
+                          value = "\${ ${resource}.${attr} }";
+                        in {
+                          resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
+                          resource.null_resource.${resource_name} = {
+                            depends_on = [resource];
+                            triggers.name = resource;
+                            triggers.attr = value;
+                            provisioner.local-exec = {
+                              environment.FILE = resource;
+                              environment.SECRET = value;
+                              command = ''
+                                root_dir=$(mktemp -d)
+                                trap 'rm -rf "$root_dir"' EXIT
+
+                                secrets_dir="$root_dir/run/secrets"
+                                mkdir -p "$secrets_dir"
+
+                                secret_file="$secrets_dir/$FILE"
+                                echo "$SECRET" > "$secret_file"
+                                chmod 0444 "$secret_file"
+
+                                scp -rf ${target.sshFlags} "$secrets_dir/" ${target.host}:/
+                              '';
+                            };
+                          };
+                        })))
 
                         # Activation
                         # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
