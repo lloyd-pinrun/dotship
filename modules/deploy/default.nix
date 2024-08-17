@@ -278,31 +278,35 @@ in {
                         (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: attr: let
                           resource_name = replaceStrings ["."] ["-"] (concatStringsSep "_" [name "secrets" resource]);
                           value = "\${ ${resource}.${attr} }";
-                        in {
-                          resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
-                          resource.null_resource.${resource_name} = {
-                            depends_on = [resource];
-                            triggers.name = resource;
-                            triggers.attr = value;
-                            provisioner.local-exec = {
-                              environment.FILE = resource;
-                              environment.SECRET = value;
-                              command = ''
-                                root_dir=$(mktemp -d)
-                                trap 'rm -rf "$root_dir"' EXIT
+                        in mkMerge [
+                          {
+                            resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
+                            resource.null_resource.${resource_name} = {
+                              triggers.name = resource;
+                              triggers.attr = value;
+                              provisioner.local-exec = {
+                                environment.FILE = resource;
+                                environment.SECRET = value;
+                                command = ''
+                                  root_dir=$(mktemp -d)
+                                  trap 'rm -rf "$root_dir"' EXIT
 
-                                secrets_dir="$root_dir/canivete/secrets"
-                                mkdir -p "$secrets_dir"
+                                  secrets_dir="$root_dir/canivete/secrets"
+                                  mkdir -p "$secrets_dir"
 
-                                secret_file="$secrets_dir/$FILE"
-                                echo "$SECRET" > "$secret_file"
-                                chmod 0444 "$secret_file"
+                                  secret_file="$secrets_dir/$FILE"
+                                  echo "$SECRET" > "$secret_file"
+                                  chmod 0444 "$secret_file"
 
-                                ${getExe pkgs.rsync} --archive --verbose --compress --rsh "ssh ${target.sshFlags}" "$root_dir/" root@${target.host}:/
-                              '';
+                                  ${getExe pkgs.rsync} --archive --verbose --compress --rsh "ssh ${target.sshFlags}" "$root_dir/" root@${target.host}:/
+                                '';
+                              };
                             };
-                          };
-                        })))
+                          }
+                          (mkIf node.config.install.enable {
+                            resource.null_resource.${resource_name}.triggers.install = "\${ null_resource.${name}_install.triggers.drv }";
+                          })
+                        ])))
 
                         # Activation
                         # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
