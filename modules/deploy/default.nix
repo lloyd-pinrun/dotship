@@ -238,6 +238,11 @@ in {
                     raw = mkOption {type = raw;};
                     opentofu = mkOption {type = deferredModule;};
                     cmds = mkOption {type = listOf str;};
+                    sshProtocol = mkOption {
+                      type = enum ["ssh" "ssh-ng"];
+                      description = "Protocol for copying derivations and closures";
+                      default = "ssh-ng";
+                    };
                     build.host = node.options.build.host // {default = node.config.build.host;};
                     build.sshFlags = node.options.build.sshFlags // {default = node.config.build.sshFlags;};
                     target.host = node.options.target.host // {default = node.config.target.host;};
@@ -276,6 +281,16 @@ in {
                       '';
 
                       rootName = concatStringsSep "_" ["nixos" root "system"];
+
+                      # Bug in ssh-ng protocol makes copying large derivations fail with "too many root sets"
+                      # NOTE https://github.com/nix-community/nixos-anywhere/issues/347
+                      nixos-anywhere-patched = pkgs.applyPatches {
+                        name = "arion-patched-src";
+                        src = inputs.nixos-anywhere;
+                        patches = [./nixos-anywhere.patch];
+                      };
+                      protocol = profile.config.sshProtocol;
+                      nixos-anywhere = if protocol == "ssh" then nixos-anywhere-patched else inputs.nixos-anywhere;
                     in
                       mkMerge [
                         # Installation
@@ -292,7 +307,7 @@ in {
                               provisioner.local-exec.command = ''
                                 set -euo pipefail
 
-                                ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
+                                ${nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
                                     --flake ${inputs.self}#${node.name} \
                                     --build-on-remote \
                                     --debug \
@@ -354,7 +369,7 @@ in {
                               depends_on = ["data.external.${name}_ssh-wait"];
                               program = pkgs.execBash ''
                                 export NIX_SSHOPTS="${target.sshFlags}"
-                                nix ${nixFlags} copy --to ssh-ng://${target.host} ${inputs.self}
+                                nix ${nixFlags} copy --to ${protocol}://${target.host} ${inputs.self}
                                 ssh ${target.sshFlags} ${target.host} nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
                                     ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
                               '';
@@ -383,7 +398,7 @@ in {
                                     closure=$(nix-store --verbose --realise ${drv})
                                 else
                                     export NIX_SSHOPTS="${build.sshFlags}"
-                                    nix ${nixFlags} copy --derivation --to ssh-ng://${build.host} ${drv}
+                                    nix ${nixFlags} copy --derivation --to ${protocol}://${build.host} ${drv}
                                     closure=$(ssh ${build.sshFlags} ${build.host} nix-store --verbose --realise ${drv})
                                 fi
 
@@ -392,7 +407,7 @@ in {
                                 else
                                     if [[ ${build.host} != ${target.host} ]]; then
                                        export NIX_SSHOPTS="${target.sshFlags}"
-                                       nix ${nixFlags} copy --no-check-sigs --from ssh-ng://${build.host} --to ssh-ng://${target.host} "$closure"
+                                       nix ${nixFlags} copy --no-check-sigs --from ${protocol}://${build.host} --to ${protocol}://${target.host} "$closure"
                                     fi
                                     ${prefixJoin "ssh ${target.sshFlags} ${target.host} " "\n" profile.config.cmds}
                                 fi
