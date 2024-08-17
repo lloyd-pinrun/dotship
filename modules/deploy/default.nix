@@ -252,15 +252,34 @@ in {
                       nixFlags = concatStringsSep " " type.config.nixFlags;
 
                       installPath = getPath "system.build.diskoScript";
+
+                      waitScript = host: ''
+                        timeout=5
+                        total=300
+                        elapsed=0
+
+                        while ! ${pkgs.netcat}/bin/nc -z -w $timeout ${host} 22; do
+                          elapsed=$((elapsed + timeout))
+                          if [[ $elapsed -ge $total ]]; then
+                            echo '{"status":"unavailable"}'
+                            exit 1
+                          fi
+                          sleep $timeout
+                        done
+
+                        echo '{"status":"available"}'
+                      '';
                     in
                       mkMerge [
                         # Installation
                         (mkIf (type.name == "nixos" && node.config.install.enable) {
+                          data.external."${name}_install_ssh-wait".program = pkgs.execBash (waitScript node.config.install.host);
                           data.external."${name}_install".program = pkgs.execBash ''
                             nix ${nixFlags} path-info --derivation ${inputs.self}#${installPath} | \
                                 ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
                           '';
                           resource.null_resource."${name}_install" = {
+                            depends_on = ["data.external.${name}_install_ssh-wait"];
                             triggers.drv = "\${ data.external.${name}_install.result.drv }";
                             provisioner.local-exec.command = ''
                               set -euo pipefail
@@ -273,8 +292,13 @@ in {
                                   "root@${node.config.install.host}"
                             '';
                           };
-                          resource.null_resource.${name}.depends_on = ["null_resource.${name}_install"];
+                          data.external."${name}_ssh-wait".depends_on = ["null_resource.${name}_install"];
                         })
+
+                        {
+                          data.external."${name}_ssh-wait".program = pkgs.execBash (waitScript target.host);
+                          resource.null_resource.${name}.depends_on = ["data.external.${name}_ssh-wait"];
+                        }
 
                         # Secrets
                         (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: attr: let
@@ -284,6 +308,7 @@ in {
                           {
                             resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
                             resource.null_resource.${resource_name} = {
+                              depends_on = ["data.external.${name}_ssh-wait"];
                               triggers.name = resource;
                               triggers.attr = value;
                               provisioner.local-exec = {
@@ -313,12 +338,15 @@ in {
                         # Activation
                         # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
                         (mkIfElse (type.name == "droid") {
-                            data.external.${name}.program = pkgs.execBash ''
-                              export NIX_SSHOPTS="${target.sshFlags}"
-                              nix ${nixFlags} copy --to ssh-ng://${target.host} ${inputs.self}
-                              ssh ${target.sshFlags} ${target.host} nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
-                                  ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
-                            '';
+                            data.external.${name} = {
+                              depends_on = ["data.external.${name}_ssh-wait"];
+                              program = pkgs.execBash ''
+                                export NIX_SSHOPTS="${target.sshFlags}"
+                                nix ${nixFlags} copy --to ssh-ng://${target.host} ${inputs.self}
+                                ssh ${target.sshFlags} ${target.host} nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
+                                    ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
+                              '';
+                            };
                             resource.null_resource.${name} = {
                               triggers.drv = drv;
                               provisioner.local-exec.command = let
