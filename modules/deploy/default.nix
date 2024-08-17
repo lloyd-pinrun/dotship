@@ -373,14 +373,15 @@ in {
                                     export NIX_SSHOPTS="${build.sshFlags}"
                                     nix ${nixFlags} copy --derivation --to ssh-ng://${build.host} ${drv}
                                     closure=$(ssh ${build.sshFlags} ${build.host} nix-store --verbose --realise ${drv})
-                                    nix ${nixFlags} copy --no-check-sigs --from ssh-ng://${build.host} "$closure"
                                 fi
 
                                 if [[ $(hostname) == ${target.host} ]]; then
                                     ${concatStringsSep "\n" profile.config.cmds}
                                 else
-                                    export NIX_SSHOPTS="${target.sshFlags}"
-                                    nix ${nixFlags} copy --to ssh-ng://${target.host} "$closure"
+                                    if [[ ${build.host} != ${target.host} ]]; then
+                                       export NIX_SSHOPTS="${target.sshFlags}"
+                                       nix ${nixFlags} copy --no-check-sigs --from ssh-ng://${build.host} --to ssh-ng://${target.host} "$closure"
+                                    fi
                                     ${prefixJoin "ssh ${target.sshFlags} ${target.host} " "\n" profile.config.cmds}
                                 fi
                               '';
