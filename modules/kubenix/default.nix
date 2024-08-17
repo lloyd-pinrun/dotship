@@ -199,7 +199,10 @@ with nix; {
             };
             opentofu.modules.kubectl-apply.resource.null_resource.kubernetes = {
               triggers.drv = cluster.configuration.drvPath;
-              provisioner.local-exec.command = "ssh sirver sudo k3s kubectl apply --server-side --prune -f ${cluster.configuration}";
+              provisioner.local-exec.command = ''
+                set -euo pipefail
+                ssh sirver sudo k3s kubectl apply --server-side --prune -f ${cluster.configuration}
+              '';
             };
           }
           (mkIf cluster.deploy.k3d {

@@ -263,6 +263,8 @@ in {
                           resource.null_resource."${name}_install" = {
                             triggers.drv = "\${ data.external.${name}_install.result.drv }";
                             provisioner.local-exec.command = ''
+                              set -euo pipefail
+
                               ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
                                   --flake ${inputs.self}#${node.name} \
                                   --build-on-remote \
@@ -288,6 +290,8 @@ in {
                                 environment.FILE = resource;
                                 environment.SECRET = value;
                                 command = ''
+                                  set -euo pipefail
+
                                   secret_file=$(mktemp)
                                   trap 'rm -f "$secret_file"' EXIT
 
@@ -320,6 +324,8 @@ in {
                               provisioner.local-exec.command = let
                                 flake_uri = "${inputs.self}#inputs.nix-on-droid.packages.${node.config.system}.nix-on-droid";
                               in ''
+                                set -euo pipefail
+
                                 ssh ${target.sshFlags} ${target.host} nix ${nixFlags} run ${flake_uri} -- switch --flake ${inputs.self}#${node.name}
                               '';
                             };
@@ -331,6 +337,8 @@ in {
                             resource.null_resource.${name} = {
                               triggers.drv = drv;
                               provisioner.local-exec.command = ''
+                                set -euo pipefail
+
                                 if [[ $(hostname) == ${build.host} ]]; then
                                     closure=$(nix-store --verbose --realise ${drv})
                                 else
