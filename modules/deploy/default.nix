@@ -288,17 +288,15 @@ in {
                                 environment.FILE = resource;
                                 environment.SECRET = value;
                                 command = ''
-                                  root_dir=$(mktemp -d)
-                                  trap 'rm -rf "$root_dir"' EXIT
+                                  secret_file=$(mktemp)
+                                  trap 'rm -f "$secret_file"' EXIT
 
-                                  secrets_dir="$root_dir/canivete/secrets"
-                                  mkdir -p "$secrets_dir"
-
-                                  secret_file="$secrets_dir/$FILE"
                                   echo "$SECRET" > "$secret_file"
                                   chmod 0444 "$secret_file"
 
-                                  ${getExe pkgs.rsync} --archive --verbose --compress --rsh "ssh ${target.sshFlags}" "$root_dir/" root@${target.host}:/
+                                  secrets_dir="/canivete/secrets"
+                                  ${pkgs.openssh}/bin/ssh ${target.sshFlags} root@${target.host} mkdir -p "$secrets_dir"
+                                  ${pkgs.openssh}/bin/scp ${target.sshFlags} "$secret_file" "root@${target.host}:$secrets_dir/$FILE"
                                 '';
                               };
                             };
