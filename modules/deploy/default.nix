@@ -43,7 +43,7 @@ in {
         systemdFlags = concatStringsSep " " [
           "--collect --no-ask-password --pipe --quiet --same-dir --wait"
           "--setenv LOCALE_ARCHIVE --setenv NIXOS_INSTALL_BOOTLOADER="
-          # Using the full 'nixos-rebuild-switch-to-configuration' name on sirver would fail to collect/cleanup
+          # Using the full 'nixos-rebuild-switch-to-configuration' name on server would fail to collect/cleanup
           "--service-type exec --unit nixos-switch"
         ];
       in [
