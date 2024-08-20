@@ -1,9 +1,12 @@
 {
+  config,
   inputs,
   nix,
   ...
 }:
-with nix; {
+with nix; let
+  inherit (config.canivete) root;
+in {
   perSystem = perSystem @ {
     config,
     pkgs,
@@ -199,9 +202,14 @@ with nix; {
             };
             opentofu.modules.kubectl-apply.resource.null_resource.kubernetes = {
               triggers.drv = cluster.configuration.drvPath;
-              provisioner.local-exec.command = ''
+              provisioner.local-exec.command = let
+                path = "canivete.${pkgs.system}.opentofu.workspaces.${config.opentofuWorkspace}.configuration";
+              in ''
                 set -euo pipefail
-                ssh sirver sudo k3s kubectl apply --server-side --prune -f ${cluster.configuration}
+                nix build .#${path} --no-link --print-output-paths | \
+                  ${getExe pkgs.vals} eval -s -f | \
+                  ${getExe pkgs.yq} "." --yaml-output | \
+                  ${pkgs.openssh}/bin/ssh ${root} sudo k3s kubectl apply --server-side --prune -f -
               '';
             };
           }
