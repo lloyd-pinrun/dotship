@@ -40,12 +40,7 @@ in {
             };
           }));
         };
-        # 4. create namespace for each release
-        config.kubernetes.resources.namespaces = flip mapAttrs' config.kubernetes.helm.releases (name: release:
-          nameValuePair release.namespace {
-            metadata.labels."canivete/chart" = name;
-          });
-        # 5. every resource gets a namespace label
+        # 4. every resource gets a namespace label
         config.kubernetes.api.defaults = toList {
           default = {config, ...}: {
             metadata.labels."canivete/namespace" =
