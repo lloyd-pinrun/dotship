@@ -5,15 +5,7 @@
   ...
 }:
 with nix; {
-  options.canivete = mkOption {
-    type = submodule {freeformType = attrsOf anything;};
-    default = {};
-  };
-  config.perSystem.options.canivete = mkOption {
-    type = submodule {freeformType = attrsOf anything;};
-    default = {};
-  };
-  config.flake = {
+  flake = {
     inherit inputs;
     canivete = mergeAttrs config.canivete (mapAttrs (_: getAttr "canivete") config.allSystems);
     schemas =
