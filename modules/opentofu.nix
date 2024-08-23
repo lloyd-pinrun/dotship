@@ -20,17 +20,17 @@
       config.packages.opentofu = pkgs.writeShellApplication {
         name = "opentofu";
         text = ''
-          git_dir=$(${getExe pkgs.git} rev-parse --show-toplevel)
+          git_dir="$(${getExe pkgs.git} rev-parse --show-toplevel)"
           run_dir="$git_dir/.canivete/opentofu/$1"
           dec_file="$run_dir/config.tf.json"
           mkdir -p "$run_dir"
-          trap "rm -rf \"$run_dir/.terraform\" \"$run_dir/.terraform.lock.hcl\" \"$dec_file\"" EXIT
-          nix build .#canivete.${system}.opentofu.workspaces.$1.configuration --no-link --print-out-paths | \
+          trap 'rm -rf "$run_dir/.terraform" "$run_dir/.terraform.lock.hcl" "$dec_file"' EXIT
+          nix build ".#canivete.${system}.opentofu.workspaces.$1.configuration" --no-link --print-out-paths | \
             xargs cat | \
             ${getExe pkgs.vals} eval -s -f - | \
-            ${getExe pkgs.yq} "." > "$dec_file"
-          nix run .#canivete.${system}.opentofu.workspaces.$1.finalPackage -- chdir="$run_dir" init --upgrade
-          nix run .#canivete.${system}.opentofu.workspaces.$1.finalPackage -- chdir="$run_dir" ''${@:2}
+            ${getExe pkgs.yq} "." >"$dec_file"
+          nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- chdir="$run_dir" init --upgrade
+          nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- chdir="$run_dir" "''${@:2}"
         '';
       };
       # Such a common need that it's worth including here
