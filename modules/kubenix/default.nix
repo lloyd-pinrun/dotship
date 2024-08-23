@@ -20,7 +20,9 @@ with nix; {
     config.packages.kubenix = pkgs.writeShellApplication {
       name = "kubenix";
       text = ''
-        export KUBECONFIG=$(eval $(nix eval .#canivete.${system}.kubenix.clusters.$1.deploy.fetchKubeconfig | tr -d "\""))
+        export KUBECONFIG=$(mktemp)
+        trap "rm -f $KUBECONFIG" EXIT
+        eval $(nix eval .#canivete.${system}.kubenix.clusters.$1.deploy.fetchKubeconfig | tr -d "\"") > "$KUBECONFIG"
         ''${@:2}
       '';
     };
