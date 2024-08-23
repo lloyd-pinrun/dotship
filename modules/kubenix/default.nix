@@ -181,10 +181,8 @@ in {
         config = mkMerge [
           {
             modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;
-          }
-          {
             opentofu.plugins = ["opentofu/external" "opentofu/local"];
-            opentofu.modules.kubeconfig = {
+            opentofu.modules.kubenix = {
               resource.local_file.encrypted-kubeconfig = {
                 content = "\${ yamlencode(jsondecode(data.external.encrypt-kubeconfig.result.kubeconfig)) }";
                 filename = "\${ path.module }/kubeconfig.enc";
@@ -194,18 +192,18 @@ in {
                   ${getExe pkgs.sops} --encrypt --input-type binary --output-type binary /dev/stdin | \
                   ${getExe pkgs.yq} --raw-input '{"kubeconfig":.}'
               '';
-            };
-            opentofu.modules.kubectl-apply.resource.null_resource.kubernetes = {
-              triggers.drv = cluster.configuration.drvPath;
-              provisioner.local-exec.command = let
-                path = "canivete.${pkgs.system}.opentofu.workspaces.${config.opentofuWorkspace}.configuration";
-              in ''
-                set -euo pipefail
-                nix build .#${path} --no-link --print-output-paths | \
-                  ${getExe pkgs.vals} eval -s -f | \
-                  ${getExe pkgs.yq} "." --yaml-output | \
-                  ${pkgs.openssh}/bin/ssh ${root} sudo k3s kubectl apply --server-side --prune -f -
-              '';
+              resource.null_resource.kubernetes = {
+                triggers.drv = cluster.configuration.drvPath;
+                provisioner.local-exec.command = let
+                  path = "canivete.${pkgs.system}.opentofu.workspaces.${config.opentofuWorkspace}.configuration";
+                in ''
+                  set -euo pipefail
+                  nix build .#${path} --no-link --print-output-paths | \
+                    ${getExe pkgs.vals} eval -s -f | \
+                    ${getExe pkgs.yq} "." --yaml-output | \
+                    ${pkgs.openssh}/bin/ssh ${root} sudo k3s kubectl apply --server-side --prune -f -
+                '';
+              };
             };
           }
           (mkIf cluster.deploy.k3d {
