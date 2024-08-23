@@ -27,9 +27,34 @@ with nix; {
       '';
     };
     config.canivete = {
-      opentofu.workspaces = mkMerge (flip mapAttrsToList config.canivete.kubenix.clusters (_: cfg: nameValuePair cfg.opentofuWorkspace {
-        imports = [cfg.opentofu];
-      }));
+      opentofu.workspaces = pipe config.canivete.kubenix.clusters [
+        (mapAttrsToList (name: cfg: {
+          ${cfg.opentofuWorkspace} = mkMerge [
+            {
+              plugins = ["opentofu/null"];
+              modules.kubenix.resource.null_resource.kubernetes = {
+                triggers.drv = cfg.configuration.drvPath;
+                provisioner.local-exec.command = ''
+                  set -euo pipefail
+                  nix build .#canivete.${system}.kubenix.clusters.${name}.configuration --no-link --print-out-paths | \
+                    xargs cat | \
+                    ${getExe pkgs.vals} eval -s -f - | \
+                    ${getExe pkgs.yq} "." --yaml-output | \
+                    nix run .#kubenix -- ${name} ${getExe pkgs.kubectl} apply --server-side --prune -f -
+                '';
+              };
+            }
+            (mkIf cfg.deploy.k3d {
+              plugins = ["pvotal-tech/k3d"];
+              modules.k3d.resource.k3d_cluster.main = {
+                inherit name;
+                servers = 1;
+              };
+            })
+          ];
+        }))
+        mkMerge
+      ];
       kubenix.sharedModules.defaults = {config, ...}: {
         options.kubernetes.helm.releases = mkOption {
           type = attrsOf (submodule ({config, ...}: {
@@ -77,12 +102,6 @@ with nix; {
             type = str;
             description = "OpenTofu workspace to include the config in";
             default = "deploy";
-          };
-          opentofu = mkOption {
-            # Can't use deferredModule here because it breaks merging with OpenTofu workspaces
-            type = deferredModule;
-            default = {};
-            description = "OpenTofu workspace to deploy";
           };
           configuration = mkOption {
             type = package;
@@ -163,31 +182,8 @@ with nix; {
           };
         };
         config = mkMerge [
-          {
-            modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;
-            opentofu.plugins = ["opentofu/external" "opentofu/local"];
-            opentofu.modules.kubenix = {
-              resource.null_resource.kubernetes = {
-                triggers.drv = cluster.configuration.drvPath;
-                provisioner.local-exec.command = ''
-                  set -euo pipefail
-                  nix build .#canivete.${system}.kubenix.clusters.${name}.configuration --no-link --print-out-paths | \
-                    xargs cat | \
-                    ${getExe pkgs.vals} eval -s -f - | \
-                    ${getExe pkgs.yq} "." --yaml-output | \
-                    nix run .#kubenix -- ${name} ${getExe pkgs.kubectl} apply --server-side --prune -f -
-                '';
-              };
-            };
-          }
-          (mkIf cluster.deploy.k3d {
-            deploy.fetchKubeconfig = "echo '\${ k3d_cluster.main.credentials[0].raw }'";
-            opentofu.plugins = ["pvotal-tech/k3d"];
-            opentofu.modules.k3d.resource.k3d_cluster.main = {
-              inherit name;
-              servers = 1;
-            };
-          })
+          {modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;}
+          (mkIf cluster.deploy.k3d {deploy.fetchKubeconfig = "echo '\${ k3d_cluster.main.credentials[0].raw }'";})
         ];
       }));
       default = {};

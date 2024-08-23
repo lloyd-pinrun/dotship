@@ -33,8 +33,6 @@
           nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- -chdir="$run_dir" "''${@:2}"
         '';
       };
-      # Such a common need that it's worth including here
-      config.canivete.opentofu.sharedPlugins = ["opentofu/external"];
       options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};
