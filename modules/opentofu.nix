@@ -65,14 +65,19 @@
                 default = workspace.package.withPlugins (_: workspace.plugins);
                 description = "Final package with plugins";
               };
-              configuration = mkOption {
-                type = package;
-                description = "OpenTofu configuration file for workspace";
-                default = inputs.terranix.lib.terranixConfiguration {
+              composition = mkOption {
+                type = raw;
+                description = "Evaluated terranix composition";
+                default = inputs.terranix.lib.terranixConfigurationAst {
                   inherit pkgs;
                   extraArgs = {inherit nix;};
                   modules = attrValues workspace.modules;
                 };
+              };
+              configuration = mkOption {
+                type = package;
+                description = "OpenTofu configuration file for workspace";
+                default = (pkgs.formats.json {}).generate "config.tf.json" workspace.composition.config;
               };
             };
             config.plugins = tofu.sharedPlugins;
