@@ -4,9 +4,7 @@
   nix,
   ...
 }:
-with nix; let
-  inherit (config.canivete) root;
-in {
+with nix; {
   perSystem = perSystem @ {
     config,
     pkgs,
@@ -19,11 +17,14 @@ in {
       patches = [./kubenix.patch];
     };
   in {
-    config.canivete = {
-      scripts.kubectl = ./kubectl.sh;
-      just.recipes."kubectl CLUSTER *ARGS" = ''
-        nix run .#canivete.${system}.kubenix.clusters.{{ CLUSTER }}.finalScript -- -- {{ ARGS }}
+    config.packages.kubenix = pkgs.writeShellApplication {
+      name = "kubenix";
+      text = ''
+        export KUBECONFIG=$(eval $(nix eval .#canivete.${system}.kubenix.clusters.$1.deploy.fetchKubeconfig | tr -d "\""))
+        ''${@:2}
       '';
+    };
+    config.canivete = {
       opentofu.workspaces = mkMerge (flip mapAttrsToList config.canivete.kubenix.clusters (_: cfg: nameValuePair cfg.opentofuWorkspace cfg.opentofu));
       kubenix.sharedModules.defaults = {config, ...}: {
         options.kubernetes.helm.releases = mkOption {
@@ -59,12 +60,6 @@ in {
         ...
       }: let
         cluster = config;
-        bins = makeBinPath (with pkgs; [vals sops kubectl yq opentofu]);
-        flags = concatStringsSep " " [
-          "--cluster ${name}"
-          "--config ${cluster.configuration}"
-        ];
-        args = "--prefix PATH : ${bins} --add-flags \"${flags}\"";
       in {
         options = {
           deploy = {
@@ -84,6 +79,11 @@ in {
             type = lazyAttrsOf anything;
             default = {};
             description = "OpenTofu workspace to deploy";
+          };
+          configuration = mkOption {
+            type = package;
+            description = "Kubernetes configuration file for cluster";
+            default = cluster.composition.config.kubernetes.resultYAML;
           };
           modules = mkModulesOption {};
           composition = mkOption {
@@ -157,51 +157,21 @@ in {
               };
             };
           };
-          configuration = mkOption {
-            type = package;
-            description = "Kubernetes configuration file for cluster";
-            default = cluster.composition.config.kubernetes.resultYAML;
-          };
-          script = mkOption {
-            type = package;
-            description = "Kubectl wrapper script for managing cluster";
-            default = pkgs.wrapProgram perSystem.config.canivete.scripts.kubectl.package "kubectl" "kubectl" args {};
-          };
-          scriptOverride = mkOption {
-            type = functionTo package;
-            description = "Function to map script to finalScript";
-            default = id;
-          };
-          finalScript = mkOption {
-            type = package;
-            description = "Final script to run kubectl on the cluster configuration";
-            default = cluster.scriptOverride cluster.script;
-          };
         };
         config = mkMerge [
           {
             modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;
             opentofu.plugins = ["opentofu/external" "opentofu/local"];
             opentofu.modules.kubenix = {
-              resource.local_file.encrypted-kubeconfig = {
-                content = "\${ yamlencode(jsondecode(data.external.encrypt-kubeconfig.result.kubeconfig)) }";
-                filename = "\${ path.module }/kubeconfig.enc";
-              };
-              data.external.encrypt-kubeconfig.program = pkgs.execBash ''
-                ${cluster.deploy.fetchKubeconfig} | \
-                  ${getExe pkgs.sops} --encrypt --input-type binary --output-type binary /dev/stdin | \
-                  ${getExe pkgs.yq} --raw-input '{"kubeconfig":.}'
-              '';
               resource.null_resource.kubernetes = {
                 triggers.drv = cluster.configuration.drvPath;
-                provisioner.local-exec.command = let
-                  path = "canivete.${pkgs.system}.opentofu.workspaces.${config.opentofuWorkspace}.configuration";
-                in ''
+                provisioner.local-exec.command = ''
                   set -euo pipefail
-                  nix build .#${path} --no-link --print-output-paths | \
-                    ${getExe pkgs.vals} eval -s -f | \
+                  nix build .#canivete.${system}.kubenix.clusters.${name}.configuration --no-link --print-out-paths | \
+                    xargs cat | \
+                    ${getExe pkgs.vals} eval -s -f - | \
                     ${getExe pkgs.yq} "." --yaml-output | \
-                    ${pkgs.openssh}/bin/ssh ${root} sudo k3s kubectl apply --server-side --prune -f -
+                    nix run .#kubenix -- ${name} ${getExe pkgs.kubectl} apply --server-side --prune -f -
                 '';
               };
             };
