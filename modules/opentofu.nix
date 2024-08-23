@@ -17,14 +17,24 @@
       tofu = config.canivete.opentofu;
       tofuOpts = options.canivete.opentofu;
     in {
-      config.canivete = {
-        # Such a common need that it's worth including here
-        opentofu.sharedPlugins = ["opentofu/external"];
-        scripts.tofu = ./tofu.sh;
-        just.recipes."tofu WORKSPACE *ARGS" = ''
-          nix run .#canivete.${system}.opentofu.workspaces.{{ WORKSPACE }}.finalScript -- -- {{ ARGS }}
+      config.packages.opentofu = pkgs.writeShellApplication {
+        name = "opentofu";
+        text = ''
+          git_dir=$(${getExe pkgs.git} rev-parse --show-toplevel)
+          run_dir="$git_dir/.canivete/opentofu/$1"
+          dec_file="$run_dir/config.tf.json"
+          mkdir -p "$run_dir"
+          trap "rm -rf \"$run_dir/.terraform\" \"$run_dir/.terraform.lock.hcl\" \"$dec_file\"" EXIT
+          nix build .#canivete.${system}.opentofu.workspaces.$1.configuration --no-link --print-out-paths | \
+            xargs cat | \
+            ${getExe pkgs.vals} eval -s -f - | \
+            ${getExe pkgs.yq} "." > "$dec_file"
+          nix run .#canivete.${system}.opentofu.workspaces.$1.finalPackage -- chdir="$run_dir" init --upgrade
+          nix run .#canivete.${system}.opentofu.workspaces.$1.finalPackage -- chdir="$run_dir" ''${@:2}
         '';
       };
+      # Such a common need that it's worth including here
+      config.canivete.opentofu.sharedPlugins = ["opentofu/external"];
       options.canivete.opentofu = {
         workspaces = mkOption {
           default = {};
@@ -35,12 +45,6 @@
             ...
           }: let
             workspace = config;
-            bins = makeBinPath [pkgs.vals pkgs.jq workspace.finalPackage];
-            flags = concatStringsSep " " [
-              "--workspace ${name}"
-              "--config ${workspace.configuration}"
-            ];
-            args = "--prefix PATH : ${bins} --add-flags \"${flags}\"";
           in {
             options = {
               encryptedState.enable = mkEnabledOption "encrypted state (alpha prerelease)";
@@ -69,21 +73,6 @@
                   extraArgs = {inherit nix;};
                   modules = attrValues workspace.modules;
                 };
-              };
-              script = mkOption {
-                type = package;
-                description = "Basic script to run OpenTofu on the workspace configuration";
-                default = pkgs.wrapProgram perSystem.config.canivete.scripts.tofu.package "tofu" "tofu" args {};
-              };
-              scriptOverride = mkOption {
-                type = functionTo package;
-                description = "Function to map script to finalScript";
-                default = id;
-              };
-              finalScript = mkOption {
-                type = package;
-                description = "Final script to run OpenTofu on the workspace configuration";
-                default = workspace.scriptOverride workspace.script;
               };
             };
             config.plugins = tofu.sharedPlugins;
