@@ -4,12 +4,12 @@
     ./deploy
     ./dream2nix
     ./kubenix
-    ./opentofu
     ./scripts
     ./sops
 
     ./devShell.nix
     ./just.nix
+    ./opentofu.nix
     ./people.nix
     ./pkgs.nix
     ./pre-commit.nix
