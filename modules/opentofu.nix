@@ -29,8 +29,8 @@
             xargs cat | \
             ${getExe pkgs.vals} eval -s -f - | \
             ${getExe pkgs.yq} "." >"$dec_file"
-          nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- chdir="$run_dir" init --upgrade
-          nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- chdir="$run_dir" "''${@:2}"
+          nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- -chdir="$run_dir" init -upgrade
+          nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- -chdir="$run_dir" "''${@:2}"
         '';
       };
       # Such a common need that it's worth including here
