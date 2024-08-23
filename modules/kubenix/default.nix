@@ -27,7 +27,9 @@ with nix; {
       '';
     };
     config.canivete = {
-      opentofu.workspaces = mkMerge (flip mapAttrsToList config.canivete.kubenix.clusters (_: cfg: nameValuePair cfg.opentofuWorkspace cfg.opentofu));
+      opentofu.workspaces = mkMerge (flip mapAttrsToList config.canivete.kubenix.clusters (_: cfg: nameValuePair cfg.opentofuWorkspace {
+        imports = [cfg.opentofu];
+      }));
       kubenix.sharedModules.defaults = {config, ...}: {
         options.kubernetes.helm.releases = mkOption {
           type = attrsOf (submodule ({config, ...}: {
@@ -78,7 +80,7 @@ with nix; {
           };
           opentofu = mkOption {
             # Can't use deferredModule here because it breaks merging with OpenTofu workspaces
-            type = lazyAttrsOf anything;
+            type = deferredModule;
             default = {};
             description = "OpenTofu workspace to deploy";
           };
