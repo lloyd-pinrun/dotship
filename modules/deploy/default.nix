@@ -144,7 +144,7 @@ in {
                   );
                   builder = modules:
                     withSystem node.config.system (
-                      {pkgs, ...}: let
+                      perSystem @ {pkgs, ...}: let
                         _builder = type.config.systemBuilder;
                         # Some tools call this extraSpecialArgs for some reason...
                         argsKey =
@@ -152,7 +152,7 @@ in {
                           then "extraSpecialArgs"
                           else "specialArgs";
                         args = {
-                          ${argsKey} = type.config.specialArgs;
+                          ${argsKey} = type.config.specialArgs // {inherit perSystem;};
                           inherit pkgs;
                           modules = attrValues modules;
                         };
@@ -168,11 +168,11 @@ in {
                   attr = "home.activationPackage";
                   builder = modules:
                     withSystem node.config.system (
-                      {pkgs, ...}: let
+                      perSystem @ {pkgs, ...}: let
                         _builder = inputs.home-manager.lib.homeManagerConfiguration;
                         args = {
                           inherit pkgs;
-                          extraSpecialArgs = specialArgs;
+                          extraSpecialArgs = specialArgs // {inherit perSystem;};
                           modules = attrValues modules;
                         };
                       in
