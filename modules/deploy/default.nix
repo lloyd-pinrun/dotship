@@ -26,7 +26,13 @@ in {
   config.canivete.deploy = {
     system.modules.secrets = {
       options.canivete.secrets = mkOption {
-        type = attrsOf str;
+        type = attrsOf (coercedTo str (setAttrByPath ["attr"]) (submodule {
+          options.attr = mkOption {type = str;};
+          options.owner = mkOption {
+            type = str;
+            default = "root:root";
+          };
+        }));
         description = "Map of terraform resource to attribute to generate a secret from in /run/secrets";
         default = {};
       };
@@ -327,9 +333,9 @@ in {
                         (mkIf (node.name != root) {data.external."${name}_ssh-wait".depends_on = ["null_resource.${rootName}"];})
 
                         # Secrets
-                        (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: attr: let
+                        (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: cfg: let
                           resource_name = replaceStrings ["."] ["-"] (concatStringsSep "_" [name "secrets" resource]);
-                          value = "\${ ${resource}.${attr} }";
+                          value = "\${ ${resource}.${cfg.attr} }";
                         in mkMerge [
                           {
                             resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
@@ -337,6 +343,7 @@ in {
                               depends_on = ["data.external.${name}_ssh-wait"];
                               triggers.name = resource;
                               triggers.attr = value;
+                              triggers.owner = cfg.owner;
                               provisioner.local-exec = {
                                 environment.FILE = resource;
                                 environment.SECRET = value;
@@ -350,8 +357,10 @@ in {
                                   chmod 0444 "$secret_file"
 
                                   secrets_dir="/canivete/secrets"
+                                  secrets_file="$secrets_dir/$FILE"
                                   ${pkgs.openssh}/bin/ssh ${target.sshFlags} root@${target.host} mkdir -p "$secrets_dir"
-                                  ${pkgs.openssh}/bin/scp ${target.sshFlags} "$secret_file" "root@${target.host}:$secrets_dir/$FILE"
+                                  ${pkgs.openssh}/bin/scp ${target.sshFlags} "$secret_file" "root@${target.host}:$secrets_file"
+                                  ${pkgs.openssh}/bin/ssh ${target.sshFlags} root@${target.host} chown ${cfg.owner} "$secrets_file"
                                 '';
                               };
                             };
