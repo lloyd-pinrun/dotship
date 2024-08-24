@@ -219,7 +219,11 @@ in {
                 };
               };
               install = {
-                enable = mkEnabledOption "nixos-anywhere installation";
+                enable = mkOption {
+                  type = bool;
+                  # Currently only support installation method for nixos
+                  default = type.name == "nixos";
+                };
                 host = mkOption {
                   type = str;
                   default = "";
