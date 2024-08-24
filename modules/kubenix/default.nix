@@ -40,7 +40,7 @@ with nix; {
                     xargs cat | \
                     ${getExe pkgs.vals} eval -s -f - | \
                     ${getExe pkgs.yq} "." --yaml-output | \
-                    nix run .#kubenix -- ${name} ${getExe pkgs.kubectl} apply --server-side --prune -f -
+                    nix run .#kubenix -- ${name} ${pkgs.kubectl}/bin/kubectl apply --server-side --prune -f -
                 '';
               };
             }
