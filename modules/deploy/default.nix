@@ -360,7 +360,13 @@ in {
 
                                   secrets_dir="/canivete/secrets"
                                   secrets_file="$secrets_dir/$FILE"
-                                  cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D /dev/stdin -m 444 $secrets_file"
+
+                                  # Darwin install lacks a -D flag so we use process substitution
+                                  if [[ "${type.name}" == "darwin" ]]; then
+                                      cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -m 400 /dev/stdin "$(sudo mkdir -p "$(dirname "$secrets_file")" && echo "$secrets_file")""
+                                  else
+                                      cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D -m 400 /dev/stdin $secrets_file"
+                                  fi
                                 '';
                               };
                             };
