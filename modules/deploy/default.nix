@@ -354,17 +354,13 @@ in {
                                 command = ''
                                   set -euo pipefail
 
-                                  secret_file=$(mktemp)
+                                  secret_file="$(mktemp)"
                                   trap 'rm -f "$secret_file"' EXIT
-
-                                  echo "$SECRET" > "$secret_file"
-                                  chmod 0444 "$secret_file"
+                                  echo "$SECRET" >"$secret_file"
 
                                   secrets_dir="/canivete/secrets"
                                   secrets_file="$secrets_dir/$FILE"
-                                  ${pkgs.openssh}/bin/ssh ${target.sshFlags} root@${target.host} mkdir -p "$secrets_dir"
-                                  ${pkgs.openssh}/bin/scp ${target.sshFlags} "$secret_file" "root@${target.host}:$secrets_file"
-                                  ${pkgs.openssh}/bin/ssh ${target.sshFlags} root@${target.host} chown ${cfg.owner} "$secrets_file"
+                                  cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D /dev/stdin -m 444 $secrets_file"
                                 '';
                               };
                             };
