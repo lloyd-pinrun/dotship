@@ -26,13 +26,7 @@ in {
   config.canivete.deploy = {
     system.modules.secrets = {
       options.canivete.secrets = mkOption {
-        type = attrsOf (coercedTo str (setAttrByPath ["attr"]) (submodule {
-          options.attr = mkOption {type = str;};
-          options.owner = mkOption {
-            type = str;
-            default = "root:root";
-          };
-        }));
+        type = attrsOf str;
         description = "Map of terraform resource to attribute to generate a secret from in /run/secrets";
         default = {};
       };
@@ -337,9 +331,9 @@ in {
                         (mkIf (node.name != root) {data.external."${name}_ssh-wait".depends_on = ["null_resource.${rootName}"];})
 
                         # Secrets
-                        (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: cfg: let
+                        (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: attr: let
                           resource_name = replaceStrings ["."] ["-"] (concatStringsSep "_" [name "secrets" resource]);
-                          value = "\${ ${resource}.${cfg.attr} }";
+                          value = "\${ ${resource}.${attr} }";
                         in mkMerge [
                           {
                             resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
@@ -347,7 +341,6 @@ in {
                               depends_on = ["data.external.${name}_ssh-wait"];
                               triggers.name = resource;
                               triggers.attr = value;
-                              triggers.owner = cfg.owner;
                               provisioner.local-exec = {
                                 environment.FILE = resource;
                                 environment.SECRET = value;
@@ -365,7 +358,7 @@ in {
                                   if [[ "${type.name}" == "darwin" ]]; then
                                       cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -m 400 /dev/stdin "$(sudo mkdir -p "$(dirname "$secrets_file")" && echo "$secrets_file")""
                                   else
-                                      cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D -m 400 /dev/stdin $secrets_file"
+                                      cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D -m 400 /dev/stdin "$secrets_file""
                                   fi
                                 '';
                               };
