@@ -351,15 +351,16 @@ in {
                                   trap 'rm -f "$secret_file"' EXIT
                                   echo "$SECRET" >"$secret_file"
 
-                                  secrets_dir="/canivete/secrets"
+                                  secrets_dir="/private/canivete/secrets"
                                   secrets_file="$secrets_dir/$FILE"
 
-                                  # Darwin install lacks a -D flag so we use process substitution
-                                  if [[ "${type.name}" == "darwin" ]]; then
-                                      cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -m 400 /dev/stdin "$(sudo mkdir -p "$(dirname "$secrets_file")" && echo "$secrets_file")""
-                                  else
-                                      cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D -m 400 /dev/stdin "$secrets_file""
-                                  fi
+                                  ${optionalString (type.name == "darwin") ''
+                                    # Darwin install lacks a -D flag so we use process substitution
+                                    cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -m 400 /dev/stdin "$(sudo mkdir -p "$(dirname "$secrets_file")" && echo "$secrets_file")""
+                                  ''}
+                                  ${optionalString (type.name != "darwin") ''
+                                    cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D -m 400 /dev/stdin "$secrets_file""
+                                  ''}
                                 '';
                               };
                             };
