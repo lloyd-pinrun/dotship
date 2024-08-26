@@ -20,11 +20,13 @@ with nix; {
     config.packages.kubenix = pkgs.writeShellApplication {
       name = "kubenix";
       text = ''
+        config="$(mktemp)"
+        cat /dev/stdin >"$config"
         KUBECONFIG="$(mktemp)"
         export KUBECONFIG
-        trap 'rm -f "$KUBECONFIG"' EXIT
+        trap 'rm -f "$KUBECONFIG" "$config"' EXIT
         eval "$(nix eval ".#canivete.${system}.kubenix.clusters.$1.deploy.fetchKubeconfig" | tr -d "\"")" >"$KUBECONFIG"
-        "''${@:2}"
+        "''${@:2}" <"$config"
       '';
     };
     config.canivete = {
@@ -186,7 +188,7 @@ with nix; {
         };
         config = mkMerge [
           {modules = prefixAttrNames "shared-" perSystem.config.canivete.kubenix.sharedModules;}
-          (mkIf cluster.deploy.k3d {deploy.fetchKubeconfig = "echo '\${ k3d_cluster.main.credentials[0].raw }'";})
+          (mkIf cluster.deploy.k3d {deploy.fetchKubeconfig = "${getExe pkgs.k3d} kubeconfig get ${name}";})
         ];
       }));
       default = {};
