@@ -19,15 +19,7 @@ with nix; {
   in {
     config.packages.kubenix = pkgs.writeShellApplication {
       name = "kubenix";
-      text = ''
-        config="$(mktemp)"
-        cat /dev/stdin >"$config"
-        KUBECONFIG="$(mktemp)"
-        export KUBECONFIG
-        trap 'rm -f "$KUBECONFIG" "$config"' EXIT
-        eval "$(nix eval ".#canivete.${system}.kubenix.clusters.$1.deploy.fetchKubeconfig" | tr -d "\"")" >"$KUBECONFIG"
-        "''${@:2}" <"$config"
-      '';
+      text = "nix run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
     };
     config.canivete = {
       opentofu.workspaces = pipe config.canivete.kubenix.clusters [
@@ -39,7 +31,7 @@ with nix; {
                 triggers.drv = cfg.configuration.drvPath;
                 provisioner.local-exec.command = ''
                   set -euo pipefail
-                  ${getExe cfg.script} apply --server-side --prune -f -
+                  ${getExe cfg.script} ${pkgs.kubectl}/bin/kubectl apply --server-side --prune -f -
                 '';
               };
             }
@@ -115,11 +107,18 @@ with nix; {
               text = ''
                 # Vals needs to run in project root to access sops config
                 cd "$(${getExe pkgs.git} rev-parse --show-toplevel)"
+
+                # Connect to cluster
+                KUBECONFIG="$(mktemp)"
+                export KUBECONFIG
+                trap 'rm -f "$KUBECONFIG"' EXIT
+                ${cluster.deploy.fetchKubeconfig} >"$KUBECONFIG"
+
                 nix build .#canivete.${system}.kubenix.clusters.${name}.configuration --no-link --print-out-paths | \
                   xargs cat | \
                   ${getExe pkgs.vals} eval -s -f - | \
                   ${getExe pkgs.yq} "." --yaml-output | \
-                  nix run .#kubenix -- ${name} ${pkgs.kubectl}/bin/kubectl "$@"
+                  ${getExe pkgs.bash} -c "$@"
               '';
             };
           };
