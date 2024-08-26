@@ -37,6 +37,8 @@ with nix; {
                 triggers.drv = cfg.configuration.drvPath;
                 provisioner.local-exec.command = ''
                   set -euo pipefail
+                  # Vals needs to run in project root to access sops config
+                  cd "$(${getExe pkgs.git} rev-parse --show-toplevel)"
                   nix build .#canivete.${system}.kubenix.clusters.${name}.configuration --no-link --print-out-paths | \
                     xargs cat | \
                     ${getExe pkgs.vals} eval -s -f - | \
