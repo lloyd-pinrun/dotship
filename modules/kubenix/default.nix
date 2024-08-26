@@ -39,13 +39,7 @@ with nix; {
                 triggers.drv = cfg.configuration.drvPath;
                 provisioner.local-exec.command = ''
                   set -euo pipefail
-                  # Vals needs to run in project root to access sops config
-                  cd "$(${getExe pkgs.git} rev-parse --show-toplevel)"
-                  nix build .#canivete.${system}.kubenix.clusters.${name}.configuration --no-link --print-out-paths | \
-                    xargs cat | \
-                    ${getExe pkgs.vals} eval -s -f - | \
-                    ${getExe pkgs.yq} "." --yaml-output | \
-                    nix run .#kubenix -- ${name} ${pkgs.kubectl}/bin/kubectl apply --server-side --prune -f -
+                  ${getExe cfg.script} apply --server-side --prune -f -
                 '';
               };
             }
@@ -112,6 +106,22 @@ with nix; {
             type = package;
             description = "Kubernetes configuration file for cluster";
             default = cluster.composition.config.kubernetes.resultYAML;
+          };
+          script = mkOption {
+            type = package;
+            description = "Wrapper script";
+            default = pkgs.writeShellApplication {
+              inherit name;
+              text = ''
+                # Vals needs to run in project root to access sops config
+                cd "$(${getExe pkgs.git} rev-parse --show-toplevel)"
+                nix build .#canivete.${system}.kubenix.clusters.${name}.configuration --no-link --print-out-paths | \
+                  xargs cat | \
+                  ${getExe pkgs.vals} eval -s -f - | \
+                  ${getExe pkgs.yq} "." --yaml-output | \
+                  nix run .#kubenix -- ${name} ${pkgs.kubectl}/bin/kubectl "$@"
+              '';
+            };
           };
           modules = mkModulesOption {};
           composition = mkOption {
