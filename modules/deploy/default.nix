@@ -354,12 +354,13 @@ in {
                                   secrets_dir="/private/canivete/secrets"
                                   secrets_file="$secrets_dir/$FILE"
 
+                                  prefix=$([[ $(hostname) != ${target.host} ]] && echo "${pkgs.openssh}/bin/ssh ${target.host} ${target.sshFlags}" || echo "")
                                   ${optionalString (type.name == "darwin") ''
                                     # Darwin install lacks a -D flag so we use process substitution
-                                    cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -m 400 /dev/stdin "$(sudo mkdir -p "$(dirname "$secrets_file")" && echo "$secrets_file")""
+                                    cat "$secret_file" | $prefix sudo install -m 400 /dev/stdin "$(sudo mkdir -p "$(dirname "$secrets_file")" && echo "$secrets_file")"
                                   ''}
                                   ${optionalString (type.name != "darwin") ''
-                                    cat "$secret_file" | ${pkgs.openssh}/bin/ssh "${target.host}" "sudo install -D -m 400 /dev/stdin "$secrets_file""
+                                    cat "$secret_file" | $prefix sudo install -D -m 400 /dev/stdin "$secrets_file"
                                   ''}
                                 '';
                               };
@@ -408,7 +409,7 @@ in {
                                 else
                                     export NIX_SSHOPTS="${build.sshFlags}"
                                     nix ${nixFlags} copy --derivation --to ${protocol}://${build.host} ${drv}
-                                    closure=$(ssh ${build.sshFlags} ${build.host} nix-store --verbose --realise ${drv})
+                                    closure=$(${pkgs.openssh}/bin/ssh ${build.sshFlags} ${build.host} nix-store --verbose --realise ${drv})
                                 fi
 
                                 if [[ $(hostname) == ${target.host} ]]; then
@@ -418,7 +419,7 @@ in {
                                        export NIX_SSHOPTS="${target.sshFlags}"
                                        nix ${nixFlags} copy --no-check-sigs --from ${protocol}://${build.host} --to ${protocol}://${target.host} "$closure"
                                     fi
-                                    ${prefixJoin "ssh ${target.sshFlags} ${target.host} " "\n" profile.config.cmds}
+                                    ${prefixJoin "${pkgs.openssh}/bin/ssh ${target.sshFlags} ${target.host} " "\n" profile.config.cmds}
                                 fi
                               '';
                             };
