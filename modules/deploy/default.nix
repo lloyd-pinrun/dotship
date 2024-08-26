@@ -353,15 +353,12 @@ in {
 
                                   secrets_dir="/private/canivete/secrets"
                                   secrets_file="$secrets_dir/$FILE"
-
                                   prefix=$([[ $(hostname) != ${target.host} ]] && echo "${pkgs.openssh}/bin/ssh ${target.host} ${target.sshFlags}" || echo "")
-                                  ${optionalString (type.name == "darwin") ''
-                                    # Darwin install lacks a -D flag so we use process substitution
-                                    cat "$secret_file" | $prefix sudo install -m 400 /dev/stdin "$(sudo mkdir -p "$(dirname "$secrets_file")" && echo "$secrets_file")"
-                                  ''}
-                                  ${optionalString (type.name != "darwin") ''
-                                    cat "$secret_file" | $prefix sudo install -D -m 400 /dev/stdin "$secrets_file"
-                                  ''}
+
+                                  # Darwin install lacks a -D flag and can't use /dev/stdin so 1 line became 3 separate ssh calls
+                                  $prefix sudo mkdir -p "$(dirname "$secrets_file")"
+                                  cat "$secret_file" | $prefix sudo tee "$secrets_file" >/dev/null
+                                  $prefix sudo chmod 400 "$secrets_file"
                                 '';
                               };
                             };
