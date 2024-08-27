@@ -4,7 +4,9 @@
   nix,
   ...
 }:
-with nix; {
+with nix; let
+  inherit (config.canivete.deploy.nixos) nodes;
+in {
   perSystem = perSystem @ {
     config,
     pkgs,
@@ -28,6 +30,10 @@ with nix; {
             {
               plugins = ["opentofu/null"];
               modules.kubenix.resource.null_resource.kubernetes = {
+                depends_on = pipe nodes [
+                  (filterAttrs (_: node: node.profiles.system.raw.config.dotfiles.kubernetes.enable))
+                  (mapAttrsToList (name: _: "null_resource.nixos_${name}_system"))
+                ];
                 triggers.drv = cfg.configuration.drvPath;
                 provisioner.local-exec.command = ''
                   set -euo pipefail
