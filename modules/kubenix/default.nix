@@ -82,6 +82,11 @@ with nix; {
         cluster = config;
       in {
         options = {
+          ifd = mkEnabledOption "IFD to support custom types";
+          kubenix = mkOption {
+            type = raw;
+            default = if cluster.ifd then kubenix-patched else inputs.kubenix;
+          };
           deploy = {
             k3d = mkEnableOption "Deploy cluster locally with k3d";
             fetchKubeconfig = mkOption {
@@ -126,7 +131,7 @@ with nix; {
           composition = mkOption {
             type = raw;
             description = "Evaluated kubenix composition for cluster";
-            default = kubenix-patched.evalModules.${system} {
+            default = cluster.kubenix.evalModules.${system} {
               specialArgs = {inherit nix;};
               module = {
                 config,
@@ -140,7 +145,7 @@ with nix; {
                   # Extract CustomResourceDefinitions from all modules
                   crds = let
                     CRDs = let
-                      evaluation = kubenix-patched.evalModules.${system} {
+                      evaluation = cluster.kubenix.evalModules.${system} {
                         specialArgs = {inherit nix;};
                         module = {kubenix, ...}: {
                           imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
@@ -165,7 +170,7 @@ with nix; {
 
                   # Generate resource definitions with IFD x 2
                   definitions = let
-                    generated = import "${kubenix-patched}/pkgs/generators/k8s" {
+                    generated = import "${cluster.kubenix}/pkgs/generators/k8s" {
                       name = "kubenix-generated-for-crds";
                       inherit pkgs lib;
                       # Mirror K8s OpenAPI spec
@@ -187,10 +192,10 @@ with nix; {
                   in
                     evaluation.config.definitions;
                 in
-                  forEach crds (crd: {
+                  mkIf cluster.ifd (forEach crds (crd: {
                     inherit (crd) group version kind attrName;
                     module = submodule definitions."${crd.fqdn}";
-                  });
+                  }));
               };
             };
           };
