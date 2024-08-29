@@ -298,7 +298,10 @@ in {
                         patches = [./nixos-anywhere.patch];
                       };
                       protocol = profile.config.sshProtocol;
-                      nixos-anywhere = if protocol == "ssh" then nixos-anywhere-patched else inputs.nixos-anywhere;
+                      nixos-anywhere =
+                        if protocol == "ssh"
+                        then nixos-anywhere-patched
+                        else inputs.nixos-anywhere;
                     in
                       mkMerge [
                         # Installation
@@ -336,39 +339,40 @@ in {
                         (mkMerge (flip mapAttrsToList profile.config.raw.config.canivete.secrets (resource: attr: let
                           resource_name = replaceStrings ["."] ["-"] (concatStringsSep "_" [name "secrets" resource]);
                           value = "\${ ${resource}.${attr} }";
-                        in mkMerge [
-                          {
-                            resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
-                            resource.null_resource.${resource_name} = {
-                              depends_on = ["data.external.${name}_ssh-wait"];
-                              triggers.name = resource;
-                              triggers.attr = value;
-                              provisioner.local-exec = {
-                                environment.FILE = resource;
-                                environment.SECRET = value;
-                                command = ''
-                                  set -euo pipefail
+                        in
+                          mkMerge [
+                            {
+                              resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
+                              resource.null_resource.${resource_name} = {
+                                depends_on = ["data.external.${name}_ssh-wait"];
+                                triggers.name = resource;
+                                triggers.attr = value;
+                                provisioner.local-exec = {
+                                  environment.FILE = resource;
+                                  environment.SECRET = value;
+                                  command = ''
+                                    set -euo pipefail
 
-                                  secret_file="$(mktemp)"
-                                  trap 'rm -f "$secret_file"' EXIT
-                                  echo "$SECRET" >"$secret_file"
+                                    secret_file="$(mktemp)"
+                                    trap 'rm -f "$secret_file"' EXIT
+                                    echo "$SECRET" >"$secret_file"
 
-                                  secrets_dir="/private/canivete/secrets"
-                                  secrets_file="$secrets_dir/$FILE"
-                                  prefix=$([[ $(hostname) != ${target.host} ]] && echo "${pkgs.openssh}/bin/ssh ${target.host} ${target.sshFlags}" || echo "")
+                                    secrets_dir="/private/canivete/secrets"
+                                    secrets_file="$secrets_dir/$FILE"
+                                    prefix=$([[ $(hostname) != ${target.host} ]] && echo "${pkgs.openssh}/bin/ssh ${target.host} ${target.sshFlags}" || echo "")
 
-                                  # Darwin install lacks a -D flag and can't use /dev/stdin so 1 line became 3 separate ssh calls
-                                  $prefix sudo mkdir -p "$(dirname "$secrets_file")"
-                                  cat "$secret_file" | $prefix sudo tee "$secrets_file" >/dev/null
-                                  $prefix sudo chmod 400 "$secrets_file"
-                                '';
+                                    # Darwin install lacks a -D flag and can't use /dev/stdin so 1 line became 3 separate ssh calls
+                                    $prefix sudo mkdir -p "$(dirname "$secrets_file")"
+                                    cat "$secret_file" | $prefix sudo tee "$secrets_file" >/dev/null
+                                    $prefix sudo chmod 400 "$secrets_file"
+                                  '';
+                                };
                               };
-                            };
-                          }
-                          (mkIf install.enable {
-                            resource.null_resource.${resource_name}.triggers.install = "\${ null_resource.${name}_install.triggers.drv }";
-                          })
-                        ])))
+                            }
+                            (mkIf install.enable {
+                              resource.null_resource.${resource_name}.triggers.install = "\${ null_resource.${name}_install.triggers.drv }";
+                            })
+                          ])))
 
                         # Activation
                         # TODO does NIX_SSHOPTS serve a purpose outside of nixos-rebuild
