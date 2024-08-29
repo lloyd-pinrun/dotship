@@ -127,7 +127,10 @@ in {
               {
                 build.sshOptions = ["ControlMaster=auto" "ControlPath=/tmp/%C" "ControlPersist=60" "StrictHostKeyChecking=accept-new"];
                 target.sshOptions = node.config.build.sshOptions;
-                install = mkIf (type.name == "nixos") {inherit (node.config.target) sshOptions;};
+                install = mkIf (type.name == "nixos") (mkMerge [
+                  {inherit (node.config.target) sshOptions;}
+                  {sshOptions = ["User=root"];}
+                ]);
                 profiles.system = {
                   attr = type.config.systemAttr;
                   cmds = type.config.systemActivationCommands;
@@ -263,6 +266,7 @@ in {
                       path = getPath profile.config.attr;
                       drv = "\${ data.external.${name}.result.drv }";
                       inherit (profile.config) build target;
+                      inherit (node.config) install;
                       nixFlags = concatStringsSep " " type.config.nixFlags;
 
                       installPath = getPath "system.build.diskoScript";
@@ -298,34 +302,32 @@ in {
                     in
                       mkMerge [
                         # Installation
-                        (mkIf (type.name == "nixos" && node.config.install.enable) (mkMerge [
+                        (mkIf (type.name == "nixos" && install.enable) (mkMerge [
                           {
-                            data.external."${name}_install_ssh-wait".program = pkgs.execBash (waitScript node.config.install.host);
                             data.external."${name}_install".program = pkgs.execBash ''
                               nix ${nixFlags} path-info --derivation .#${installPath} | \
                                   ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
                             '';
                             resource.null_resource."${name}_install" = {
-                              depends_on = ["data.external.${name}_install_ssh-wait"];
                               triggers.drv = "\${ data.external.${name}_install.result.drv }";
                               provisioner.local-exec.command = ''
                                 set -euo pipefail
-
+                                ${waitScript install}
                                 ${nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
-                                    --flake ${inputs.self}#${node.name} \
+                                    --flake .#${node.name} \
                                     --build-on-remote \
                                     --debug \
-                                    ${prefixJoin "--ssh-option " " " node.config.install.sshOptions} \
-                                    "root@${node.config.install.host}"
+                                    ${prefixJoin "--ssh-option " " " install.sshOptions} \
+                                    ${install.host}
                               '';
                             };
                             data.external."${name}_ssh-wait".depends_on = ["null_resource.${name}_install"];
                           }
-                          (mkIf (node.name != root) {data.external."${name}_install_ssh-wait".depends_on = ["null_resource.${rootName}"];})
+                          (mkIf (node.name != root) {data.external."${name}_install".depends_on = ["null_resource.${rootName}"];})
                         ]))
 
                         {
-                          data.external."${name}_ssh-wait".program = pkgs.execBash (waitScript target.host);
+                          data.external."${name}_ssh-wait".program = pkgs.execBash (waitScript target);
                           resource.null_resource.${name}.depends_on = ["data.external.${name}_ssh-wait"];
                         }
                         (mkIf (node.name != root) {data.external."${name}_ssh-wait".depends_on = ["null_resource.${rootName}"];})
@@ -363,7 +365,7 @@ in {
                               };
                             };
                           }
-                          (mkIf node.config.install.enable {
+                          (mkIf install.enable {
                             resource.null_resource.${resource_name}.triggers.install = "\${ null_resource.${name}_install.triggers.drv }";
                           })
                         ])))
