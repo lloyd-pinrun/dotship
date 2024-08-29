@@ -272,7 +272,7 @@ in {
                         total=300
                         elapsed=0
 
-                        while ! ${pkgs.netcat}/bin/nc -z -w $timeout ${host} 22; do
+                        while ! ${pkgs.openssh}/bin/ssh -q -o ConnectTimeout=$timeout ${host.sshFlags} ${host.host} exit; do
                           elapsed=$((elapsed + timeout))
                           if [[ $elapsed -ge $total ]]; then
                             echo '{"status":"unavailable"}'
