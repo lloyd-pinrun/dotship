@@ -302,7 +302,7 @@ in {
                           {
                             data.external."${name}_install_ssh-wait".program = pkgs.execBash (waitScript node.config.install.host);
                             data.external."${name}_install".program = pkgs.execBash ''
-                              nix ${nixFlags} path-info --derivation ${inputs.self}#${installPath} | \
+                              nix ${nixFlags} path-info --derivation .#${installPath} | \
                                   ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
                             '';
                             resource.null_resource."${name}_install" = {
@@ -393,7 +393,7 @@ in {
                             };
                           } {
                             data.external.${name}.program = pkgs.execBash ''
-                              nix ${nixFlags} path-info --derivation ${inputs.self}#${path} | \
+                              nix ${nixFlags} path-info --derivation .#${path} | \
                                   ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
                             '';
                             resource.null_resource.${name} = {
