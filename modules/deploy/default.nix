@@ -366,7 +366,6 @@ in {
                           (mkIf node.config.install.enable {
                             resource.null_resource.${resource_name}.triggers.install = "\${ null_resource.${name}_install.triggers.drv }";
                           })
-                          (mkIf (node.name != root) {resource.null_resource.${resource_name}.depends_on = ["null_resource.${rootName}"];})
                         ])))
 
                         # Activation
