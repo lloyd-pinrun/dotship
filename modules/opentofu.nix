@@ -125,16 +125,16 @@
                 providerParts = strings.splitString "/" provider;
                 owner = elemAt providerParts 0;
                 repo = elemAt providerParts 1;
-                versionTry = tryEval (elemAt providerParts 2);
                 source = "${owner}/${repo}";
 
                 # Target system version (latest by default)
                 version = let
                   file = inputs.opentofu-registry + "/providers/${substring 0 1 owner}/${source}.json";
                   inherit (importJSON file) versions;
-                  specificVersion = head (filter (v: v.version == versionTry.value) versions);
+                  hasSpecificVersion = (length providerParts) == 3;
+                  specificVersion = head (filter (v: v.version == elemAt providerParts 2) versions);
                   latestVersion = head versions;
-                in ifElse (versionTry.success) specificVersion latestVersion;
+                in ifElse hasSpecificVersion specificVersion latestVersion;
                 target = head (filter (t: t.arch == GOARCH && t.os == GOOS) version.targets);
               in
                 pkgs.stdenv.mkDerivation {
