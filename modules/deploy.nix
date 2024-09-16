@@ -290,18 +290,7 @@ in {
 
                       rootName = concatStringsSep "_" ["nixos" root "system"];
 
-                      # Bug in ssh-ng protocol makes copying large derivations fail with "too many root sets"
-                      # NOTE https://github.com/nix-community/nixos-anywhere/issues/347
-                      nixos-anywhere-patched = pkgs.applyPatches {
-                        name = "arion-patched-src";
-                        src = inputs.nixos-anywhere;
-                        patches = [./nixos-anywhere.patch];
-                      };
                       protocol = profile.config.sshProtocol;
-                      nixos-anywhere =
-                        if protocol == "ssh"
-                        then nixos-anywhere-patched
-                        else inputs.nixos-anywhere;
                     in
                       mkMerge [
                         # Installation
@@ -316,7 +305,7 @@ in {
                               provisioner.local-exec.command = ''
                                 set -euo pipefail
                                 ${waitScript install}
-                                ${nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
+                                ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
                                     --flake .#${node.name} \
                                     --build-on-remote \
                                     --debug \

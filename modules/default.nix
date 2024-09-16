@@ -1,12 +1,12 @@
 {
   imports = [
     ./arion
-    ./deploy
     ./dream2nix
     ./kubenix
     ./scripts
     ./sops
 
+    ./deploy.nix
     ./devShell.nix
     ./just.nix
     ./opentofu.nix

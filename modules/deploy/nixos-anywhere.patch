@@ -1,6 +1,0 @@
---- a/src/nixos-anywhere.sh
-+++ a/src/nixos-anywhere.sh
-@@ -477,2 +477,2 @@
--  nix_copy --to "ssh-ng://$ssh_connection?remote-store=local?root=/mnt" "${flake}#nixosConfigurations.\"${flakeAttr}\".config.system.build.toplevel" \
-+  nix_copy --to "ssh://$ssh_connection?remote-store=local?root=/mnt" "${flake}#nixosConfigurations.\"${flakeAttr}\".config.system.build.toplevel" \
-     --derivation --no-check-sigs
