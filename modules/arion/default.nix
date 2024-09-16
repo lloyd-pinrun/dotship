@@ -47,7 +47,8 @@ with nix; {
         default = pkgs.wrapProgram cfg.basePackage "arion" "arion" "--add-flags \"--prebuilt-file ${cfg.yaml}\"" {};
       };
     };
-    config.canivete.just.recipes."arion *ARGS" = "${getExe cfg.finalPackage} {{ ARGS }}";
+    # TODO why does this cause a nix daemon disconnection? move-docs.sh missing? cross platform is HARD
+    # config.canivete.just.recipes."arion *ARGS" = "${getExe cfg.finalPackage} {{ ARGS }}";
     config.canivete.arion.modules.builtin = {
       # Also share self' of the Linux system variant
       config._module.args.self'' = flake.config.perInput system'' inputs.self;
