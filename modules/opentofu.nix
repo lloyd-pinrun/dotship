@@ -116,25 +116,29 @@
         sharedPlugins = mkOption {
           default = [];
           description = "Providers to pull";
-          example = ["opentofu/google"];
+          example = ["opentofu/google/1.0.0" "opentofu/random"];
           type = listOf (coercedTo str (
-              source: let
-                # TODO add all systems to allowing operating on different workstations
+              provider: let
                 inherit (pkgs.go) GOARCH GOOS;
 
-                # Parse registry reference from path
-                sourceParts = strings.splitString "/" source;
-                owner = elemAt sourceParts 0;
-                repo = elemAt sourceParts 1;
-                path = "registry.opentofu.org/${source}";
+                # Parse source (e.g. "owner/repo[/versionTry]")
+                providerParts = strings.splitString "/" provider;
+                owner = elemAt providerParts 0;
+                repo = elemAt providerParts 1;
+                versionTry = tryEval (elemAt providerParts 2);
+                source = "${owner}/${repo}";
 
-                # Target latest system version
-                file = inputs.opentofu-registry + "/providers/${substring 0 1 owner}/${source}.json";
-                latest = head (importJSON file).versions;
-                target = head (filter (e: e.arch == GOARCH && e.os == GOOS) latest.targets);
+                # Target system version (latest by default)
+                version = let
+                  file = inputs.opentofu-registry + "/providers/${substring 0 1 owner}/${source}.json";
+                  inherit (importJSON file) versions;
+                  specificVersion = head (filter (v: v.version == versionTry.value) versions);
+                  latestVersion = head versions;
+                in ifElse (versionTry.success) specificVersion latestVersion;
+                target = head (filter (t: t.arch == GOARCH && t.os == GOOS) version.targets);
               in
-                pkgs.stdenv.mkDerivation rec {
-                  inherit (latest) version;
+                pkgs.stdenv.mkDerivation {
+                  inherit (version) version;
                   pname = "terraform-provider-${repo}";
                   src = pkgs.fetchurl {
                     url = target.download_url;
@@ -145,7 +149,7 @@
                   buildPhase = ":";
                   # The upstream terraform wrapper assumes the provider filename here
                   installPhase = ''
-                    dir=$out/libexec/terraform-providers/${path}/${version}/${GOOS}_${GOARCH}
+                    dir=$out/libexec/terraform-providers/registry.opentofu.org/${source}/${version.version}/${GOOS}_${GOARCH}
                     mkdir -p "$dir"
                     mv terraform-* "$dir/"
                   '';
