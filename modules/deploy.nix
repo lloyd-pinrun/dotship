@@ -296,26 +296,19 @@ in {
                         # Installation
                         (mkIf (type.name == "nixos" && install.enable) (mkMerge [
                           {
-                            data.external."${name}_install".program = pkgs.execBash ''
-                              nix ${nixFlags} path-info --derivation .#${installPath} | \
-                                  ${pkgs.jq}/bin/jq --raw-input '{"drv":.}'
+                            resource.null_resource."${name}_install".provisioner.local-exec.command = ''
+                              set -euo pipefail
+                              ${waitScript install}
+                              ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
+                                  --flake .#${node.name} \
+                                  --build-on-remote \
+                                  --debug \
+                                  ${prefixJoin "--ssh-option " " " install.sshOptions} \
+                                  ${install.host}
                             '';
-                            resource.null_resource."${name}_install" = {
-                              triggers.drv = "\${ data.external.${name}_install.result.drv }";
-                              provisioner.local-exec.command = ''
-                                set -euo pipefail
-                                ${waitScript install}
-                                ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
-                                    --flake .#${node.name} \
-                                    --build-on-remote \
-                                    --debug \
-                                    ${prefixJoin "--ssh-option " " " install.sshOptions} \
-                                    ${install.host}
-                              '';
-                            };
                             data.external."${name}_ssh-wait".depends_on = ["null_resource.${name}_install"];
                           }
-                          (mkIf (node.name != root) {data.external."${name}_install".depends_on = ["null_resource.${rootName}"];})
+                          (mkIf (node.name != root) {resource.null_resource."${name}_install".depends_on = ["null_resource.${rootName}"];})
                         ]))
 
                         {
@@ -330,6 +323,7 @@ in {
                           value = "\${ ${resource}.${attr} }";
                         in
                           mkMerge [
+                            (mkIf install.enable {resource.null_resource.${resource_name}.lifecycle.replace_triggered_by = ["null_resource.${name}_install"];})
                             {
                               resource.null_resource.${name}.depends_on = ["null_resource.${resource_name}"];
                               resource.null_resource.${resource_name} = {
@@ -358,9 +352,6 @@ in {
                                 };
                               };
                             }
-                            (mkIf install.enable {
-                              resource.null_resource.${resource_name}.triggers.install = "\${ null_resource.${name}_install.triggers.drv }";
-                            })
                           ])))
 
                         # Activation
