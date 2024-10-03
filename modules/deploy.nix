@@ -32,9 +32,9 @@ in {
       };
     };
     nixos = {
-      modules.home-manager = {
+      modules.home-manager = {perSystem, ...}: {
         imports = [inputs.home-manager.nixosModules.home-manager];
-        home-manager.extraSpecialArgs = specialArgs;
+        home-manager.extraSpecialArgs = specialArgs // {inherit perSystem;};
         home-manager.sharedModules = attrValues config.canivete.deploy.nixos.homeModules;
       };
       defaultSystem = "x86_64-linux";
