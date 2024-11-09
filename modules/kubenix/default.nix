@@ -13,7 +13,7 @@ in {
     system,
     ...
   }: let
-    kubenix-patched = pkgs.applyPatches {
+    kubenix-patched = pkgs.applyFlakePatches {
       name = "kubenix-patched-src";
       src = inputs.kubenix;
       patches = [./kubenix.patch];

@@ -48,7 +48,7 @@ with nix; {
 
     # Patch underlying flake source tree
     # NOTE Adapted from https://discourse.nixos.org/t/apply-a-patch-to-an-input-flake/36904
-    applyPatches = {
+    applyFlakePatches = {
       name,
       src,
       patches,

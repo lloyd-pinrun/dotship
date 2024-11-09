@@ -10,7 +10,7 @@ with nix; {
     ...
   }: let
     cfg = config.canivete.dream2nix;
-    dream2nix-patched = pkgs.applyPatches {
+    dream2nix-patched = pkgs.applyFlakePatches {
       name = "dream2nix-patched-src";
       src = inputs.dream2nix;
       patches = [./dream2nix.patch];

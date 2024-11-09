@@ -11,7 +11,7 @@ with nix; {
     ...
   }: let
     # Arion has no argument to prefer buildLayeredImage when streamLayeredImage doesn't work across systems
-    arion-patched = pkgs.applyPatches {
+    arion-patched = pkgs.applyFlakePatches {
       name = "arion-patched-src";
       src = inputs.arion;
       patches = [./arion.patch];
