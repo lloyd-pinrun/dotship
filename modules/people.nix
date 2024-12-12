@@ -1,9 +1,10 @@
 {
   config,
-  nix,
+  lib,
   ...
-}:
-with nix; let
+}: let
+  inherit (lib) mkOption types;
+  inherit (types) submodule str attrsOf;
   userSubmodule = submodule {
     options.name = mkOption {
       type = str;

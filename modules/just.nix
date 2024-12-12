@@ -1,13 +1,19 @@
-{nix, ...}:
-with nix; {
+{
   perSystem = {
+    canivete,
     config,
+    lib,
     pkgs,
     ...
   }: let
+    inherit (canivete) mkEnabledOption;
+    inherit (lib) getExe mkOption types setAttrByPath attrNames pipe filterAttrs getAttr toList attrValues concatStringsSep mkIf mkMerge;
+    inherit (types) attrsOf coercedTo str submodule enum package;
+    inherit (pkgs) writeText just wrapProgram mkShell git convco;
     cfg = config.canivete.just;
   in {
     options.canivete.just = {
+      enable = mkEnabledOption "Just command runner";
       recipes = mkOption {
         type = attrsOf (coercedTo str (setAttrByPath ["command"]) (submodule ({
           config,
@@ -44,33 +50,38 @@ with nix; {
           (recipes: toList (recipes.${cfg.defaultRecipe} or []) ++ attrValues (removeAttrs recipes [cfg.defaultRecipe]))
           (map (getAttr "recipe"))
           (concatStringsSep "\n")
-          (pkgs.writeText "justfile")
+          (writeText "justfile")
         ];
       };
       basePackage = mkOption {
         type = package;
         description = "Base just package to use";
-        default = pkgs.just;
+        default = just;
       };
       finalPackage = mkOption {
         type = package;
+        readOnly = true;
         description = "Final just executable";
-        default = pkgs.wrapProgram cfg.basePackage "just" "just" "--add-flags \"--justfile ${cfg.justfile}\"" {};
+        default = wrapProgram cfg.basePackage "just" "just" "--add-flags \"--justfile ${cfg.justfile}\"" {};
       };
       devShell = mkOption {
         type = package;
         description = "Development shell with just executable";
-        default = pkgs.mkShell {
+        default = mkShell {
           packages = [cfg.finalPackage];
-          shellHook = "export JUST_WORKING_DIRECTORY=\"$(${getExe pkgs.git} rev-parse --show-toplevel)\"";
+          shellHook = "export JUST_WORKING_DIRECTORY=\"$(${getExe git} rev-parse --show-toplevel)\"";
         };
       };
     };
-    config.canivete.devShell.inputsFrom = [cfg.devShell];
-    config.canivete.just.recipes = {
-      list = "@just --list";
-      "changelog *ARGS" = "${getExe pkgs.convco} changelog --prefix \"\" {{ ARGS }}";
-      "flake *ARGS" = "nix flake show {{ ARGS }}";
-    };
+    config = mkMerge [
+      {canivete.just.recipes.list = "@just --list";}
+      (mkIf cfg.enable {
+        canivete.just.recipes = {
+          "changelog *ARGS" = "${getExe convco} changelog --prefix \"\" {{ ARGS }}";
+          "flake *ARGS" = "nix flake show {{ ARGS }}";
+        };
+      })
+      (mkIf config.canivete.devShells.enable {canivete.devShells.shells.shared.inputsFrom = [cfg.devShell];})
+    ];
   };
 }

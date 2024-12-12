@@ -6,12 +6,6 @@ reset=$(tput sgr0)
 null=/dev/null
 declare -A tool_log_colors=(
 	[DEFAULT]=""
-	[NIX]=$(tput setaf 2)
-	[OPENTOFU]=$(tput setaf 3)
-	[GOOGLE]=$(tput setaf 6)
-	[GIT]=$(tput setaf 7)
-	[GITHUB]=$(tput setaf 8)
-	[SSH]=$(tput setaf 9)
 )
 declare -A log_level_colors=(
 	[ERROR]=$(tput setaf 1)
@@ -102,19 +96,3 @@ has_intersection() {
 	done
 	has_duplicates has_intersection_array
 }
-
-nix() {
-	command nix --show-trace \
-		--allow-import-from-derivation \
-		--extra-experimental-features "nix-command flakes auto-allocate-uids" \
-		"$@"
-}
-
-GIT_DIR="$(git rev-parse --show-toplevel)"
-CANIVETE_GIT_DIR="$GIT_DIR/.canivete"
-export GIT_DIR CANIVETE_GIT_DIR
-mkdir -p "$CANIVETE_GIT_DIR"
-ignore_file="$CANIVETE_GIT_DIR/.gitignore"
-if [[ ! -f $ignore_file ]]; then
-	printf '.terraform/\nconfig.tf.json\nconfig.yaml\nkubeconfig\n' >"$ignore_file"
-fi

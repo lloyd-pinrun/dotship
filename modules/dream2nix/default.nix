@@ -1,22 +1,16 @@
-{
-  inputs,
-  nix,
-  ...
-}:
-with nix; {
+{inputs, ...}: {
   perSystem = {
     config,
+    lib,
     pkgs,
     ...
   }: let
+    inherit (lib) mkEnableOption mkOption types concat toList mkDefault mapAttrs getAttr mkIf;
+    inherit (types) listOf deferredModule package raw attrsOf submodule nullOr;
     cfg = config.canivete.dream2nix;
-    dream2nix-patched = pkgs.applyFlakePatches {
-      name = "dream2nix-patched-src";
-      src = inputs.dream2nix;
-      patches = [./dream2nix.patch];
-    };
   in {
     options.canivete.dream2nix = {
+      enable = mkEnableOption "Dream2nix packaging" // {default = inputs ? dream2nix;};
       sharedModules = mkOption {
         type = listOf deferredModule;
         default = [];
@@ -27,7 +21,14 @@ with nix; {
         default = [];
         description = "Shells shared by package devShells";
       };
+      flake = mkOption {
+        type = raw;
+        description = "Dream2nix flake input";
+        default = inputs.dream2nix;
+      };
       packages = mkOption {
+        default = {};
+        description = "Dream2Nix packages";
         type = attrsOf (submodule ({config, ...}: {
           options = {
             module = mkOption {
@@ -36,35 +37,37 @@ with nix; {
             };
             modules = mkOption {
               type = listOf deferredModule;
-              default = concat cfg.sharedModules [config.module];
               description = "All modules used to build package";
+              default = concat cfg.sharedModules [config.module];
             };
             package = mkOption {
               type = package;
-              default = dream2nix-patched.lib.evalModules {
+              description = "Final package built with Dream2Nix";
+              default = cfg.flake.lib.evalModules {
                 inherit (config) modules;
                 packageSets.nixpkgs = pkgs;
               };
-              description = "Final package built with Dream2Nix";
             };
             devShell = mkOption {
               type = nullOr package;
-              default = pkgs.mkShell {inputsFrom = concat cfg.sharedShells [config.package.devShell];};
               description = "Development shell for this package";
+              default = pkgs.mkShell {inputsFrom = concat cfg.sharedShells [config.package.devShell];};
             };
           };
         }));
-        default = {};
-        description = "Dream2Nix packages";
       };
     };
-    config = {
-      devShells = mapAttrs (_: getAttr "devShell") cfg.packages;
+    config = mkIf cfg.enable {
       packages = mapAttrs (_: getAttr "package") cfg.packages;
-      canivete.dream2nix.sharedShells = [config.devShells.default];
-      canivete.dream2nix.sharedModules = toList {
+      canivete.dream2nix.sharedModules = toList ({config, ...}: {
         paths.projectRoot = toString inputs.self;
         paths.projectRootFile = "flake.nix";
+        paths.package = mkDefault config.mkDerivation.src;
+      });
+      canivete.dream2nix.flake = inputs.nix-flake-patch.lib.patchFlake {
+        flake = inputs.dream2nix;
+        inherit pkgs;
+        patches = [./dream2nix.patch];
       };
     };
   };

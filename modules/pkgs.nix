@@ -1,14 +1,15 @@
 {
   config,
   inputs,
-  nix,
+  lib,
   ...
-}:
-with nix; {
+}: let
+  inherit (lib) attrValues flip pipe importJSON toList getExe mkOption types;
+in {
   # TODO options for overlays (from options.flake.overlays doesn't work?)
   # TODO nixpkgs config options
   options.canivete.pkgs.config = mkOption {
-    type = attrsOf anything;
+    type = types.attrsOf types.anything;
     default = {};
     description = "Nixpkgs configuration (i.e. allowUnfree, etc.)";
   };
@@ -25,7 +26,7 @@ with nix; {
       overlays = attrValues inputs.self.overlays;
     };
   };
-  config.flake.overlays.canivete = final: prev: {
+  config.flake.overlays.canivete = final: _: {
     fromYAML = flip pipe [
       (file: "${final.yq}/bin/yq '.' ${file} > $out")
       (final.runCommand "from-yaml" {})
@@ -45,52 +46,5 @@ with nix; {
         }
         // overrides);
     wrapFlags = pkg: args: final.wrapProgram pkg pkg.name pkg.name args {};
-
-    # Patch underlying flake source tree
-    # NOTE Adapted from https://discourse.nixos.org/t/apply-a-patch-to-an-input-flake/36904
-    applyFlakePatches = {
-      name,
-      src,
-      patches,
-      lockFileEntries ? {},
-    }: let
-      # Patched flake source
-      patched =
-        (prev.applyPatches {
-          inherit name src;
-          patches = forEach patches (patch:
-            if isAttrs patch
-            then prev.fetchpatch2 patch
-            else patch);
-        })
-        .overrideAttrs (_: old: {
-          outputs = ["out" "narHash"];
-          installPhase = ''
-            ${old.installPhase}
-            ${getExe prev.nix} \
-              --extra-experimental-features nix-command \
-              --offline \
-              hash path ./ \
-              > $narHash
-          '';
-        });
-
-      # New lock file
-      lockFile = let
-        lockFilePath = "${patched.outPath}/flake.lock";
-        lockFileExists = pathExists lockFilePath;
-        original = importJSON lockFilePath;
-        root = ifElse lockFileExists original.root "root";
-        nodes = ifElse lockFileExists (mergeAttrs original.nodes lockFileEntries) {root = {};};
-      in
-        builtins.unsafeDiscardStringContext (generators.toJSON {} {inherit root nodes;});
-
-      # New flake object
-      flake = {
-        inherit (patched) outPath;
-        narHash = fileContents patched.narHash;
-      };
-    in
-      (import "${inputs.call-flake}/call-flake.nix") lockFile flake "";
   };
 }

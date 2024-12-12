@@ -33,13 +33,9 @@
     dream2nix.inputs.nixpkgs.follows = "nixpkgs";
 
     # Container composition framework
-    arion = {
-      url = github:hercules-ci/arion;
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-parts.follows = "flake-parts";
-      inputs.hercules-ci-effects.inputs.flake-parts.follows = "arion/flake-parts";
-      inputs.hercules-ci-effects.inputs.nixpkgs.follows = "arion/nixpkgs";
-    };
+    arion.url = github:hercules-ci/arion;
+    arion.inputs.nixpkgs.follows = "nixpkgs";
+    arion.inputs.flake-parts.follows = "flake-parts";
 
     # Kubernetes manifest generation
     kubenix.url = github:hall/kubenix;
@@ -78,13 +74,11 @@
     disko.url = github:nix-community/disko;
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Robust derivation for referencing a flake
-    # NOTE pinned due to this unresolved issue https://github.com/divnix/call-flake/issues/4
-    call-flake.url = github:divnix/call-flake/a9bc85f5bd939734655327a824b4e7ceb4ccaba9;
+    nix-flake-patch.url = github:schradert/nix-flake-patch;
 
     # Local service definitions (like docker without containers)
-    process-compose-flake.url = github:Platonic-Systems/process-compose-flake;
-    services-flake.url = github:juspay/services-flake;
+    process-compose.url = github:Platonic-Systems/process-compose-flake;
+    services.url = github:juspay/services-flake;
 
     # Diagram generation for infrastructure dependencies
     nix-topology.url = github:oddlama/nix-topology;
@@ -92,46 +86,31 @@
     nix-topology.inputs.pre-commit-hooks.follows = "pre-commit";
   };
   outputs = inputs:
-    with inputs;
-      flake-parts.lib.mkFlake {inherit inputs;} (flake @ {config, ...}: let
-        nix = import ./lib.nix flake;
-      in {
-        imports = [./modules];
-        _module.args.nix = nix;
-        flake = {
-          lib =
-            nix
-            // {
-              mkFlake = args @ {
-                specialArgs ? {},
-                everything ? [],
-                ...
-              }: module:
-                flake-parts.lib.mkFlake {
-                  inputs = inputs // args.inputs;
-                  specialArgs = {inherit nix;} // specialArgs;
-                } {
-                  imports = nix.concat [module self.flakeModule] (nix.filesets.nix.everything everything);
-                  perSystem._module.args.nix = nix;
-                };
-            };
-          flakeModule = config.flake.flakeModules.default;
-          flakeModules = with nix;
-            pipe ./modules [
-              filesets.nix.files
-              (map (file:
-                flip nameValuePair file (pipe file [
-                  baseNameOf
-                  (match "^(.+)\.nix$")
-                  head
-                ])))
-              listToAttrs
-            ];
-          templates.default = {
-            path = ./template;
-            description = "Basic canivete template";
-          };
-        };
-        perSystem.canivete.pre-commit.languages.shell.enable = true;
-      });
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} ({
+      canivete,
+      lib,
+      ...
+    }: {
+      imports = [./modules];
+      flake.lib = canivete;
+      flake.flakeModules = let
+        inherit (lib) pipe flip nameValuePair match head listToAttrs;
+      in
+        pipe ./modules [
+          canivete.filesets.nix.files
+          (builtins.map (file:
+            flip nameValuePair file (pipe file [
+              builtins.baseNameOf
+              (match "^(.+)\.nix$")
+              head
+            ])))
+          listToAttrs
+        ];
+      # TODO add WAYYY more templates
+      flake.templates.default = {
+        path = ./template;
+        description = "Basic canivete template";
+      };
+      perSystem.canivete.pre-commit.languages.shell.enable = true;
+    });
 }
