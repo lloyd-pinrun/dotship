@@ -40,7 +40,7 @@ in {
       config = {
         _module.args = {inherit canivete flake node type;};
         modules.self = config.module;
-        modules.canivete = mkIf (name != "system") {options.canivete = config.profiles.system.raw.options.canivete;};
+        modules.canivete = mkIf (name != "system") {options.canivete = node.config.profiles.system.raw.options.canivete;};
         raw = with config; builder modules;
       };
     }));
