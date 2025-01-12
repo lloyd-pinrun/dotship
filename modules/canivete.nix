@@ -125,7 +125,7 @@ in {
         (mkIf condition yes)
         (mkIf (!condition) no)
       ];
-    mkUnless = condition: flip (mkIfElse condition);
+    mkUnless = condition: mkIf (!condition);
     mkMergeTopLevel = names:
       flip pipe [
         (foldAttrs (this: those: [this] ++ those) [])
