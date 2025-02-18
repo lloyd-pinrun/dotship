@@ -4,20 +4,20 @@
   lib,
   ...
 }: let
-  inherit (lib) mkDefault mergeAttrs mapAttrs getAttr;
+  inherit (lib) mergeAttrs mapAttrs getAttr;
 in {
   imports = [
     ./arion
     ./deploy
     ./dream2nix
     ./kubenix
+    ./opentofu
     ./scripts
 
     ./canivete.nix
     ./climod.nix
     ./devShells.nix
     ./just.nix
-    ./opentofu.nix
     ./people.nix
     ./pkgs.nix
     ./pre-commit.nix

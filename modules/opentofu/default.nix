@@ -12,30 +12,22 @@
     ...
   }: let
     inherit (canivete) vals ifElse mkEnabledOption;
-    inherit (lib) getExe mkOption mkEnableOption nameValuePair mkIf concat listToAttrs pipe types mkMerge mkDefault attrValues importJSON head length filter elemAt substring strings;
+    inherit (lib) getExe mkOption mkEnableOption nameValuePair mkIf concat listToAttrs pipe types mkMerge mkDefault attrValues importJSON head length filter elemAt substring strings readFile;
     inherit (types) attrsOf submodule raw package str listOf coercedTo deferredModule;
     tofu = config.canivete.opentofu;
     tofuOpts = options.canivete.opentofu;
   in {
+    config = mkIf tofu.enable {
+      canivete.just.recipes."tofu *ARGS" = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
+    };
     options.canivete.opentofu = {
       enable = mkEnableOption "OpenTofu workspaces" // {default = inputs ? terranix;};
       script = mkOption {
         type = package;
         default = pkgs.writeShellApplication {
           name = "opentofu";
-          text = ''
-            git_dir="$(${getExe pkgs.git} rev-parse --show-toplevel)"
-            run_dir="$git_dir/.canivete/opentofu/$1"
-            dec_file="$run_dir/config.tf.json"
-            mkdir -p "$run_dir"
-            trap 'rm -rf "$run_dir/.terraform" "$run_dir/.terraform.lock.hcl" "$dec_file"' EXIT
-            nix build ".#canivete.${system}.opentofu.workspaces.$1.configuration" --no-link --print-out-paths | \
-              xargs cat | \
-              ${getExe pkgs.vals} eval -s -f - | \
-              ${getExe pkgs.yq} "." >"$dec_file"
-            nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- -chdir="$run_dir" init -upgrade
-            nix run ".#canivete.${system}.opentofu.workspaces.$1.finalPackage" -- -chdir="$run_dir" "''${@:2}"
-          '';
+          runtimeInputs = with pkgs; [git gum yq] ++ [pkgs.vals config.canivete.scripts.utils];
+          text = readFile ./opentofu.sh;
         };
       };
       workspaces = mkOption {
