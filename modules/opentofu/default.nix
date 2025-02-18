@@ -8,11 +8,10 @@
     lib,
     options,
     pkgs,
-    system,
     ...
   }: let
     inherit (canivete) vals ifElse mkEnabledOption;
-    inherit (lib) getExe mkOption mkEnableOption nameValuePair mkIf concat listToAttrs pipe types mkMerge mkDefault attrValues importJSON head length filter elemAt substring strings readFile;
+    inherit (lib) mkOption mkEnableOption nameValuePair mkIf concat listToAttrs pipe types mkMerge mkDefault attrValues importJSON head length filter elemAt substring strings readFile;
     inherit (types) attrsOf submodule raw package str listOf coercedTo deferredModule;
     tofu = config.canivete.opentofu;
     tofuOpts = options.canivete.opentofu;

@@ -1,5 +1,9 @@
 {
-  perSystem = {lib, pkgs, ...}: {
+  perSystem = {
+    lib,
+    pkgs,
+    ...
+  }: {
     options.canivete.scripts = lib.mkOption {
       default = {};
       description = "Scripts!";

@@ -88,6 +88,7 @@
             (mkIf cfg.languages.shell.enable {
               shellcheck.enable = true;
               shfmt.enable = true;
+              shfmt.raw.args = ["--indent" (toString 4)];
             })
             (mkIf cfg.languages.javascript.enable {
               biome.enable = true;

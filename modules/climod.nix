@@ -1,5 +1,10 @@
 {inputs, ...}: {
-  perSystem = {config, lib, pkgs, ...}: let
+  perSystem = {
+    config,
+    lib,
+    pkgs,
+    ...
+  }: let
     inherit (config.canivete) climod;
     inherit (lib) mapAttrs' mkDefault mkEnableOption mkIf mkOption nameValuePair types;
     inherit (types) attrsOf deferredModule submodule package functionTo;
@@ -13,7 +18,11 @@
       programs = mkOption {
         default = {};
         description = "Executables";
-        type = attrsOf (submodule ({name, config, ...}: {
+        type = attrsOf (submodule ({
+          name,
+          config,
+          ...
+        }: {
           options.builder = mkOption {
             default = pkgs.callPackage (inputs.climod + "/default.nix") {inherit pkgs;};
             description = "Function to create executable with configuration";
