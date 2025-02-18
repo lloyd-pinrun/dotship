@@ -71,6 +71,22 @@
         "type": "github"
       }
     },
+    "climod": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1669486888,
+        "narHash": "sha256-BLvyAl+taQAd+bnkUYsAcEIB15pwtJ9zSZkg7od2RBA=",
+        "owner": "nixosbrasil",
+        "repo": "climod",
+        "rev": "64f6c5495db03185803105d5babd2906a3fdcd99",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixosbrasil",
+        "repo": "climod",
+        "type": "github"
+      }
+    },
     "devshell": {
       "inputs": {
         "nixpkgs": [
@@ -806,6 +822,7 @@
     "root": {
       "inputs": {
         "arion": "arion",
+        "climod": "climod",
         "disko": "disko",
         "dream2nix": "dream2nix",
         "flake-parts": "flake-parts",

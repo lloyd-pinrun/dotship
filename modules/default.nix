@@ -14,6 +14,7 @@ in {
     ./scripts
 
     ./canivete.nix
+    ./climod.nix
     ./devShells.nix
     ./just.nix
     ./opentofu.nix

@@ -84,6 +84,10 @@
     nix-topology.url = github:oddlama/nix-topology;
     nix-topology.inputs.nixpkgs.follows = "nixpkgs";
     nix-topology.inputs.pre-commit-hooks.follows = "pre-commit";
+
+    # Climod
+    climod.url = github:nixosbrasil/climod;
+    climod.flake = false;
   };
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake {inherit inputs;} ({
