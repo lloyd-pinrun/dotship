@@ -96,3 +96,5 @@ has_intersection() {
 	done
 	has_duplicates has_intersection_array
 }
+
+"$@"
