@@ -41,4 +41,4 @@ nix build "$workspace_path.configuration" --no-link --print-out-paths |
     vals eval -s -f - |
     yq "." >"$dec_file"
 "${tofu[@]}" init -upgrade
-"${tofu[@]}" "${@:2}"
+"${tofu[@]}" "$@"
