@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+usage="Usage: $0 [-w|--workspace WORKSPACE] [-h|--help] <opentofu args>"
 git_dir="$(git rev-parse --show-toplevel)"
 system="$(nix eval --raw --impure --expr "builtins.currentSystem")"
 workspaces_path="$git_dir#canivete.$system.opentofu.workspaces"
@@ -13,7 +14,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     -h | --help)
-        echo "$USAGE"
+        echo "$usage"
         exit
         ;;
     *)
