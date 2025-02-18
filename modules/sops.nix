@@ -17,9 +17,13 @@ in {
     pkgs,
     ...
   }: {
-    options.canivete.sops.enable = lib.mkEnableOption "sops" // {default = inputs ? sops-nix;};
+    options.canivete.sops = {
+      enable = lib.mkEnableOption "sops" // {default = inputs ? sops-nix;};
+      package = lib.mkPackageOption pkgs "sops" {};
+    };
     config = lib.mkIf (config.canivete.sops.enable && config.canivete.devShells.enable) {
-      canivete.devShells.shells.default.packages = [pkgs.sops];
+      canivete.devShells.shells.default.packages = [config.canivete.sops.package];
+      canivete.just.recipes."sops *ARGS" = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.package \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
     };
   };
 }
