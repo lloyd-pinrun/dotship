@@ -20,11 +20,12 @@ in {
     nixosConfigurations = nodes "nixos";
     darwinConfigurations = nodes "darwin";
     nixOnDroidConfigurations = nodes "droid";
-  in mkMerge [
-    (mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
-    (mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
-    (mkIf (nixOnDroidConfigurations != {}) {inherit nixOnDroidConfigurations;})
-  ];
+  in
+    mkMerge [
+      (mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
+      (mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
+      (mkIf (nixOnDroidConfigurations != {}) {inherit nixOnDroidConfigurations;})
+    ];
   canivete.deploy = {
     system.modules.secrets = {
       options.canivete.secrets = mkOption {
