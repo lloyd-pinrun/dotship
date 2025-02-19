@@ -13,6 +13,7 @@ in {
     ./kubenix
     ./opentofu
     ./scripts
+    ./sops
 
     ./canivete.nix
     ./climod.nix
@@ -23,7 +24,6 @@ in {
     ./pre-commit.nix
     ./processes.nix
     ./schemas.nix
-    ./sops.nix
   ];
   systems = mkDefault (import inputs.systems);
 
