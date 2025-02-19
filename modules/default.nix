@@ -4,7 +4,7 @@
   lib,
   ...
 }: let
-  inherit (lib) mergeAttrs mapAttrs getAttr;
+  inherit (lib) getAttr mapAttrs mergeAttrsList mkDefault;
 in {
   imports = [
     ./arion
@@ -25,9 +25,12 @@ in {
     ./schemas.nix
     ./sops.nix
   ];
-  systems = with inputs; lib.mkDefault (import systems);
+  systems = mkDefault (import inputs.systems);
 
-  # Exposes inputs, canivete (with each system), and utils.sh to flake top level
-  flake.inputs = inputs;
-  flake.canivete = mergeAttrs config.canivete (mapAttrs (_: getAttr "canivete") config.allSystems);
+  # Expose everything canivete to flake top level
+  flake.canivete = mergeAttrsList [
+    config.canivete
+    (mapAttrs (_: getAttr "canivete") config.allSystems)
+    {inherit inputs;}
+  ];
 }
