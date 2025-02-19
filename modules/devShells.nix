@@ -52,7 +52,10 @@
       };
     };
     config = mkIf cfg.enable {
-      devShells = mapAttrs (_: getAttr "shell") cfg.shells;
+      devShells = pipe cfg.shells [
+        (filterAttrs (name: _: name != "shared"))
+        (mapAttrs (_: getAttr "shell"))
+      ];
       canivete.devShells.shells = mkMerge [
         {
           shared = {};
