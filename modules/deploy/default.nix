@@ -6,7 +6,7 @@
   self,
   ...
 }: let
-  inherit (lib) getAttrFromPath mapAttrs mkOption types attrValues concatStringsSep pipe mapAttrsToList flip getAttr flatten;
+  inherit (lib) getAttrFromPath mapAttrs mkOption types attrValues concatStringsSep pipe mapAttrsToList flip getAttr flatten mkMerge mkIf;
   inherit (types) attrsOf str;
   specialArgs = {
     inherit canivete;
@@ -17,11 +17,14 @@ in {
   flake = let
     nodeAttr = getAttrFromPath ["profiles" "system" "raw"];
     nodes = type: mapAttrs (_: nodeAttr) config.canivete.deploy.${type}.nodes;
-  in {
     nixosConfigurations = nodes "nixos";
     darwinConfigurations = nodes "darwin";
     nixOnDroidConfigurations = nodes "droid";
-  };
+  in mkMerge [
+    (mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
+    (mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
+    (mkIf (nixOnDroidConfigurations != {}) {inherit nixOnDroidConfigurations;})
+  ];
   canivete.deploy = {
     system.modules.secrets = {
       options.canivete.secrets = mkOption {
