@@ -31,7 +31,11 @@ in {
       };
     };
     nixos = {
-      modules.home-manager = {perSystem, utils, ...}: {
+      modules.home-manager = {
+        perSystem,
+        utils,
+        ...
+      }: {
         imports = [inputs.home-manager.nixosModules.home-manager];
         home-manager.extraSpecialArgs = specialArgs // {inherit perSystem utils;};
         home-manager.sharedModules = attrValues config.canivete.deploy.nixos.homeModules;

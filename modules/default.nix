@@ -21,8 +21,8 @@ in {
     ./people.nix
     ./pkgs.nix
     ./pre-commit.nix
+    ./processes.nix
     ./schemas.nix
-    ./services.nix
     ./sops.nix
   ];
   systems = with inputs; lib.mkDefault (import systems);
