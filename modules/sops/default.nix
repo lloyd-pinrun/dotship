@@ -33,6 +33,7 @@ in {
       };
     };
     config = mkIf (config.canivete.sops.enable && config.canivete.devShells.enable) {
+      canivete.pre-commit.settings.excludes = [".canivete/sops/.+"];
       canivete.devShells.shells.default.packages = [config.canivete.sops.package];
       canivete.just.recipes."sops-setup *ARGS" = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
     };

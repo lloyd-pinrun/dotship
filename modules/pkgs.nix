@@ -12,7 +12,7 @@ in {
   options.canivete.pkgs = {
     allowUnfree = mkOption {
       type = listOf str;
-      deafult = [];
+      default = [];
       description = "Package names to ignore because unfree";
     };
     config = mkOption {

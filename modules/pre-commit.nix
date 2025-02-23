@@ -53,7 +53,7 @@
                   description = "Contents of lychee.toml";
                 };
                 config.enable = true;
-                config.settings.configPath = toml.generate "lychee.toml" config.toml;
+                config.settings.configPath = builtins.toString (toml.generate "lychee.toml" config.toml);
               };
               markdownlint.enable = true;
               markdownlint.settings.configuration.MD013.line_length = -1;
