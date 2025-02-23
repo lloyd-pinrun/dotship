@@ -46,7 +46,15 @@
               commitizen.enable = true;
               gitleaks.enable = true;
               gitleaks.entry = "${pkgs.gitleaks}/bin/gitleaks protect --redact";
-              lychee.enable = true;
+              lychee = {config, ...}: {
+                options.toml = mkOption {
+                  inherit (toml) type;
+                  default = {};
+                  description = "Contents of lychee.toml";
+                };
+                config.enable = true;
+                config.settings.configPath = toml.generate "lychee.toml" config.toml;
+              };
               markdownlint.enable = true;
               markdownlint.settings.configuration.MD013.line_length = -1;
               mdsh.enable = true;
