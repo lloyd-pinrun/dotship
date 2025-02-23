@@ -66,10 +66,6 @@
     nixos-anywhere.inputs.nixpkgs.follows = "nixpkgs";
     nixos-anywhere.inputs.flake-parts.follows = "flake-parts";
 
-    # Common configuration modules for NixOS servers
-    srvos.url = github:nix-community/srvos;
-    srvos.inputs.nixpkgs.follows = "nixpkgs";
-
     # Declarative disk partitioning and formatting
     disko.url = github:nix-community/disko;
     disko.inputs.nixpkgs.follows = "nixpkgs";
