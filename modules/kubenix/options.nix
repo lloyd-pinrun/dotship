@@ -7,7 +7,7 @@
     ...
   }: let
     inherit (canivete) mkModulesOption prefixAttrNames mkEnabledOption;
-    inherit (lib) mkMerge getExe mkOption types mkIf mkEnableOption filter forEach concatStringsSep concatMap toJSON listToAttrs;
+    inherit (lib) attrValues mkMerge getExe mkOption types mkIf mkEnableOption filter forEach concatStringsSep concatMap toJSON listToAttrs;
     inherit (types) attrsOf submodule raw str package anything;
     composition = cluster:
       mkOption {
@@ -22,7 +22,7 @@
             lib,
             ...
           }: {
-            imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
+            imports = with kubenix.modules; [k8s helm] ++ (attrValues cluster.modules);
             kubernetes.customTypes = let
               # Extract CustomResourceDefinitions from all modules
               crds = let
@@ -30,7 +30,7 @@
                   evaluation = inputs.kubenix.evalModules.${system} {
                     specialArgs = {inherit canivete;};
                     module = {kubenix, ...}: {
-                      imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
+                      imports = with kubenix.modules; [k8s helm] ++ (attrValues cluster.modules);
                       options.kubernetes.api = mkOption {
                         type = submodule {freeformType = attrsOf anything;};
                       };
