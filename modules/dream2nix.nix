@@ -6,7 +6,7 @@
     ...
   }: let
     inherit (lib) mkEnableOption mkOption types concat toList mkDefault mapAttrs getAttr mkIf;
-    inherit (types) listOf deferredModule package raw attrsOf submodule nullOr;
+    inherit (types) listOf deferredModule package attrsOf submodule nullOr;
     cfg = config.canivete.dream2nix;
   in {
     options.canivete.dream2nix = {

@@ -6,13 +6,11 @@
     pkgs,
     ...
   }: let
-    inherit (lib) mkDefault mkIf mkMerge mkOption optionalAttrs types;
+    inherit (lib) mkDefault mkMerge mkOption optionalAttrs types;
     inherit (types) attrsOf submodule anything deferredModule;
     yaml = pkgs.formats.yaml {};
   in {
-    config = mkMerge [
-      (mkIf config.canivete.pre-commit.enable {pre-commit.settings.hooks.lychee.toml.exclude = ["svc.cluster.local"];})
-    ];
+    config.pre-commit.settings.hooks.lychee.toml.exclude = ["svc.cluster.local"];
     options.canivete.kubenix.helm = mkOption {
       default = {};
       type = attrsOf (submodule ({
