@@ -22,6 +22,7 @@ in {
               depends_on = pipe nodes [
                 (filterAttrs (_: node: node.profiles.system.raw.config.dotfiles.kubernetes.enable))
                 (mapAttrsToList (name: _: "null_resource.nixos_${name}_system"))
+                (mkIf (cfg.opentofuWorkspace == "deploy"))
               ];
               triggers.drv = cfg.configuration.drvPath;
               provisioner.local-exec.command = ''
