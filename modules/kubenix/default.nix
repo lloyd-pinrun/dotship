@@ -1,7 +1,7 @@
 {config, ...}: let
   inherit (config.canivete.deploy.nixos) nodes;
 in {
-  imports = [./options.nix];
+  imports = [./helm.nix ./nixos.nix ./options.nix];
   perSystem = {
     canivete,
     config,
@@ -11,7 +11,7 @@ in {
     ...
   }: let
     inherit (lib) pipe mapAttrsToList mkMerge filterAttrs getExe mkOption mkDefault types toList mkIf;
-    inherit (types) attrsOf submodule raw;
+    inherit (types) attrsOf submodule;
   in {
     canivete.opentofu.workspaces = pipe config.canivete.kubenix.clusters [
       (mapAttrsToList (name: cfg: {
@@ -20,7 +20,7 @@ in {
             plugins = ["opentofu/null"];
             modules.kubenix.resource.null_resource.kubernetes = {
               depends_on = pipe nodes [
-                (filterAttrs (_: node: node.profiles.system.raw.config.dotfiles.kubernetes.enable))
+                (filterAttrs (_: node: node.profiles.system.raw.config.canivete.kubernetes.enable))
                 (mapAttrsToList (name: _: "null_resource.nixos_${name}_system"))
                 (mkIf (cfg.opentofuWorkspace == "deploy"))
               ];

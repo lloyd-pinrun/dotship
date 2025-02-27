@@ -8,7 +8,7 @@
   inherit (config._module.args.canivete) eval functions prefix mapAttrNames mkOverrideOption mkIfElse filesets;
   inherit (builtins) functionArgs;
   inherit (lib) attrsets lists path strings trivial versions options types modules;
-  inherit (attrsets) filterAttrs attrNames mapAttrs' nameValuePair foldAttrs mapAttrs getAttrs;
+  inherit (attrsets) filterAttrs attrNames mapAttrs' nameValuePair foldAttrs mapAttrs getAttrs optionalAttrs;
   inherit (lists) all flatten foldl sublist toList;
   inherit (modules) mkMerge mkIf;
   inherit (options) mkOption;
@@ -112,6 +112,13 @@ in {
       default = "latest";
       example = "0.0.1";
       description = "Set the version. Defaults to null (i.e. latest)";
+    };
+    mkFunctionArgsOption = func: mkOverrideOption {
+      type = types.submodule {
+        options = flip mapAttrs (functionArgs func) (_: hasDefault:
+          mkOption ({type = types.anything;} // optionalAttrs hasDefault {default = null;})
+        );
+      };
     };
 
     # Convenience utilities

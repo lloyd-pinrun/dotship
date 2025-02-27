@@ -2,6 +2,7 @@
 # OpenTofu has issues finding Terraform plugins added with .withPlugins, so this module will patch that
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
 {inputs, ...}: {
+  imports = [./sops.nix];
   perSystem = {
     canivete,
     config,

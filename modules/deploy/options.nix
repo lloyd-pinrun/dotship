@@ -7,7 +7,6 @@
   withSystem,
   ...
 }: let
-  inherit (config.canivete) root;
   inherit (canivete) prefixAttrNames mkModulesOption mkSystemOption;
   inherit (lib) concatMapStringsSep mkOption types mkMerge mkIf;
   inherit (types) attrsOf str submodule anything listOf nullOr bool functionTo raw deferredModule;
@@ -17,10 +16,6 @@
   };
   prefixJoin = prefix: separator: concatMapStringsSep separator (option: "${prefix}${option}");
 in {
-  options.canivete.root = mkOption {
-    type = str;
-    description = "Name of node to treat as deployment root";
-  };
   options.canivete.deploy = mkOption {
     default = {};
     type = attrsOf (submodule (type @ {name, ...}: {

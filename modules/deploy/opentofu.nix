@@ -10,7 +10,7 @@
   inherit (flake) inputs;
   inherit (canivete) prefixJoin mkIfElse;
   inherit (lib) mkOption types concatStringsSep mkMerge mkIf flip mapAttrsToList replaceStrings;
-  inherit (flake.config.canivete) root;
+  inherit (flake.config.canivete.meta) root;
 in {
   options.opentofu = mkOption {type = types.deferredModule;};
   config.opentofu = {pkgs, ...}: {

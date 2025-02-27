@@ -19,7 +19,7 @@ in {
     ./devShells.nix
     ./dream2nix.nix
     ./just.nix
-    ./people.nix
+    ./meta.nix
     ./pkgs.nix
     ./pre-commit.nix
     ./processes.nix
