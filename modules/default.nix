@@ -7,17 +7,17 @@
   inherit (lib) getAttr mapAttrs mergeAttrsList mkDefault;
 in {
   imports = [
-    ./arion
     ./deploy
-    ./dream2nix
     ./kubenix
     ./opentofu
     ./scripts
     ./sops
 
+    ./arion.nix
     ./canivete.nix
     ./climod.nix
     ./devShells.nix
+    ./dream2nix.nix
     ./just.nix
     ./people.nix
     ./pkgs.nix

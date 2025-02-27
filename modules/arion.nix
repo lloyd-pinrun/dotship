@@ -73,12 +73,6 @@ in {
       };
     };
     config = mkIf cfg.enable {
-      # Arion has no argument to prefer buildLayeredImage when streamLayeredImage doesn't work across systems
-      canivete.arion.flake = inputs.nix-flake-patch.lib.patchFlake {
-        flake = inputs.arion;
-        inherit pkgs;
-        patches = [./arion.patch];
-      };
       # TODO why does this cause a nix daemon disconnection? move-docs.sh missing? cross platform is HARD
       # config.canivete.just.recipes."arion *ARGS" = "${getExe cfg.finalPackage} {{ ARGS }}";
     };

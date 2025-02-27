@@ -11,15 +11,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1733918465,
-        "narHash": "sha256-hSuGa8Hh67EHr2x812Ay6WFyFT2BGKn+zk+FJWeKXPg=",
-        "owner": "hercules-ci",
+        "lastModified": 1740626013,
+        "narHash": "sha256-CQPj94/5zsHCzLSM06D6Y/r4EttTEMEabSTR0yFwsoc=",
+        "owner": "schradert",
         "repo": "arion",
-        "rev": "f01c95c10f9d4f04bb08d97b3233b530b180f12e",
+        "rev": "0ba45632e849eb018730a2ee8c78967d5c365860",
         "type": "github"
       },
       "original": {
-        "owner": "hercules-ci",
+        "owner": "schradert",
+        "ref": "build-layer-image",
         "repo": "arion",
         "type": "github"
       }
@@ -53,21 +54,6 @@
       "original": {
         "owner": "bats-core",
         "repo": "bats-support",
-        "type": "github"
-      }
-    },
-    "call-flake": {
-      "locked": {
-        "lastModified": 1733018953,
-        "narHash": "sha256-11/dQG/vjpfMi4D7ku2o1UtUMf8Sud0KJ/Le44zHIc8=",
-        "owner": "divnix",
-        "repo": "call-flake",
-        "rev": "bb20f71a66f110625d6b1d31598910339b4948dd",
-        "type": "github"
-      },
-      "original": {
-        "owner": "divnix",
-        "repo": "call-flake",
         "type": "github"
       }
     },
@@ -159,15 +145,15 @@
         "pyproject-nix": "pyproject-nix"
       },
       "locked": {
-        "lastModified": 1735160684,
-        "narHash": "sha256-n5CwhmqKxifuD4Sq4WuRP/h5LO6f23cGnSAuJemnd/4=",
-        "owner": "nix-community",
+        "lastModified": 1740626484,
+        "narHash": "sha256-mYJs8B0HAEjay96qZPV/jEIzBZrVpdyGWVqBZv3q2GA=",
+        "owner": "schradert",
         "repo": "dream2nix",
-        "rev": "8ce6284ff58208ed8961681276f82c2f8f978ef4",
+        "rev": "28a1612f7e83abc8341eb138950b9deaf4bc1539",
         "type": "github"
       },
       "original": {
-        "owner": "nix-community",
+        "owner": "schradert",
         "repo": "dream2nix",
         "type": "github"
       }
@@ -382,15 +368,16 @@
         "treefmt": "treefmt"
       },
       "locked": {
-        "lastModified": 1719313214,
-        "narHash": "sha256-3CY/B/60A5rikhU5OlgDdNZMsOSIA1MteA2UPm4EHU0=",
-        "owner": "hall",
+        "lastModified": 1740625118,
+        "narHash": "sha256-n8lCPSQMqxYQdA7XBmK6EsgS8dAJm8J/DkSxctfUgF0=",
+        "owner": "schradert",
         "repo": "kubenix",
-        "rev": "d6ddf1b4e8804e3c9564696a493ac14c0bcb19e2",
+        "rev": "1eefed2f1d5bdcb161f9379a4cfdb405e2fb2099",
         "type": "github"
       },
       "original": {
-        "owner": "hall",
+        "owner": "schradert",
+        "ref": "52-patch",
         "repo": "kubenix",
         "type": "github"
       }
@@ -412,24 +399,6 @@
       "original": {
         "owner": "LnL7",
         "repo": "nix-darwin",
-        "type": "github"
-      }
-    },
-    "nix-flake-patch": {
-      "inputs": {
-        "call-flake": "call-flake"
-      },
-      "locked": {
-        "lastModified": 1736924561,
-        "narHash": "sha256-FW5TBWqPKgj7LZGPptvxU66ZIOXTNR3Zk9CtuKGjVec=",
-        "owner": "schradert",
-        "repo": "nix-flake-patch",
-        "rev": "b5826d840bdbf07e8a145e45291c2ec2d53c08a8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "schradert",
-        "repo": "nix-flake-patch",
         "type": "github"
       }
     },
@@ -819,7 +788,6 @@
         "home-manager": "home-manager",
         "kubenix": "kubenix",
         "nix-darwin": "nix-darwin",
-        "nix-flake-patch": "nix-flake-patch",
         "nix-on-droid": "nix-on-droid",
         "nix-topology": "nix-topology",
         "nixos-anywhere": "nixos-anywhere",

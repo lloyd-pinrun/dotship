@@ -9,16 +9,11 @@
     inherit (canivete) mkModulesOption prefixAttrNames mkEnabledOption;
     inherit (lib) mkMerge getExe mkOption types mkIf mkEnableOption filter forEach concatStringsSep concatMap toJSON listToAttrs;
     inherit (types) attrsOf submodule raw str package anything;
-    kubenix-patched = inputs.nix-flake-patch.lib.patchFlake {
-      flake = inputs.kubenix;
-      inherit pkgs;
-      patches = [./kubenix.patch];
-    };
     composition = cluster:
       mkOption {
         type = raw;
         description = "Evaluated kubenix composition for cluster";
-        default = cluster.kubenix.evalModules.${system} {
+        default = inputs.kubenix.evalModules.${system} {
           specialArgs = {inherit canivete;};
           module = {
             config,
@@ -32,7 +27,7 @@
               # Extract CustomResourceDefinitions from all modules
               crds = let
                 CRDs = let
-                  evaluation = cluster.kubenix.evalModules.${system} {
+                  evaluation = inputs.kubenix.evalModules.${system} {
                     specialArgs = {inherit canivete;};
                     module = {kubenix, ...}: {
                       imports = with kubenix.modules; [k8s helm] ++ attrValues cluster.modules;
@@ -57,7 +52,7 @@
 
               # Generate resource definitions with IFD x 2
               definitions = let
-                generated = import "${cluster.kubenix}/pkgs/generators/k8s" {
+                generated = import "${inputs.kubenix}/pkgs/generators/k8s" {
                   name = "kubenix-generated-for-crds";
                   inherit pkgs lib;
                   # Mirror K8s OpenAPI spec
@@ -97,10 +92,6 @@
           text = "nix run \".#canivete.${system}.kubenix.clusters.$1.script\" -- \"\${@:2}\"";
         };
       };
-      flake = mkOption {
-        type = raw;
-        default = inputs.kubenix;
-      };
       clusters = mkOption {
         type = attrsOf (submodule ({
           config,
@@ -111,13 +102,6 @@
         in {
           options = {
             ifd = mkEnabledOption "IFD to support custom types";
-            kubenix = mkOption {
-              type = raw;
-              default =
-                if cluster.ifd
-                then kubenix-patched
-                else inputs.kubenix;
-            };
             deploy = {
               k3d = mkEnableOption "Deploy cluster locally with k3d";
               fetchKubeconfig = mkOption {

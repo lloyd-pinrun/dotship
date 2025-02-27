@@ -29,16 +29,24 @@
     opentofu-registry.flake = false;
 
     # Declarative software packaging
-    dream2nix.url = github:nix-community/dream2nix;
+    # dream2nix.url = github:nix-community/dream2nix;
+    # TODO follow changes upstream for better PDM support
+    # NOTE might also consider moving away from PDM...
+    dream2nix.url = github:schradert/dream2nix;
     dream2nix.inputs.nixpkgs.follows = "nixpkgs";
 
     # Container composition framework
-    arion.url = github:hercules-ci/arion;
+    # Arion has no argument to prefer buildLayeredImage when streamLayeredImage doesn't work across systems
+    # arion.url = github:hercules-ci/arion;
+    arion.url = github:schradert/arion/build-layer-image;
     arion.inputs.nixpkgs.follows = "nixpkgs";
     arion.inputs.flake-parts.follows = "flake-parts";
 
     # Kubernetes manifest generation
-    kubenix.url = github:hall/kubenix;
+    # TODO follow updates and revert on merge
+    # NOTE https://github.com/hall/kubenix/issues/52
+    # kubenix.url = github:hall/kubenix;
+    kubenix.url = github:schradert/kubenix/52-patch;
     kubenix.inputs.nixpkgs.follows = "nixpkgs";
 
     # RFC for flake output schemas
@@ -69,8 +77,6 @@
     # Declarative disk partitioning and formatting
     disko.url = github:nix-community/disko;
     disko.inputs.nixpkgs.follows = "nixpkgs";
-
-    nix-flake-patch.url = github:schradert/nix-flake-patch;
 
     # Local service definitions (like docker without containers)
     process-compose.url = github:Platonic-Systems/process-compose-flake;

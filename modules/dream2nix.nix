@@ -21,11 +21,6 @@
         default = [];
         description = "Shells shared by package devShells";
       };
-      flake = mkOption {
-        type = raw;
-        description = "Dream2nix flake input";
-        default = inputs.dream2nix;
-      };
       packages = mkOption {
         default = {};
         description = "Dream2Nix packages";
@@ -43,7 +38,7 @@
             package = mkOption {
               type = package;
               description = "Final package built with Dream2Nix";
-              default = cfg.flake.lib.evalModules {
+              default = inputs.dream2nix.lib.evalModules {
                 inherit (config) modules;
                 packageSets.nixpkgs = pkgs;
               };
@@ -64,11 +59,6 @@
         paths.projectRootFile = "flake.nix";
         paths.package = mkDefault config.mkDerivation.src;
       });
-      canivete.dream2nix.flake = inputs.nix-flake-patch.lib.patchFlake {
-        flake = inputs.dream2nix;
-        inherit pkgs;
-        patches = [./dream2nix.patch];
-      };
     };
   };
 }
