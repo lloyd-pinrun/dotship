@@ -8,7 +8,7 @@
       pkgs,
       ...
     }: let
-      inherit (lib) concatMapStrings getExe mkOption replaceStrings toUpper types flip mapAttrs getAttr mapAttrs' nameValuePair concatStringsSep mapAttrsToList;
+      inherit (lib) concatMapStrings getExe mkOption mkIf replaceStrings toUpper types flip mapAttrs getAttr mapAttrs' nameValuePair concatStringsSep mapAttrsToList;
       inherit (types) attrsOf submodule str listOf anything;
       inherit (config.canivete) sops;
     in {
@@ -58,7 +58,7 @@
           path = ["passwords" name];
           value = "\${ random_password.${name}.result }";
         });
-        resource = {
+        resource = mkIf (sops != {}) {
           random_password = config.canivete.passwords;
           null_resource.sops = {
             triggers = mapAttrs (_: getAttr "value") sops;
