@@ -8,7 +8,7 @@
   ...
 }: let
   inherit (canivete) prefixAttrNames prefixJoin mkModulesOption mkSystemOption;
-  inherit (lib) mkOption types mkMerge mkIf;
+  inherit (lib) mkOption types mkMerge mkIf pipe concat flatten;
   inherit (types) attrsOf str submodule anything listOf nullOr bool functionTo raw deferredModule;
   specialArgs = {
     inherit canivete;
@@ -51,16 +51,20 @@ in {
         homeModules = mkModulesOption {};
         nodes = mkOption {
           default = {};
-          type = attrsOf (submodule (node @ {name, ...}: {
+          type = attrsOf (submodule ({config, name, ...}: {
             imports = [./profiles.nix];
             config = {
               _module.args = specialArgs // {inherit type withSystem;};
               build.sshOptions = ["ControlMaster=auto" "ControlPath=/tmp/%C" "ControlPersist=60" "StrictHostKeyChecking=accept-new"];
-              target.sshOptions = node.config.build.sshOptions;
-              install = mkIf (type.name == "nixos") (mkMerge [
-                {inherit (node.config.target) sshOptions;}
-                {sshOptions = ["User=root"];}
-              ]);
+              target.sshOptions = config.build.sshOptions;
+              install = mkIf (type.name == "nixos") {
+                sshOptions = mkMerge [config.target.sshOptions ["User=root"]];
+                anywhereFlags = pipe config.install.sshOptions [
+                  (map (option: ["--ssh-option" option]))
+                  (concat ["--flake" ".#${name}" "--debug"])
+                  flatten
+                ];
+              };
             };
             options = {
               system = mkSystemOption {default = type.config.defaultSystem;};
@@ -72,7 +76,7 @@ in {
               build = {
                 host = mkOption {
                   type = nullOr str;
-                  default = node.name;
+                  default = name;
                 };
                 sshOptions = mkOption {
                   type = listOf str;
@@ -80,13 +84,13 @@ in {
                 };
                 sshFlags = mkOption {
                   type = str;
-                  default = prefixJoin "-o " " " node.config.build.sshOptions;
+                  default = prefixJoin "-o " " " config.build.sshOptions;
                 };
               };
               target = {
                 host = mkOption {
                   type = str;
-                  default = node.name;
+                  default = name;
                 };
                 sshOptions = mkOption {
                   type = listOf str;
@@ -94,7 +98,7 @@ in {
                 };
                 sshFlags = mkOption {
                   type = str;
-                  default = prefixJoin "-o " " " node.config.target.sshOptions;
+                  default = prefixJoin "-o " " " config.target.sshOptions;
                 };
               };
               install = {
@@ -113,7 +117,11 @@ in {
                 };
                 sshFlags = mkOption {
                   type = str;
-                  default = prefixJoin "-o " " " node.config.install.sshOptions;
+                  default = prefixJoin "-o " " " config.install.sshOptions;
+                };
+                anywhereFlags = mkOption {
+                  type = listOf str;
+                  default = [];
                 };
               };
             };

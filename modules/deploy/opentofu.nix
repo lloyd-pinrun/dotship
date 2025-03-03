@@ -55,11 +55,7 @@ in {
               set -euo pipefail
               ${waitScript install}
               ${inputs.nixos-anywhere.packages.${pkgs.system}.nixos-anywhere}/bin/nixos-anywhere \
-                  --flake .#${node.name} \
-                  --build-on-remote \
-                  --debug \
-                  ${prefixJoin "--ssh-option " " " install.sshOptions} \
-                  ${install.host}
+                  ${concatStringsSep " " install.anywhereFlags} ${install.host}
             '';
             data.external."${name}_ssh-wait".depends_on = ["null_resource.${name}_install"];
           }
