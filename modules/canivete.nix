@@ -5,15 +5,14 @@
   lib,
   ...
 }: let
-  inherit (config._module.args.canivete) eval functions prefix mapAttrNames mkOverrideOption mkIfElse filesets;
+  inherit (config._module.args.canivete) functions prefix mapAttrNames mkOverrideOption filesets;
   inherit (builtins) functionArgs;
   inherit (lib) attrsets lists path strings trivial versions options types modules;
   inherit (attrsets) filterAttrs attrNames mapAttrs' nameValuePair foldAttrs mapAttrs getAttrs optionalAttrs;
-  inherit (lists) all flatten foldl sublist toList;
+  inherit (lists) all flatten sublist toList;
   inherit (modules) mkMerge mkIf;
   inherit (options) mkOption;
-  inherit (path) hasPrefix;
-  inherit (strings) substring replaceStrings stringLength concatStrings concatStringsSep toLower toUpper;
+  inherit (strings) concatMapStringsSep substring replaceStrings stringLength concatStrings concatStringsSep toLower toUpper;
   inherit (trivial) concat flip pipe id mergeAttrs;
   inherit (types) attrsOf deferredModule;
   inherit (versions) splitVersion;
@@ -70,6 +69,7 @@ in {
 
     # String manipulation
     prefix = pre: str: concatStrings [pre str];
+    prefixJoin = prefix: separator: concatMapStringsSep separator (option: "${prefix}${option}");
     pascalToCamel = str: let
       first = substring 0 1 str;
       rest = substring 1 (stringLength str - 1) str;

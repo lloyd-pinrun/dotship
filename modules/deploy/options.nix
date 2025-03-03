@@ -7,14 +7,13 @@
   withSystem,
   ...
 }: let
-  inherit (canivete) prefixAttrNames mkModulesOption mkSystemOption;
-  inherit (lib) concatMapStringsSep mkOption types mkMerge mkIf;
+  inherit (canivete) prefixAttrNames prefixJoin mkModulesOption mkSystemOption;
+  inherit (lib) mkOption types mkMerge mkIf;
   inherit (types) attrsOf str submodule anything listOf nullOr bool functionTo raw deferredModule;
   specialArgs = {
     inherit canivete;
     flake = {inherit self inputs config;};
   };
-  prefixJoin = prefix: separator: concatMapStringsSep separator (option: "${prefix}${option}");
 in {
   options.canivete.deploy = mkOption {
     default = {};
