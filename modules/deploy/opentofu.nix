@@ -3,6 +3,7 @@
   lib,
   flake,
   config,
+  name,
   node,
   type,
   ...
@@ -11,13 +12,14 @@
   inherit (canivete) prefixJoin mkIfElse;
   inherit (lib) mkOption types concatStringsSep mkMerge mkIf flip mapAttrsToList replaceStrings;
   inherit (flake.config.canivete.meta) root;
+  profile_name = name;
 in {
   options.opentofu = mkOption {type = types.deferredModule;};
   config.opentofu = {pkgs, ...}: {
     config = let
-      getPath = attr: concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "configs" config.name "raw.config" attr];
+      getPath = attr: concatStringsSep "." ["canivete.deploy" type.name "nodes" node.name "configs" profile_name "raw.config" attr];
 
-      name = concatStringsSep "_" [type.name node.name config.name];
+      name = concatStringsSep "_" [type.name node.name profile_name];
       path = getPath config.attr;
       drv = "\${ data.external.${name}.result.drv }";
       inherit (config) build target;
