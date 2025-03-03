@@ -9,6 +9,7 @@ node @ {
   withSystem,
   ...
 }: let
+  inherit (config) build target;
   inherit (lib) mkOption types mkIf mkMerge attrValues mergeAttrs flip mapAttrs;
   inherit (types) attrsOf submodule str functionTo raw deferredModule listOf enum;
 in {
@@ -32,10 +33,10 @@ in {
           description = "Protocol for copying derivations and closures";
           default = "ssh-ng";
         };
-        build.host = options.build.host // {default = config.build.host;};
-        build.sshFlags = options.build.sshFlags // {default = config.build.sshFlags;};
-        target.host = options.target.host // {default = config.target.host;};
-        target.sshFlags = options.target.sshFlags // {default = config.target.sshFlags;};
+        build.host = options.build.host // {default = build.host;};
+        build.sshFlags = options.build.sshFlags // {default = build.sshFlags;};
+        target.host = options.target.host // {default = target.host;};
+        target.sshFlags = options.target.sshFlags // {default = target.sshFlags;};
       };
       config = {
         _module.args = {inherit canivete flake node type;};
