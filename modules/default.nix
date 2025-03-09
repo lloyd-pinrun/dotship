@@ -20,6 +20,7 @@ in {
     ./dream2nix.nix
     ./just.nix
     ./meta.nix
+    ./nix2container.nix
     ./pkgs.nix
     ./pre-commit.nix
     ./processes.nix
