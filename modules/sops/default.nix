@@ -1,15 +1,38 @@
-{inputs, ...}: let
+{
+  config,
+  inputs,
+  ...
+}: let
+  inherit (config.canivete.meta.people) me;
   filepathConfigRelative = "sops/age/keys.txt";
-  getFilepathHomeRelative = pkgs: let
+  getFilepathHomeRelative = home: pkgs: let
     directoryConfig =
       if pkgs.stdenv.isDarwin
       then "Library/Application Support"
       else ".config";
-  in "~/${directoryConfig}/${filepathConfigRelative}";
+  in "${home}/${directoryConfig}/${filepathConfigRelative}";
 in {
-  canivete.deploy.system.homeModules.sops = {pkgs, ...}: {
-    imports = [inputs.sops-nix.homeManagerModules.sops];
-    sops.age.keyFile = getFilepathHomeRelative pkgs;
+  canivete.deploy.canivete.modules = {
+    home-manager = {
+      config,
+      pkgs,
+      ...
+    }: {
+      imports = [inputs.sops-nix.homeManagerModules.sops];
+      # TODO should I use age.sshKeyPaths + age.generateKey
+      sops.age.keyFile = getFilepathHomeRelative config.home.username pkgs;
+      sops.defaultSopsFile = inputs.self + "/.canivete/sops/default.yaml";
+    };
+    nixos = {
+      config,
+      pkgs,
+      ...
+    }: {
+      imports = [inputs.sops-nix.nixosModules.sops];
+      # TODO should I use age.sshKeyPaths + age.generateKey
+      sops.age.keyFile = getFilepathHomeRelative config.users.users.${me}.home pkgs;
+      sops.defaultSopsFile = inputs.self + "/.canivete/sops/default.yaml";
+    };
   };
   perSystem = {
     config,
@@ -19,6 +42,7 @@ in {
   }: let
     inherit (lib) mkEnableOption mkIf mkOption mkPackageOption readFile types;
   in {
+    imports = [./opentofu.nix];
     options.canivete.sops = {
       enable = mkEnableOption "sops" // {default = inputs ? sops-nix;};
       package = mkPackageOption pkgs "sops" {};
@@ -32,10 +56,10 @@ in {
         };
       };
     };
-    config = mkIf (config.canivete.sops.enable && config.canivete.devShells.enable) {
-      canivete.pre-commit.settings.excludes = [".canivete/sops/.+"];
-      canivete.devShells.shells.default.packages = [config.canivete.sops.package];
-      canivete.just.recipes."sops-setup *ARGS" = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
+    config.canivete = mkIf config.canivete.sops.enable {
+      devShells.shells.default.packages = [config.canivete.sops.package];
+      just.recipes."sops-setup *ARGS" = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
+      pre-commit.settings.excludes = [".canivete/sops/.+"];
     };
   };
 }
