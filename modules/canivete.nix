@@ -14,7 +14,7 @@
   inherit (options) mkOption;
   inherit (strings) concatMapStringsSep substring replaceStrings stringLength concatStrings concatStringsSep toLower toUpper;
   inherit (trivial) concat flip pipe id mergeAttrs;
-  inherit (types) attrsOf deferredModule;
+  inherit (types) attrsOf deferredModule enum listOf nullOr raw str;
   inherit (versions) splitVersion;
 in {
   perSystem._module.args.canivete = canivete;
@@ -83,6 +83,14 @@ in {
 
     # Common options
     mkOverrideOption = args: flip pipe [(mergeAttrs args) mkOption];
+    mkNullableOption = type: mkOverrideOption {
+      type = nullOr type;
+      default = null;
+    };
+    mkArgsOption = mkOverrideOption {
+      type = listOf str;
+      default = [];
+    };
     mkEnabledOption = doc:
       mkOption {
         type = types.bool;
@@ -94,7 +102,18 @@ in {
       type = attrsOf deferredModule;
       default = {};
     };
-    mkSystemOption = args: mkOption ({type = types.enum config.systems;} // args);
+    mkModuleOption = mkOverrideOption {
+      type = deferredModule;
+      default = {};
+    };
+    mkSystemOption = mkOverrideOption {
+      type = enum config.systems;
+      description = "System for package builds";
+    };
+    mkFlakeOption = name: mkOverrideOption {
+      type = raw;
+      default = inputs.${name};
+    };
     mkSubdomainOption = mkOverrideOption {
       type = types.strMatching "^[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]$";
       example = "my-TEST-subdomain1";
