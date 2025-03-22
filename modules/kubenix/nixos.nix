@@ -1,21 +1,21 @@
 {config, ...}: let
   flakeConfig = config;
 in {
-  canivete.deploy.nixos.modules.kubernetes = {
-    canivete,
+  canivete.deploy.canivete.modules.nixos = {
     config,
     lib,
+    node,
     pkgs,
     ...
   }: let
     inherit (lib) mkEnableOption mkOption mkIf mkMerge mkDefault;
-    inherit (flakeConfig.canivete.meta) domain;
+    inherit (flakeConfig.canivete.meta) domain root;
     cfg = config.canivete.kubernetes;
     cfg_k3s = config.services.k3s;
+    isRoot = node.name == root;
   in {
     options.canivete.kubernetes = {
       enable = mkEnableOption "kubernetes as a service";
-      root = mkEnableOption "node as kubernetes main control plane";
       k3s = mkOption {
         inherit (pkgs.formats.yaml {}) type;
         description = "Settings for /etc/rancher/k3s/config.yaml";
@@ -24,10 +24,10 @@ in {
     };
     config = mkIf cfg.enable (mkMerge [
       {
-        canivete.secrets."random_password.k3s-token" = "result";
+        sops.secrets."passwords/k3s-token" = {};
         canivete.kubernetes.k3s = {
           selinux = true;
-          token-file = "/private/canivete/secrets/random_password.k3s-token";
+          token-file = config.sops.secrets."passwords/k3s-token".path;
         };
         environment.etc."rancher/k3s/config.yaml".source = pkgs.writers.writeYAML "k3s.yaml" cfg.k3s;
         environment.systemPackages = [pkgs.k3s];
@@ -39,12 +39,11 @@ in {
         };
         virtualisation.containerd.enable = true;
       }
-      (canivete.mkIfElse cfg.root {
-          services.k3s.role = "server";
-          services.k3s.clusterInit = true;
-        } {
-          canivete.kubernetes.k3s.server = "https://${domain}:6443";
-        })
+      (mkIf isRoot {
+        services.k3s.role = "server";
+        services.k3s.clusterInit = true;
+      })
+      (mkIf (!isRoot) {canivete.kubernetes.k3s.server = "https://${domain}:6443";})
       (mkIf (cfg_k3s.role == "server") {
         canivete.kubernetes.k3s = {
           # Barebones
@@ -65,9 +64,13 @@ in {
     lib,
     ...
   }: let
-    inherit (lib) any attrValues mkIf;
-    hasKubernetesNode = any (cfg: cfg.profiles.system.raw.config.canivete.kubernetes.enable) (attrValues flakeConfig.canivete.deploy.nixos.nodes);
+    inherit (lib) any attrValues filterAttrs mkIf pipe;
+    hasKubernetesNode = pipe flakeConfig.canivete.deploy.nodes [
+      (filterAttrs (_: node: node.canivete.os == "nixos"))
+      attrValues
+      (any (cfg: cfg.profiles.system.canivete.configuration.config.canivete.kubernetes.enable))
+    ];
   in {
-    canivete = mkIf (hasKubernetesNode && config.canivete.opentofu.enable) {opentofu.workspaces.deploy.modules.k3s-token.resource.random_password.length = 21;};
+    canivete = mkIf (hasKubernetesNode && config.canivete.opentofu.enable) {opentofu.workspaces.deploy.passwords.k3s-token.length = 21;};
   };
 }
