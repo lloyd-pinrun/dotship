@@ -48,5 +48,59 @@
   # 1. flake-parts module args
   # 2. directories where every .nix file recursively is a flake-parts module
   # 3. root flake-parts module
-  outputs = inputs: inputs.canivete.lib.mkFlake {inherit inputs;} [] {};
+  outputs = inputs:
+    inputs.canivete.lib.mkFlake {inherit inputs;} [] {
+      canivete.meta = {
+        root = "root";
+        domain = "example.com";
+        people.me = "username";
+        people.users.username.name = "name";
+      };
+      canivete.deploy = {
+        nodes."root".profiles.system.canivete.configuration.canivete.kubernetes.enable = true;
+        canivete.modules.home-manager.home.stateVersion = "25.05";
+        canivete.modules.nixos = {
+          boot.loader.systemd-boot.enable = true;
+          system.stateVersion = "25.05";
+          disko.devices.disk.base = {
+            device = "/dev/sda";
+            type = "disk";
+            content.type = "gpt";
+            content.partitions = {
+              ESP = {
+                priority = 1;
+                type = "EF00";
+                size = "500M";
+                content.type = "filesystem";
+                content.format = "vfat";
+                content.mountpoint = "/boot";
+              };
+              root = {
+                priority = 2;
+                end = "-1G";
+                content.type = "filesystem";
+                content.format = "ext4";
+                content.mountpoint = "/";
+              };
+              swap = {
+                size = "100%";
+                content.type = "swap";
+                content.discardPolicy = "both";
+                content.resumeDevice = true;
+              };
+            };
+          };
+        };
+      };
+      perSystem.canivete = {
+        kubenix.clusters.deploy = {
+          canivete.deploy.fetchKubeconfig = "ssh \"root\" sudo k3s kubectl config view --raw | sed 's/127\.0\.0\.1/\"example.com\"/'";
+          kubernetes.helm.releases.nginx.values.controllers.nginx.containers.nginx.image = {
+            repository = "nginx";
+            tag = "1.27.4-bookworm";
+          };
+        };
+        opentofu.workspaces.deploy.kubernetes.cluster = "deploy";
+      };
+    };
 }
