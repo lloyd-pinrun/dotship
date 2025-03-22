@@ -50,10 +50,6 @@
     disko.url = github:nix-community/disko;
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Diagram generation for infrastructure dependencies
-    nix-topology.url = github:oddlama/nix-topology;
-    nix-topology.inputs.nixpkgs.follows = "nixpkgs";
-
     # Git hook framework
     pre-commit.url = github:cachix/git-hooks.nix;
     pre-commit.inputs.nixpkgs.follows = "nixpkgs";
