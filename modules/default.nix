@@ -30,7 +30,7 @@ in {
 
   # Expose everything canivete to flake top level
   flake.canivete = mergeAttrsList [
-    config.canivete
+    (config.canivete or {})
     (mapAttrs (_: getAttr "canivete") config.allSystems)
     {inherit inputs;}
   ];
