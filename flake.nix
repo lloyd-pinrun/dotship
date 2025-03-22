@@ -1,62 +1,13 @@
 {
   description = "Useful flake-parts modules";
   inputs = {
-    # Common upstream software dependencies
-    nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
-    nixpkgs-stable.url = github:nixos/nixpkgs/nixos-23.11;
+    # Essential
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    systems.url = "github:nix-systems/default";
 
-    # Supported systems
-    systems.url = github:nix-systems/default;
-    systems-default.url = github:nix-systems/x86_64-linux;
-    systems-darwin.url = github:nix-systems/aarch64-darwin;
-
-    # Nix flake framework
-    flake-parts.url = github:hercules-ci/flake-parts;
-    flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
-
-    # Container composition framework
-    # Arion has no argument to prefer buildLayeredImage when streamLayeredImage doesn't work across systems
-    # arion.url = github:hercules-ci/arion;
-    arion.url = github:schradert/arion/build-layer-image;
-    arion.inputs.nixpkgs.follows = "nixpkgs";
-    arion.inputs.flake-parts.follows = "flake-parts";
-
-    # RFC for flake output schemas
-    # TODO check in to see if this is supported yet
-    flake-schemas.url = github:DeterminateSystems/flake-schemas;
-
-    # User software configuration framework
-    home-manager.url = github:nix-community/home-manager;
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
-
-    # Darwin system configuration framework
-    nix-darwin.url = github:LnL7/nix-darwin;
-    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-
-    # Android system configuration framework
-    nix-on-droid.url = github:nix-community/nix-on-droid;
-    nix-on-droid.inputs.nixpkgs.follows = "nixpkgs";
-
-    # Generate NixOS builds for different formats
-    nixos-generators.url = github:nix-community/nixos-generators;
-    nixos-generators.inputs.nixpkgs.follows = "nixpkgs";
-
-    # Bootstrap a new NixOS machine
-    nixos-anywhere.url = github:nix-community/nixos-anywhere;
-    nixos-anywhere.inputs.nixpkgs.follows = "nixpkgs";
-    nixos-anywhere.inputs.flake-parts.follows = "flake-parts";
-
-    # Declarative disk partitioning and formatting
-    disko.url = github:nix-community/disko;
-    disko.inputs.nixpkgs.follows = "nixpkgs";
-
-    # Git hook framework
-    pre-commit.url = github:cachix/git-hooks.nix;
-    pre-commit.inputs.nixpkgs.follows = "nixpkgs";
-
-    # Climod
-    climod.url = github:nixosbrasil/climod;
-    climod.flake = false;
+    # Development
+    pre-commit.url = "github:cachix/git-hooks.nix";
   };
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake {inherit inputs;} ({
