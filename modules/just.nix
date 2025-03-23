@@ -76,10 +76,7 @@
     config = mkMerge [
       {canivete.just.recipes.list = "@just --list";}
       (mkIf cfg.enable {
-        canivete.just.recipes = {
-          "changelog *ARGS" = "${getExe convco} changelog --prefix \"\" {{ ARGS }}";
-          "flake *ARGS" = "nix flake show {{ ARGS }}";
-        };
+        canivete.just.recipes."changelog *ARGS" = "${getExe convco} changelog --prefix \"\" {{ ARGS }}";
       })
       (mkIf config.canivete.devShells.enable {canivete.devShells.shells.shared.inputsFrom = [cfg.devShell];})
     ];

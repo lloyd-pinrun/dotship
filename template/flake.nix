@@ -1,9 +1,7 @@
 {
   inputs = {
     # Essentials
-    # NOTE replace with:
-    # canivete.url = "github:schradert/canivete";
-    canivete.url = "path:..";
+    canivete.url = "github:schradert/canivete";
     # flake-parts.url = "github:hercules-ci/flake-parts";
     # canivete.inputs.flake-parts.follows = "flake-parts";
     # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -41,6 +39,7 @@
     # Misc.
     dream2nix.url = "github:nix-community/dream2nix";
     flake-schemas.url = "github:DeterminateSystems/flake-schemas";
+    nix-flake-schemas.url = "github:DeterminateSystems/nix-src/flake-schemas";
     climod.url = "github:hercules-ci/flake-parts";
     climod.flake = false;
   };

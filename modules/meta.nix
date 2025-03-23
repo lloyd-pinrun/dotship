@@ -58,4 +58,9 @@ in {
       };
     };
   };
+  # TODO does this work?!
+  config.canivete.schemas.schemas.canivete.canivete.children.meta.children = {
+    inherit (config) domain root;
+    inherit (config.people) me;
+  };
 }
