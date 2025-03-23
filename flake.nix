@@ -17,14 +17,16 @@
     }: {
       imports = [./modules];
       flake.lib = canivete;
+      # TODO what about directories? how should these be handled? use every nix file?
       flake.flakeModules = let
-        inherit (lib) pipe flip nameValuePair match head listToAttrs;
+        inherit (builtins) baseNameOf map match head listToAttrs;
+        inherit (lib) flip nameValuePair pipe;
       in
         pipe ./modules [
           canivete.filesets.nix.files
-          (builtins.map (file:
+          (map (file:
             flip nameValuePair file (pipe file [
-              builtins.baseNameOf
+              baseNameOf
               (match "^(.+)\.nix$")
               head
             ])))
