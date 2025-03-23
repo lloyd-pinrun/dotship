@@ -111,8 +111,9 @@ in {
       description = "System for package builds";
     };
     mkFlakeOption = name: mkOverrideOption {
-      type = raw;
-      default = inputs.${name};
+      type = nullOr raw;
+      default = inputs.${name} or null;
+      # TODO should I do a check for _flake type?
     };
     mkSubdomainOption = mkOverrideOption {
       type = types.strMatching "^[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]$";
