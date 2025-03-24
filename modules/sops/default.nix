@@ -4,13 +4,15 @@
   ...
 }: let
   inherit (config.canivete.meta.people) me;
-  filepathConfigRelative = "sops/age/keys.txt";
+  inherit (inputs.sops-nix) darwinModules homeManagerModules nixosModules;
   getFilepathHomeRelative = home: pkgs: let
     directoryConfig =
-      if pkgs.stdenv.isDarwin
+      if pkgs.stdenv.hostPlatform.isDarwin
       then "Library/Application Support"
       else ".config";
-  in "${home}/${directoryConfig}/${filepathConfigRelative}";
+  in "${home}/${directoryConfig}/sops/age/keys.txt";
+  # TODO should I use age.sshKeyPaths + age.generateKey
+  sharedSopsModule.sops.defaultSopsFile = inputs.self + "/.canivete/sops/default.yaml";
 in {
   canivete.deploy.canivete.modules = {
     home-manager = {
@@ -18,20 +20,20 @@ in {
       pkgs,
       ...
     }: {
-      imports = [inputs.sops-nix.homeManagerModules.sops];
-      # TODO should I use age.sshKeyPaths + age.generateKey
-      sops.age.keyFile = getFilepathHomeRelative config.home.username pkgs;
-      sops.defaultSopsFile = inputs.self + "/.canivete/sops/default.yaml";
+      imports = [sharedSopsModule homeManagerModules.sops];
+      sops.age.keyFile = getFilepathHomeRelative config.home.homeDirectory pkgs;
     };
     nixos = {
       config,
       pkgs,
       ...
     }: {
-      imports = [inputs.sops-nix.nixosModules.sops];
-      # TODO should I use age.sshKeyPaths + age.generateKey
+      imports = [sharedSopsModule nixosModules.sops];
       sops.age.keyFile = getFilepathHomeRelative config.users.users.${me}.home pkgs;
-      sops.defaultSopsFile = inputs.self + "/.canivete/sops/default.yaml";
+    };
+    darwin = {pkgs, ...}: {
+      imports = [sharedSopsModule darwinModules.sops];
+      sops.age.keyFile = getFilepathHomeRelative "/Users/${me}" pkgs;
     };
   };
   perSystem = {
