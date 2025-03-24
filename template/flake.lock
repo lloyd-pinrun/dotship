@@ -61,11 +61,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1742672610,
-        "narHash": "sha256-nesTvUPmjbCTyQI+ozG3AtZkvYm7lt7HwQhpp8Xp01U=",
+        "lastModified": 1742773669,
+        "narHash": "sha256-ardcLT7s/3OcSLMEmbf75DHYUv+uoilakDad58ji1zQ=",
         "owner": "schradert",
         "repo": "canivete",
-        "rev": "3104bd43ff57c78b2d931d83b8ab4b602ee76570",
+        "rev": "081a5a0e2a27dca4293651892d2f9ca33c608697",
         "type": "github"
       },
       "original": {
@@ -77,16 +77,16 @@
     "climod": {
       "flake": false,
       "locked": {
-        "lastModified": 1741352980,
-        "narHash": "sha256-+u2UunDA4Cl5Fci3m7S643HzKmIDAe+fiXrLqYsR2fs=",
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
-        "rev": "f4330d22f1c5d2ba72d3d22df5597d123fdb60a9",
+        "lastModified": 1669486888,
+        "narHash": "sha256-BLvyAl+taQAd+bnkUYsAcEIB15pwtJ9zSZkg7od2RBA=",
+        "owner": "nixosbrasil",
+        "repo": "climod",
+        "rev": "64f6c5495db03185803105d5babd2906a3fdcd99",
         "type": "github"
       },
       "original": {
-        "owner": "hercules-ci",
-        "repo": "flake-parts",
+        "owner": "nixosbrasil",
+        "repo": "climod",
         "type": "github"
       }
     },

@@ -40,7 +40,7 @@
     dream2nix.url = "github:nix-community/dream2nix";
     flake-schemas.url = "github:DeterminateSystems/flake-schemas";
     nix-flake-schemas.url = "github:DeterminateSystems/nix-src/flake-schemas";
-    climod.url = "github:hercules-ci/flake-parts";
+    climod.url = "github:nixosbrasil/climod";
     climod.flake = false;
   };
   # Arguments are:

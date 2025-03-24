@@ -19,7 +19,8 @@ in {
     lib = mkOption {
       type = let
         recursive = attrsOf (either (functionTo anything) recursive);
-      in recursive;
+      in
+        recursive;
       default = {};
       description = "Helper functions";
     };
@@ -76,7 +77,9 @@ in {
       inputs.flake-schemas.lib
       {
         checkDerivation = drv:
-          drv.type or null == "derivation"
+          drv.type
+          or null
+          == "derivation"
           && drv ? drvPath
           && drv ? name
           && isString drv.name;
@@ -90,13 +93,15 @@ in {
     canivete.schemas.schemas = mkMerge [
       inputs.flake-schemas.schemas
       {
+        # TODO why is this giving me null children?!
         flakeModules.inventory = schemas.lib.eachChild (_: module: {
           what = "flake-parts module";
-          evalChecks.isModule = schemas.lib.checkModule (mod: (functionArgs mod) ? flake-parts-lib);
+          evalChecks.isModule = schemas.lib.checkModule (mod: (functionArgs mod) ? flake-parts-lib) module;
         });
       }
     ];
     perSystem = {system, ...}: {
+      # TODO why does this not use the right version of nix from flake-schemas?
       canivete.just.recipes.inspect = "${getExe schemas.flakes.nix.packages.${system}.default} -- flake show";
     };
   };
