@@ -226,12 +226,15 @@ in {
           darwin = mkModuleOption {};
           droid = mkModuleOption {};
           system = mkModuleOption {};
+          shared = mkModuleOption {};
         };
       };
       config.canivete.modules = let
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
+        home-manager.imports = [modules.shared];
         system = systemConfiguration @ {config, ...}: {
+          imports = [modules.shared];
           config = mkIf (config ? home-manager) {
             home-manager.sharedModules = [
               {
