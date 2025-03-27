@@ -9,7 +9,7 @@ flake @ {inputs, ...}: {
     ...
   }: let
     inherit (lib) getExe mapAttrs mkDefault mkEnableOption mkIf mkOption types;
-    inherit (types) deferredModule attrsOf str package submodule;
+    inherit (types) attrsOf deferredModule listOf package str submodule;
   in {
     imports = [./k3d.nix];
     config = mkIf config.canivete.kubenix.enable {
@@ -27,6 +27,11 @@ flake @ {inputs, ...}: {
           deploy.fetchKubeconfig = mkOption {
             type = str;
             description = "Script to fetch the kubeconfig of an externally managed Kubernetes cluster. Stdout is the contents of the file";
+          };
+          apps = mkOption {
+            type = listOf str;
+            default = [];
+            description = "Order of resource deployment with kapp";
           };
           script = mkOption {
             type = package;

@@ -35,9 +35,20 @@
             (mkIf (workspace.name == "deploy"))
           ];
           triggers.drv = cluster.config.kubernetes.resultYAML.drvPath;
-          provisioner.local-exec.command = ''
-            set -euo pipefail
-            ${getExe cluster.config.canivete.script} ${pkgs.kubectl}/bin/kubectl apply --server-side --prune -f -
+          provisioner.local-exec.command = let
+            inherit (lib) concatStringsSep forEach;
+            inherit (cluster.config.canivete) apps script;
+            deploy = app: filter: "${getExe pkgs.kapp} deploy --app ${app} ${filter} --yes --file - <3";
+            remainder = builtins.toJSON {
+              or = [
+                {not.metadata.labels."canivete/app" = "*";}
+                {not.metadata.labels."canivete/app" = apps;}
+              ];
+            };
+          in ''
+            ${getExe script} ${getExe pkgs.yq} '.' --yaml-output >3
+            ${concatStringsSep "\n" (forEach apps (app: deploy app "--filter-labels canivete/app=${app}"))}
+            ${deploy "remainder" "--filter '${remainder}'"}
           '';
         };
       };
