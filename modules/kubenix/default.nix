@@ -58,14 +58,18 @@ flake @ {inputs, ...}: {
           };
         };
         options.kubernetes.helm.releases = mkOption {
-          type = attrsOf (submodule {
+          type = attrsOf (submodule ({config, ...}: {
+            # Existing override doesn't provide a default but an override of chart value
+            # TODO submit issue report on github.com/hall/kubenix
+            overrideNamespace = false;
+            overrides = [{metadata.namespace = mkDefault config.namespace;}];
             chart = mkDefault (helm.fetch {
               repo = "https://bjw-s.github.io/helm-charts";
               chart = "app-template";
               version = "3.7.3";
               sha256 = "sha256-ZkgsF4Edl+s044BR4oQIXDS3S6pT/B8V3TEjDQzx6eE=";
             });
-          });
+          }));
         };
       };
     };
