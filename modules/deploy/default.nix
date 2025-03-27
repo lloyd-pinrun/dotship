@@ -233,9 +233,10 @@ in {
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
         home-manager.imports = [modules.shared];
-        system = systemConfiguration @ {config, ...}: {
-          imports = [modules.shared];
-          config = mkIf (config ? home-manager) {
+        system = mkMerge [
+          modules.shared
+          # TODO can I do this for other systems too?
+          (mkIf (flakes.home-manager != null) (systemConfiguration @ {pkgs, ...}: {
             home-manager.sharedModules = [
               {
                 imports = [modules.home-manager];
@@ -243,24 +244,28 @@ in {
               }
             ];
             home-manager.users = mapAttrs (username: _: {home = {inherit username;};}) people.users;
-          };
-        };
-        nixos = {utils, ...}: {
-          imports = [
-            hostnameModule
-            modules.system
-            flakes.home-manager.nixosModules.home-manager
-            flakes.disko.nixosModules.default
-          ];
+          }))
+        ];
+        nixos = mkMerge [
+          {
+            imports = [
+              hostnameModule
+              modules.system
+              flakes.disko.nixosModules.default
+            ];
+            users.users = flip mapAttrs people.users (username: person: {
+              isNormalUser = true;
+              home = "/home/${username}";
+              description = person.name;
+              extraGroups = ["tty"] ++ (optional (username == people.me) "wheel");
+            });
+          }
           # TODO can I do this for other systems too?
-          home-manager.sharedModules = [{_module.args = {inherit utils;};}];
-          users.users = flip mapAttrs people.users (username: person: {
-            isNormalUser = true;
-            home = "/home/${username}";
-            description = person.name;
-            extraGroups = ["tty"] ++ (optional (username == people.me) "wheel");
-          });
-        };
+          (mkIf (flakes.home-manager != null) ({utils, ...}: {
+            imports = [flakes.home-manager.nixosModules.home-manager];
+            home-manager.sharedModules = [{_module.args = {inherit utils;};}];
+          }))
+        ];
         droid.imports = [modules.system flakes.home-manager.nixosModules.home-manager];
         # TODO figure out home-manager inside nix-darwin
         darwin.imports = [hostnameModule modules.system];
