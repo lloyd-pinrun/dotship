@@ -100,7 +100,7 @@ flake @ {inputs, ...}: {
             };
             json = mkOption {
               type = package;
-              default = (pkgs.formats.json {}).generate "config.tf.json" config.modules;
+              default = (pkgs.formats.json {}).generate "config.tf.json" config.modules.config;
               description = "OpenTofu configuration file for workspace";
             };
             modules = mkOption {
