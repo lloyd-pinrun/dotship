@@ -110,7 +110,8 @@ flake @ {inputs, ...}: {
               apply = modules:
                 inputs.terranix.lib.terranixConfigurationAst {
                   inherit pkgs;
-                  modules = [opentofu.sharedModules modules {_module.args = {inherit workspace;};}];
+                  extraArgs = {inherit workspace canivete flake perSystem;};
+                  modules = [opentofu.sharedModules modules];
                 };
             };
           };
@@ -122,7 +123,6 @@ flake @ {inputs, ...}: {
       canivete.opentofu.sharedModules = {workspace, ...}: let
         inherit (workspace.config) encryptedState plugins;
       in {
-        _module.args = {inherit canivete flake perSystem;};
         terraform = mkMerge [
           {
             # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
