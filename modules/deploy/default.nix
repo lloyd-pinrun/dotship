@@ -32,6 +32,7 @@ flake @ {
     node,
     ...
   }: let
+    inherit (config.path) drvPath;
     inherit (config.canivete) activator builder configuration type;
     inherit (flakes.deploy.lib.${node.config.canivete.system}) activate;
     inherit (node.config.canivete) os system;
@@ -114,13 +115,8 @@ flake @ {
         in {
           config = mkMerge [
             {
-              module.${resource_name} = {
-                depends_on = sops_depends;
-                source = "${flakes.anywhere}//terraform/nix-build";
-                attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.path.drvPath";
-              };
               resource.null_resource.${resource_name} = {
-                triggers.drvPath = "\${ module.${resource_name}.result.out }";
+                triggers.drvPath = drvPath;
                 provisioner.local-exec.command = "${getExe flakes.deploy.packages.${pkgs.system}.default} .#\"${node.name}\".\"${name}\" ${nixFlags}";
               };
             }
