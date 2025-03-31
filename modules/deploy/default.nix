@@ -110,11 +110,12 @@ flake @ {
             if type == "droid"
             then "--impure"
             else "";
+          sops_depends = mkIf (null_resource ? sops) ["null_resource.sops"];
         in {
           config = mkMerge [
             {
               module.${resource_name} = {
-                depends_on = mkIf (null_resource ? sops) ["null_resource.sops"];
+                depends_on = sops_depends;
                 source = "${flakes.anywhere}//terraform/nix-build";
                 attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.path.drvPath";
               };
@@ -126,19 +127,18 @@ flake @ {
             # TODO support installation of nix system manager on every platform
             (mkIf (type == "nixos") {
               module."${resource_name}_install_system" = {
+                depends_on = sops_depends;
                 source = "${flakes.anywhere}//terraform/nix-build";
                 attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.toplevel";
               };
               module."${resource_name}_install_disko" = {
+                depends_on = sops_depends;
                 source = "${flakes.anywhere}//terraform/nix-build";
                 attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.diskoScript";
               };
               module."${resource_name}_install" = {
                 # TODO make this dynamic. should system be a default?
-                depends_on = mkMerge [
-                  (mkIf (node.name != root) ["module.nixos_${root}_system_install"])
-                  (mkIf (null_resource ? sops) ["null_resource.sops"])
-                ];
+                depends_on = mkIf (node.name != root) ["module.nixos_${root}_system_install"];
                 source = "${flakes.anywhere}//terraform/install";
                 target_host = node.config.hostname;
                 nixos_system = "\${ module.${resource_name}_install_system.result.out }";
