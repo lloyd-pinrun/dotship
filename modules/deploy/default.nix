@@ -309,7 +309,7 @@ in {
               ]))
             flatten
           ];
-          plugins = ["opentofu/null"];
+          plugins = ["opentofu/null" "opentofu/external"];
         };
       };
     };
