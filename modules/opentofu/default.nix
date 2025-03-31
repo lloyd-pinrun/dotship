@@ -63,7 +63,10 @@ flake @ {inputs, ...}: {
 
                   # Target system version (latest by default)
                   version = let
-                    upstreamOwner = if owner == "hashicorp" then "opentofu" else owner;
+                    upstreamOwner =
+                      if owner == "hashicorp"
+                      then "opentofu"
+                      else owner;
                     file = inputs.opentofu-registry + "/providers/${substring 0 1 upstreamOwner}/${upstreamOwner}/${repo}.json";
                     inherit (importJSON file) versions;
                     hasSpecificVersion = (length providerParts) == 3;

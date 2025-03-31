@@ -232,6 +232,7 @@ in {
         system = mkMerge [
           modules.shared
           # TODO can I do this for other systems too?
+          # deadnix: skip
           (mkIf (flakes.home-manager != null) (systemConfiguration @ {pkgs, ...}: {
             home-manager.sharedModules = [
               {

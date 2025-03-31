@@ -1,7 +1,13 @@
 base: let
   # TODO why wasn't this possible with extendModules inside module args? reached max-call-depth
   default = let
-    module = {canivete, config, lib, options, ...}: {
+    module = {
+      canivete,
+      config,
+      lib,
+      options,
+      ...
+    }: {
       config.kubernetes.customTypes = config.canivete.ifd.crds;
       options.canivete.ifd = {
         enable = canivete.mkEnabledOption "IFD to support custom types";
@@ -18,7 +24,8 @@ base: let
               version = elemAt values 1;
               kind = elemAt values 2;
             };
-          in coercedTo (attrsOf str) (mapAttrs parse) options.kubernetes.customTypes.type;
+          in
+            coercedTo (attrsOf str) (mapAttrs parse) options.kubernetes.customTypes.type;
           default = {};
           description = "CRDs to support IFD (one string per CRD)";
         };
@@ -35,8 +42,7 @@ base: let
       ...
     }: let
       inherit (builtins) concatMap filter listToAttrs;
-      inherit (lib) concatStringsSep forEach mkIf mkOption nameValuePair types;
-      inherit (types) attrsOf anything submodule;
+      inherit (lib) concatStringsSep forEach nameValuePair types;
 
       # Extract CustomResourceDefinitions from all modules
       crds = let
@@ -74,10 +80,11 @@ base: let
       in
         evaluation.config.definitions;
     in {
-      kubernetes.customTypes = listToAttrs (forEach crds (crd: nameValuePair crd.attrName {
-        inherit (crd) group version kind attrName;
-        module = types.submodule definitions.${crd.fqdn};
-      }));
+      kubernetes.customTypes = listToAttrs (forEach crds (crd:
+        nameValuePair crd.attrName {
+          inherit (crd) group version kind attrName;
+          module = types.submodule definitions.${crd.fqdn};
+        }));
     };
   in
     default.extendModules {modules = [module];};
