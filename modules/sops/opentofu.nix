@@ -55,7 +55,7 @@ in {
       };
       config = mkMerge [
         (mkIf (passwords != {}) {
-          plugins = ["opentofu/random"];
+          plugins = ["hashicorp/random"];
           sops = flip mapAttrs passwords (name: _: {
             path = ["passwords" name];
             value = "\${ random_password.${name}.result }";

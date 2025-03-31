@@ -15,7 +15,7 @@
             type = nullOr (coercedTo (enum (attrNames clusters)) (name: clusters.${name}) raw);
             description = "Kubernetes cluster to deploy in this OpenTofu workspace";
           };
-          config.plugins = mkIf (config.kubernetes.cluster != null) ["opentofu/null"];
+          config.plugins = mkIf (config.kubernetes.cluster != null) ["hashicorp/null"];
         }));
       };
     };

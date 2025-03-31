@@ -49,7 +49,7 @@ flake @ {inputs, ...}: {
             plugins = mkOption {
               default = [];
               description = "Providers to pull";
-              example = ["opentofu/google/1.0.0" "opentofu/random"];
+              example = ["hashicorp/google/1.0.0" "hashicorp/random"];
               type = let
                 inherit (lib) elemAt substring importJSON length head filter;
                 inherit (types) listOf coercedTo;
@@ -63,7 +63,8 @@ flake @ {inputs, ...}: {
 
                   # Target system version (latest by default)
                   version = let
-                    file = inputs.opentofu-registry + "/providers/${substring 0 1 owner}/${source}.json";
+                    upstreamOwner = if owner == "hashicorp" then "opentofu" else owner;
+                    file = inputs.opentofu-registry + "/providers/${substring 0 1 upstreamOwner}/${upstreamOwner}/${repo}.json";
                     inherit (importJSON file) versions;
                     hasSpecificVersion = (length providerParts) == 3;
                     specificVersion = head (filter (v: v.version == elemAt providerParts 2) versions);
