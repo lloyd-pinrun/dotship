@@ -117,7 +117,9 @@ flake @ {
             {
               resource.null_resource.${resource_name} = {
                 triggers.drvPath = drvPath;
-                provisioner.local-exec.command = "${getExe flakes.deploy.packages.${pkgs.system}.default} .#\"${node.name}\".\"${name}\" ${nixFlags}";
+                # deploy-rs currently runs all flake checks, which can fail when correctly deploying
+                # TODO submit issue report to only run checks that deploy-rs creates
+                provisioner.local-exec.command = "${getExe flakes.deploy.packages.${pkgs.system}.default} --skip-checks .#\"${node.name}\".\"${name}\" ${nixFlags}";
               };
             }
             # TODO support installation of nix system manager on every platform
