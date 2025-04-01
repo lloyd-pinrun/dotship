@@ -10,7 +10,7 @@ flake @ {
   inherit (config.canivete.meta) root people;
   inherit (config.canivete.deploy) nodes;
   inherit (config.canivete.deploy.canivete) flakes modules;
-  inherit (lib) attrNames evalModules filterAttrsRecursive flip getExe mapAttrs mkIf mkMerge mkOption optional optionalAttrs types;
+  inherit (lib) attrNames evalModules filterAttrsRecursive flip getExe mapAttrs mkDefault mkIf mkMerge mkOption optional optionalAttrs types;
   inherit (types) attrsOf bool deferredModule enum functionTo int listOf package path pathInStore raw str submodule;
   genericModule.options = {
     sshUser = mkNullableOption str {description = "User to connect with";};
@@ -148,6 +148,12 @@ flake @ {
         };
       };
     };
+    config.user = mkDefault ({
+        home-manager = name;
+        nixos = "root";
+      }
+      .${type}
+      or null);
     config.canivete.configuration.imports = [
       (withSystem system (perSystem: {_module.args = {inherit canivete flake node perSystem profile;};}))
       (modules.${type}
