@@ -6,7 +6,7 @@ flake @ {
   withSystem,
   ...
 }: let
-  inherit (canivete) mkFlakeOption mkModuleOption mkNullableOption mkSystemOption;
+  inherit (canivete) mkFlakeOption mkIfElse mkModuleOption mkNullableOption mkSystemOption;
   inherit (config.canivete.meta) root people;
   inherit (config.canivete.deploy) nodes;
   inherit (config.canivete.deploy.canivete) flakes modules;
@@ -123,27 +123,33 @@ flake @ {
               };
             }
             # TODO support installation of nix system manager on every platform
-            (mkIf (type == "nixos") {
-              module."${resource_name}_install_system" = {
-                depends_on = sops_depends;
-                source = "${flakes.anywhere}//terraform/nix-build";
-                attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.toplevel";
-              };
-              module."${resource_name}_install_disko" = {
-                depends_on = sops_depends;
-                source = "${flakes.anywhere}//terraform/nix-build";
-                attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.diskoScript";
-              };
-              module."${resource_name}_install" = {
-                # TODO make this dynamic. should system be a default?
-                depends_on = mkIf (node.name != root) ["module.nixos_${root}_system_install"];
-                source = "${flakes.anywhere}//terraform/install";
-                target_host = node.config.hostname;
-                nixos_system = "\${ module.${resource_name}_install_system.result.out }";
-                nixos_partitioner = "\${ module.${resource_name}_install_disko.result.out }";
-              };
-              resource.null_resource.${resource_name}.depends_on = ["module.${resource_name}_install"];
-            })
+            (mkIf (type == "nixos") (mkMerge [
+              {
+                module."${resource_name}_install_system" = {
+                  depends_on = sops_depends;
+                  source = "${flakes.anywhere}//terraform/nix-build";
+                  attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.toplevel";
+                };
+                module."${resource_name}_install" = {
+                  # TODO make this dynamic. should system be a default?
+                  depends_on = mkIf (node.name != root) ["module.nixos_${root}_system_install"];
+                  source = "${flakes.anywhere}//terraform/install";
+                  target_host = node.config.hostname;
+                  nixos_system = "\${ module.${resource_name}_install_system.result.out }";
+                };
+                resource.null_resource.${resource_name}.depends_on = ["module.${resource_name}_install"];
+              }
+              (mkIfElse (flakes.disko != null) {
+                  module."${resource_name}_install_disko" = {
+                    depends_on = sops_depends;
+                    source = "${flakes.anywhere}//terraform/nix-build";
+                    attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.diskoScript";
+                  };
+                  module."${resource_name}_install".nixos_partitioner = "\${ module.${resource_name}_install_disko.result.out }";
+                } {
+                  module."${resource_name}_install".phases = ["kexec" "install" "reboot"];
+                })
+            ]))
           ];
         };
       };
@@ -256,7 +262,6 @@ in {
             imports = [
               hostnameModule
               modules.system
-              flakes.disko.nixosModules.default
             ];
             users.users = flip mapAttrs people.users (username: person: {
               isNormalUser = true;
@@ -265,6 +270,7 @@ in {
               extraGroups = ["tty"] ++ (optional (username == people.me) "wheel");
             });
           }
+          (mkIf (flakes.disko != null) flakes.disko.nixosModules.default)
           # TODO can I do this for other systems too?
           (mkIf (flakes.home-manager != null) ({utils, ...}: {
             imports = [flakes.home-manager.nixosModules.home-manager];
