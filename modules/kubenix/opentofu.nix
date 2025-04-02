@@ -46,7 +46,7 @@
               ];
             };
           in ''
-            ${getExe script} ${getExe pkgs.yq} '.' --yaml-output >3
+            ${getExe script} ${getExe pkgs.yq} '.' --yaml-output >&3
             ${concatStringsSep "\n" (forEach apps (app: deploy app "--filter-labels canivete/app=${app}"))}
             ${deploy "remainder" "--filter '${remainder}'"}
           '';

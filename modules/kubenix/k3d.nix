@@ -5,7 +5,7 @@ in {
     type = types.attrsOf (types.submodule ({config, ...}: let
       inherit (config.kubernetes) cluster;
     in {
-      config = mkIf cluster.config.canivete.deploy.k3d {
+      config = mkIf (cluster != null && cluster.config.canivete.deploy.k3d) {
         plugins = ["pvotal-tech/k3d"];
         modules.resource.k3d_cluster.main = {
           # TODO does this work?
