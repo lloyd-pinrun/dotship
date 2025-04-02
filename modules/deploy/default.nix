@@ -6,7 +6,7 @@ flake @ {
   withSystem,
   ...
 }: let
-  inherit (canivete) mkFlakeOption mkIfElse mkModuleOption mkNullableOption mkSystemOption;
+  inherit (canivete) mkFlakeOption mkModuleOption mkNullableOption mkSystemOption;
   inherit (config.canivete.meta) root people;
   inherit (config.canivete.deploy) nodes;
   inherit (config.canivete.deploy.canivete) flakes modules;
@@ -111,7 +111,6 @@ flake @ {
             if type == "droid"
             then "--impure"
             else "";
-          sops_depends = mkIf (null_resource ? sops) ["null_resource.sops"];
         in {
           config = mkMerge [
             {
@@ -123,33 +122,20 @@ flake @ {
               };
             }
             # TODO support installation of nix system manager on every platform
-            (mkIf (type == "nixos") (mkMerge [
-              {
-                module."${resource_name}_install_system" = {
-                  depends_on = sops_depends;
-                  source = "${flakes.anywhere}//terraform/nix-build";
-                  attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.toplevel";
-                };
-                module."${resource_name}_install" = {
-                  # TODO make this dynamic. should system be a default?
-                  depends_on = mkIf (node.name != root) ["module.nixos_${root}_system_install"];
+            (mkIf (type == "nixos") {
+              module."${resource_name}_install" = mkMerge [
+                {
                   source = "${flakes.anywhere}//terraform/install";
                   target_host = node.config.hostname;
-                  nixos_system = "\${ module.${resource_name}_install_system.result.out }";
-                };
-                resource.null_resource.${resource_name}.depends_on = ["module.${resource_name}_install"];
-              }
-              (mkIfElse (flakes.disko != null) {
-                  module."${resource_name}_install_disko" = {
-                    depends_on = sops_depends;
-                    source = "${flakes.anywhere}//terraform/nix-build";
-                    attribute = ".#canivete.deploy.nodes.${node.name}.profiles.${name}.canivete.configuration.config.system.build.diskoScript";
-                  };
-                  module."${resource_name}_install".nixos_partitioner = "\${ module.${resource_name}_install_disko.result.out }";
-                } {
-                  module."${resource_name}_install".phases = ["kexec" "install" "reboot"];
-                })
-            ]))
+                  flake = ".#${node.name}";
+                }
+                (mkIf (flakes.disko == null) {phases = ["kexec" "install" "reboot"];})
+                (mkIf (null_resource ? sops) {depends_on = ["null_resource.sops"];})
+                # TODO make this dynamic. should system be a default?
+                (mkIf (node.name != root) {depends_on = ["module.nixos_${root}_system_install"];})
+              ];
+              resource.null_resource.${resource_name}.depends_on = ["module.${resource_name}_install"];
+            })
           ];
         };
       };
