@@ -38,7 +38,7 @@
           provisioner.local-exec.command = let
             inherit (lib) concatStringsSep forEach;
             inherit (cluster.config.canivete) apps script;
-            deploy = app: filter: "${getExe pkgs.kapp} deploy --app ${app} ${filter} --yes --file - <3";
+            deploy = app: filter: "${getExe pkgs.kapp} deploy --app ${app} ${filter} --yes --file \"$tmp\"";
             remainder = builtins.toJSON {
               or = [
                 {not.metadata.labels."canivete/app" = "*";}
@@ -46,7 +46,9 @@
               ];
             };
           in ''
-            ${getExe script} ${getExe pkgs.yq} '.' --yaml-output >&3
+            tmp=$(mktemp)
+            trap 'rm -f "$tmp"' EXIT
+            ${getExe script} ${getExe pkgs.yq} '.' --yaml-output >"$tmp"
             ${concatStringsSep "\n" (forEach apps (app: deploy app "--filter-labels canivete/app=${app}"))}
             ${deploy "remainder" "--filter '${remainder}'"}
           '';
