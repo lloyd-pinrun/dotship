@@ -58,11 +58,14 @@ flake @ {inputs, ...}: {
           };
         };
         options.kubernetes.helm.releases = mkOption {
-          type = attrsOf (submodule ({config, ...}: {
+          type = attrsOf (submodule ({config, name, ...}: {
             # Existing override doesn't provide a default but an override of chart value
             # TODO submit issue report on github.com/hall/kubenix
             overrideNamespace = false;
-            overrides = [{metadata.namespace = mkDefault config.namespace;}];
+            overrides = [
+              {metadata.namespace = mkDefault config.namespace;}
+              {metadata.labels."canivete/app" = mkDefault name;}
+            ];
             chart = mkDefault (helm.fetch {
               repo = "https://bjw-s.github.io/helm-charts";
               chart = "app-template";
