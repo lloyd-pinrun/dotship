@@ -100,44 +100,8 @@ flake @ {
       };
       opentofu = mkOption {
         type = deferredModule;
-        default = {
-          config,
-          pkgs,
-          ...
-        }: let
-          inherit (config.resource) null_resource;
-          resource_name = "${type}_${node.name}_${name}";
-          nixFlags =
-            if type == "droid"
-            then "--impure"
-            else "";
-        in {
-          config = mkMerge [
-            {
-              resource.null_resource.${resource_name} = {
-                triggers.drvPath = drvPath;
-                # deploy-rs currently runs all flake checks, which can fail when correctly deploying
-                # TODO submit issue report to only run checks that deploy-rs creates
-                provisioner.local-exec.command = "${getExe flakes.deploy.packages.${pkgs.system}.default} --skip-checks .#\"${node.name}\".\"${name}\" ${nixFlags}";
-              };
-            }
-            # TODO support installation of nix system manager on every platform
-            (mkIf (type == "nixos") {
-              module."${resource_name}_install" = mkMerge [
-                {
-                  source = "${flakes.anywhere}//terraform/install";
-                  target_host = node.config.hostname;
-                  flake = ".#${node.name}";
-                }
-                (mkIf (flakes.disko == null) {phases = ["kexec" "install" "reboot"];})
-                (mkIf (null_resource ? sops) {depends_on = ["null_resource.sops"];})
-                # TODO make this dynamic. should system be a default?
-                (mkIf (node.name != root) {depends_on = ["module.nixos_${root}_system_install"];})
-              ];
-              resource.null_resource.${resource_name}.depends_on = ["module.${resource_name}_install"];
-            })
-          ];
-        };
+        default = {};
+        description = "Extra module to be injected in OpenTofu workspace for the node";
       };
     };
     config.user = mkDefault ({
@@ -159,6 +123,44 @@ flake @ {
       # TODO when should I replace this with nixos-facter, etc.?
       (optionalAttrs (type != "custom") {nixpkgs.hostPlatform = system;})
     ];
+    config.canivete.opentofu = {
+      config,
+      pkgs,
+      ...
+    }: let
+      inherit (config.resource) null_resource;
+      resource_name = "${type}_${node.name}_${name}";
+      nixFlags =
+        if type == "droid"
+        then "--impure"
+        else "";
+    in {
+      config = mkMerge [
+        {
+          resource.null_resource.${resource_name} = {
+            triggers.drvPath = drvPath;
+            # deploy-rs currently runs all flake checks, which can fail when correctly deploying
+            # TODO submit issue report to only run checks that deploy-rs creates
+            provisioner.local-exec.command = "${getExe flakes.deploy.packages.${pkgs.system}.default} --skip-checks .#\"${node.name}\".\"${name}\" ${nixFlags}";
+          };
+        }
+        # TODO support installation of nix system manager on every platform
+        (mkIf (type == "nixos") {
+          module."${resource_name}_install" = mkMerge [
+            {
+              source = "${flakes.anywhere}//terraform/install";
+              target_host = node.config.hostname;
+              flake = ".#${node.name}";
+            }
+            (mkIf (flakes.disko == null) {phases = ["kexec" "install" "reboot"];})
+            (mkIf (null_resource ? sops) {depends_on = ["null_resource.sops"];})
+            # TODO make this dynamic. should system be a default?
+            (mkIf (node.name != root) {depends_on = ["module.nixos_${root}_system_install"];})
+          ];
+          resource.null_resource.${resource_name}.depends_on = ["module.${resource_name}_install"];
+        })
+      ];
+    };
   };
   nodeModule = node @ {
     config,
