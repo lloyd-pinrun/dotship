@@ -32,6 +32,7 @@ in {
               };
               path = mkOption {
                 type = listOf str;
+                default = [name];
                 description = "Path in the default encrypted SOPS file to drop the secret";
               };
               env = mkOption {
