@@ -43,7 +43,7 @@ flake @ {inputs, ...}: {
             encryptedState.enable = mkEnabledOption "encrypted state (alpha prerelease)";
             encryptedState.passphrase = mkOption {
               type = str;
-              default = vals.sops "default.yaml#/opentofu_pw";
+              default = vals.sops.default "opentofu_pw";
               description = "Value or vals-like reference (i.e. ref+sops://... or with nix.vals.sops) to secret to decrypt state";
             };
             plugins = mkOption {

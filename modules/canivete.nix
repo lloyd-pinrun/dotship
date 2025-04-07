@@ -167,7 +167,12 @@ in {
       };
 
     # Vals shorthand
-    vals.sops = attr: "ref+sops://.canivete/sops/${attr}+";
+    vals.sops = let
+      inherit (config.canivete.sops) directory default;
+    in {
+      custom = file: attr: "ref+sops://${directory}/${file}${attr}+";
+      default = attr: "ref+sops://${default}#/${attr}+";
+    };
     vals.tfstate = workspace: attr: "ref+tfstate://.canivete/opentofu/${workspace}/terraform.tfstate.dec/${attr}+";
   };
 }
