@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}: let
-  inherit (config.canivete.sops) default package;
+{lib, ...}: let
   inherit (lib) concatMapStrings getExe mkOption mkIf replaceStrings toUpper types flip mapAttrs getAttr mapAttrs' nameValuePair concatStringsSep mapAttrsToList mkMerge;
   inherit (types) attrsOf submodule str listOf anything;
 in {
@@ -48,7 +43,7 @@ in {
                   # TODO why does this create a weird syntax highlighting issue in the file?
                   envValue = "\\\"\$${config.env}\\\"";
                   # TODO configure the file for this
-                in "${getExe package} set \"\${ var.GIT_DIR }\"/${default}\" '${indexPath}' \"${envValue}\"";
+                in "\${ local.SOPS_BIN } set \"\${ local.SOPS_DEFAULT }\" '${indexPath}' \"${envValue}\"";
                 description = "Command to save value in SOPS, running in the project root directory";
               };
             };
@@ -56,6 +51,15 @@ in {
         };
       };
       config = mkMerge [
+        {
+          modules = {flake, perSystem, ...}: let
+            inherit (flake.config.canivete.sops) default directory;
+          in{
+            locals.SOPS_DEFAULT = "\${ var.GIT_DIR }/${default}";
+            locals.SOPS_DIR = "\${ var.GIT_DIR }/${directory}";
+            locals.SOPS_BIN = getExe perSystem.config.canivete.sops.package;
+          };
+        }
         (mkIf (passwords != {}) {
           plugins = ["hashicorp/random"];
           sops = flip mapAttrs passwords (name: _: {
