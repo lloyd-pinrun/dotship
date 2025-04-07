@@ -32,7 +32,6 @@ flake @ {
     node,
     ...
   }: let
-    inherit (config.path) drvPath;
     inherit (config.canivete) activator builder configuration type;
     inherit (flakes.deploy.lib.${node.config.canivete.system}) activate;
     inherit (node.config.canivete) os system;
@@ -137,8 +136,9 @@ flake @ {
     in {
       config = mkMerge [
         {
+          data.external.${resource_name}.program = pkgs.execBash "nix eval .#canivete.deploy.nodes.${node.name}.profiles.${name}.path.drvPath | ${getExe pkgs.jq} '{drvPath:.}'";
           resource.null_resource.${resource_name} = {
-            triggers.drvPath = drvPath;
+            triggers.drvPath = "\${ data.external.${resource_name}.result.drvPath }";
             # deploy-rs currently runs all flake checks, which can fail when correctly deploying
             # TODO submit issue report to only run checks that deploy-rs creates
             provisioner.local-exec.command = "${getExe flakes.deploy.packages.${pkgs.system}.default} --skip-checks .#\"${node.name}\".\"${name}\" ${nixFlags}";
@@ -157,7 +157,7 @@ flake @ {
             # TODO make this dynamic. should system be a default?
             (mkIf (node.name != root) {depends_on = ["module.nixos_${root}_system_install"];})
           ];
-          resource.null_resource.${resource_name}.depends_on = ["module.${resource_name}_install"];
+          data.external.${resource_name}.depends_on = ["module.${resource_name}_install"];
         })
       ];
     };
