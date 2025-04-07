@@ -12,7 +12,9 @@
       else ".config";
   in "${home}/${directoryConfig}/sops/age/keys.txt";
   # TODO should I use age.sshKeyPaths + age.generateKey
-  sharedSopsModule.sops.defaultSopsFile = inputs.self + "/.canivete/sops/default.yaml";
+  sharedSopsModule = {perSystem, ...}: {
+    sops.defaultSopsFile = inputs.self + "/" + perSystem.config.canivete.sops.default;
+  };
 in {
   canivete.deploy.canivete.modules = {
     home-manager = {
@@ -37,17 +39,30 @@ in {
     };
   };
   perSystem = {
+    canivete,
     config,
     lib,
     pkgs,
     ...
   }: let
     inherit (lib) mkEnableOption mkIf mkOption mkPackageOption readFile types;
+    inherit (config.canivete) sops;
   in {
     imports = [./opentofu.nix];
     options.canivete.sops = {
       enable = mkEnableOption "sops" // {default = inputs ? sops-nix;};
       package = mkPackageOption pkgs "sops" {};
+      directory = mkOption {
+        type = types.str;
+        default = ".canivete/sops";
+        description = "Path relative to project root to store SOPS secrets";
+      };
+      default = mkOption {
+        type = types.str;
+        default = "default.yaml";
+        description = "Path relative to sops directory for storing SOPS secrets by default";
+        apply = canivete.prefix sops.directory;
+      };
       scripts.setup = mkOption {
         type = types.package;
         default = pkgs.writeShellApplication {
@@ -58,10 +73,10 @@ in {
         };
       };
     };
-    config.canivete = mkIf config.canivete.sops.enable {
-      devShells.shells.default.packages = [config.canivete.sops.package];
+    config.canivete = mkIf sops.enable {
+      devShells.shells.default.packages = [sops.package];
       just.recipes."sops-setup *ARGS" = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
-      pre-commit.settings.excludes = [".canivete/sops/.+"];
+      pre-commit.settings.excludes = ["${sops.directory}/.+"];
     };
   };
 }

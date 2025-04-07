@@ -1,8 +1,9 @@
 {
+  config,
   lib,
-  pkgs,
   ...
 }: let
+  inherit (config.canivete.sops) default package;
   inherit (lib) concatMapStrings getExe mkOption mkIf replaceStrings toUpper types flip mapAttrs getAttr mapAttrs' nameValuePair concatStringsSep mapAttrsToList mkMerge;
   inherit (types) attrsOf submodule str listOf anything;
 in {
@@ -47,7 +48,7 @@ in {
                   # TODO why does this create a weird syntax highlighting issue in the file?
                   envValue = "\\\"\$${config.env}\\\"";
                   # TODO configure the file for this
-                in "${getExe pkgs.sops} set .canivete/sops/default.yaml '${indexPath}' \"${envValue}\"";
+                in "${getExe package} set \"\${ var.GIT_DIR }\"/${default}\" '${indexPath}' \"${envValue}\"";
                 description = "Command to save value in SOPS, running in the project root directory";
               };
             };
@@ -69,10 +70,7 @@ in {
               sops = {
                 triggers = mapAttrs (_: getAttr "value") sops;
                 provisioner.local-exec.environment = environment;
-                provisioner.local-exec.command = ''
-                  cd "$(${getExe pkgs.git} rev-parse --show-toplevel)"
-                  ${concatStringsSep "\n" (mapAttrsToList (_: getAttr "command") sops)}
-                '';
+                provisioner.local-exec.command = concatStringsSep "\n" (mapAttrsToList (_: getAttr "command") sops);
               };
             }
             (mkIf (kubernetes.cluster != null) {
