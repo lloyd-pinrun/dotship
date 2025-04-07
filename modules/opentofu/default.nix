@@ -127,6 +127,7 @@ flake @ {inputs, ...}: {
       canivete.opentofu.sharedModules = {workspace, ...}: let
         inherit (workspace.config) encryptedState plugins;
       in {
+        variable.GIT_DIR.type = "string";
         terraform = mkMerge [
           {
             # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>

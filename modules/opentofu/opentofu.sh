@@ -40,5 +40,7 @@ nix build "$workspace_path.json" --no-link --print-out-paths |
     xargs cat |
     vals eval -s -f - |
     yq "." >"$dec_file"
+
+export TF_VAR_GIT_DIR="$git_dir"
 "${tofu[@]}" init -upgrade
 "${tofu[@]}" "$@"
