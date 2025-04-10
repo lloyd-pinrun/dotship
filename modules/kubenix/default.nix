@@ -64,7 +64,7 @@ flake @ {inputs, ...}: {
             # TODO submit issue report on github.com/hall/kubenix
             overrideNamespace = false;
             overrides = [
-              {metadata.annotations."canivete/chart" = config.name;}
+              {metadata.annotations."chart.canivete.app/${config.name}" = "";}
               {metadata.namespace = mkDefault config.namespace;}
             ];
             chart = mkDefault (helm.fetch {
