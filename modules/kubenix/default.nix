@@ -8,8 +8,8 @@ flake @ {inputs, ...}: {
     system,
     ...
   }: let
-    inherit (lib) getExe mapAttrs mkDefault mkEnableOption mkIf mkOption types;
-    inherit (types) attrsOf deferredModule listOf package str submodule;
+    inherit (lib) getExe importJSON mapAttrs mkDefault mkEnableOption mkIf mkOption types;
+    inherit (types) attrs attrsOf deferredModule listOf package str submodule;
   in {
     imports = [./k3d.nix];
     config = mkIf config.canivete.kubenix.enable {
@@ -23,15 +23,16 @@ flake @ {inputs, ...}: {
       }: {
         imports = [kubenix.modules.k8s kubenix.modules.helm];
         config._module.args = {inherit canivete flake perSystem system;};
+        config.kubernetes.customTypes.kappconfig = {
+          attrName = "kappconfig";
+          group = "kapp.k14s.io";
+          version = "v1alpha1";
+          kind = "Config";
+        };
         options.canivete = {
           deploy.fetchKubeconfig = mkOption {
             type = str;
             description = "Script to fetch the kubeconfig of an externally managed Kubernetes cluster. Stdout is the contents of the file";
-          };
-          apps = mkOption {
-            type = listOf str;
-            default = [];
-            description = "Order of resource deployment with kapp";
           };
           script = mkOption {
             type = package;
@@ -58,13 +59,13 @@ flake @ {inputs, ...}: {
           };
         };
         options.kubernetes.helm.releases = mkOption {
-          type = attrsOf (submodule ({config, name, ...}: {
+          type = attrsOf (submodule ({config, ...}: {
             # Existing override doesn't provide a default but an override of chart value
             # TODO submit issue report on github.com/hall/kubenix
             overrideNamespace = false;
             overrides = [
+              {metadata.annotations."canivete/chart" = config.name;}
               {metadata.namespace = mkDefault config.namespace;}
-              {metadata.labels."canivete/app" = mkDefault name;}
             ];
             chart = mkDefault (helm.fetch {
               repo = "https://bjw-s.github.io/helm-charts";
