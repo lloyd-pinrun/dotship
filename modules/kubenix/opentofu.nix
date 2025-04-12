@@ -35,7 +35,7 @@
             (mkIf (workspace.name == "deploy"))
           ];
           triggers.drv = cluster.config.kubernetes.resultYAML.drvPath;
-          provisioner.local-exec.command = "${getExe cluster.config.canivete.script} ${getExe pkgs.kapp} deploy --yes --file -";
+          provisioner.local-exec.command = "${getExe cluster.config.canivete.script} ${getExe pkgs.kapp} deploy --yes --app everything --file -";
         };
       };
     };
