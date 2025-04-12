@@ -53,7 +53,7 @@ flake @ {inputs, ...}: {
                   xargs cat | \
                   ${getExe pkgs.vals} eval -s -f - | \
                   ${getExe pkgs.yq} "." --yaml-output | \
-                  ${getExe pkgs.bash} -c "$@"
+                  ${getExe pkgs.bash} -c "$*"
               '';
             };
           };
