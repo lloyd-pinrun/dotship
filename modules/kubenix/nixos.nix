@@ -8,7 +8,7 @@ in {
     pkgs,
     ...
   }: let
-    inherit (lib) mkEnableOption mkOption mkIf mkMerge mkDefault;
+    inherit (lib) attrValues mkEnableOption mkOption mkIf mkMerge mkDefault types;
     inherit (flakeConfig.canivete.meta) domain root;
     cfg = config.canivete.kubernetes;
     cfg_k3s = config.services.k3s;
@@ -16,6 +16,11 @@ in {
   in {
     options.canivete.kubernetes = {
       enable = mkEnableOption "kubernetes as a service";
+      images = mkOption {
+        type = types.attrsOf types.package;
+        default = {};
+        description = "Images to load on root";
+      };
       k3s = mkOption {
         inherit (pkgs.formats.yaml {}) type;
         description = "Settings for /etc/rancher/k3s/config.yaml";
@@ -40,8 +45,11 @@ in {
         virtualisation.containerd.enable = true;
       }
       (mkIf isRoot {
-        services.k3s.role = "server";
-        services.k3s.clusterInit = true;
+        services.k3s = {
+          clusterInit = true;
+          role = "server";
+          images = attrValues cfg.images;
+        };
       })
       (mkIf (!isRoot) {canivete.kubernetes.k3s.server = "https://${domain}:6443";})
       (mkIf (cfg_k3s.role == "server") {
