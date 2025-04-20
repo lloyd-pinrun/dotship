@@ -8,8 +8,8 @@ flake @ {inputs, ...}: {
     system,
     ...
   }: let
-    inherit (lib) getExe importJSON mapAttrs mkDefault mkEnableOption mkIf mkOption types;
-    inherit (types) attrs attrsOf deferredModule listOf package str submodule;
+    inherit (lib) getExe mapAttrs mkDefault mkEnableOption mkIf mkOption types mkMerge pipe mapAttrsToList;
+    inherit (types) attrsOf deferredModule package str submodule;
   in {
     imports = [./k3d.nix];
     config = mkIf config.canivete.kubenix.enable {
@@ -23,6 +23,20 @@ flake @ {inputs, ...}: {
       }: {
         imports = [kubenix.modules.k8s kubenix.modules.helm];
         config._module.args = {inherit canivete flake perSystem system;};
+        config.kubernetes.api.resources = pipe config.kubernetes.helm.releases [
+          (mapAttrsToList (
+            _: release:
+              mapAttrs (
+                _:
+                  mapAttrs (
+                    _: resource:
+                      mkMerge ([resource] ++ release.overrides)
+                  )
+              )
+              release.extraResources
+          ))
+          mkMerge
+        ];
         config.kubernetes.customTypes.kappconfig = {
           attrName = "kappconfig";
           group = "kapp.k14s.io";
@@ -60,14 +74,19 @@ flake @ {inputs, ...}: {
         };
         options.kubernetes.helm.releases = mkOption {
           type = attrsOf (submodule ({config, ...}: {
+            options.extraResources = mkOption {
+              default = {};
+              type = attrsOf (attrsOf (pkgs.formats.yaml {}).type);
+              description = "Extra resources to attach to Helm release; top-level is plural name, like kubernets.resources, for optimal merging";
+            };
             # Existing override doesn't provide a default but an override of chart value
             # TODO submit issue report on github.com/hall/kubenix
-            overrideNamespace = false;
-            overrides = [
+            config.overrideNamespace = false;
+            config.overrides = [
               {metadata.annotations."chart.canivete.app/${config.name}" = "";}
               {metadata.namespace = mkDefault config.namespace;}
             ];
-            chart = mkDefault (helm.fetch {
+            config.chart = mkDefault (helm.fetch {
               repo = "https://bjw-s.github.io/helm-charts";
               chart = "app-template";
               version = "3.7.3";
