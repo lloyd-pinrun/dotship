@@ -65,8 +65,7 @@ flake @ {inputs, ...}: {
 
                 nix build .#canivete.${system}.kubenix.clusters.${name}.config.kubernetes.resultYAML --no-link --print-out-paths | \
                   xargs cat | \
-                  ${getExe pkgs.vals} eval -s -f - | \
-                  ${getExe pkgs.yq} "." --yaml-output | \
+                  ${getExe pkgs.vals} eval -s -decode-kubernetes-secrets -f - | \
                   ${getExe pkgs.bash} -c "$*"
               '';
             };
