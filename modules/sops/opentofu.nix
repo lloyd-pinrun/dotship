@@ -77,10 +77,7 @@ in {
                 provisioner.local-exec.command = concatStringsSep "\n" (mapAttrsToList (_: getAttr "command") sops);
               };
             }
-            (mkIf (kubernetes.cluster != null) {
-              kubernetes.depends_on = ["null_resource.sops"];
-              kubernetes.provisioner.local-exec.environment = environment;
-            })
+            (mkIf (kubernetes.cluster != null) {kubernetes.depends_on = ["null_resource.sops"];})
           ];
         })
       ];
