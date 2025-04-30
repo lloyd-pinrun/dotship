@@ -44,7 +44,7 @@ in {
       # Filter out <exclude> paths from "everything" in <roots>
       everythingBut = f: roots: exclude: filter (_path: all (prefix: ! path.hasPrefix prefix _path) exclude) (everything f roots);
       nix = {
-        filter = name: _: builtins.match ".+\.nix$" name != null;
+        filter = name: _: builtins.match ".+\\.nix$" name != null;
         files = files nix.filter;
         everything = everything nix.filter;
         everythingBut = everythingBut nix.filter;
