@@ -4,38 +4,54 @@
     lib,
     ...
   }: let
-    inherit (config.canivete.kubenix) clusters;
-    inherit (lib) attrNames filterAttrs getExe mapAttrsToList mkIf mkOption pipe types;
-    inherit (types) attrsOf coercedTo enum nullOr raw submodule;
+    inherit (config.dotship.kubenix) clusters;
+
+    inherit
+      (lib)
+      attrNames
+      filterAttrs
+      getExe
+      mapAttrsToList
+      mkIf
+      mkOption
+      pipe
+      types
+      ;
   in {
-    options.canivete.opentofu = {
+    options.dotship.opentofu = {
       workspaces = mkOption {
-        type = attrsOf (submodule ({config, ...}: {
+        type = types.lazyAttrsOf (types.submodule ({config, ...}: {
           options.kubernetes.cluster = mkOption {
-            type = nullOr (coercedTo (enum (attrNames clusters)) (name: clusters.${name}) raw);
-            description = "Kubernetes cluster to deploy in this OpenTofu workspace";
+            type = types.nullOr (types.coercedTo (types.enum (attrNames clusters)) (name: clusters.${name}) types.raw);
+            description = "kubernetes cluster to deploy in this OpenTofu workspace";
           };
+
           config.plugins = mkIf (config.kubernetes.cluster != null) ["hashicorp/null"];
         }));
       };
     };
-    config.canivete.opentofu.sharedModules = {
+
+    config.dotship.opentofu.sharedModules = {
       flake,
       pkgs,
       workspace,
       ...
     }: let
+      inherit (flake.config.dotship.deploy) hosts;
       inherit (workspace.config.kubernetes) cluster;
+
+      script = getExe cluster.config.dotship.script;
+      kapp = getExe pkgs.kapp;
     in {
       config = mkIf (cluster != null) {
-        resource.null_resource.kubernetes = {
-          depends_on = pipe flake.config.canivete.deploy.nodes [
-            (filterAttrs (_: node: node.canivete.os == "nixos" && node.profiles.system.canivete.configuration.config.canivete.kubernetes.enable))
+        resources.null_resource.kubernetes = {
+          depends_on = pipe hosts [
+            (filterAttrs (_: host: host.dotship.os == "nixos" && host.profiles.system.dotship.configuration.config.dotship.kubernetes.enable))
             (mapAttrsToList (name: _: "null_resource.nixos_${name}_system"))
             (mkIf (workspace.name == "deploy"))
           ];
           triggers.drv = cluster.config.kubernetes.resultYAML.drvPath;
-          provisioner.local-exec.command = "${getExe cluster.config.canivete.script} ${getExe pkgs.kapp} deploy --yes --diff-changes --app everything --file -";
+          provisioners.local-exec.command = "${script} ${kapp} deploy --yes --app everything --file -";
         };
       };
     };

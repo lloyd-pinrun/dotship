@@ -1,29 +1,41 @@
 {lib, ...}: let
-  inherit (lib) getExe mkIf mkEnableOption mkOption types;
+  inherit
+    (lib)
+    getExe
+    mkEnableOptioon
+    mkIf
+    mkOption
+    types
+    ;
 in {
-  options.canivete.opentofu.workspaces = mkOption {
-    type = types.attrsOf (types.submodule ({config, ...}: let
+  options.dotship.opentofu.workspaces = mkOption {
+    type = types.lazyAttrsOf (types.submodule ({config, ...}: let
       inherit (config.kubernetes) cluster;
     in {
-      config = mkIf (cluster != null && cluster.config.canivete.deploy.k3d) {
+      config = mkIf (cluster != null && cluster.config.dotship.deploy.k3d) {
         plugins = ["pvotal-tech/k3d"];
-        modules.resource.k3d_cluster.main = {
-          # TODO does this work?
+        modules.source.k3d_cluster.main = {
           inherit (cluster.config) name;
           servers = 1;
         };
       };
     }));
   };
-  config.canivete.kubenix.sharedModules = {
+
+  config.dotship.kubenix.sharedModules = {
     config,
     name,
     pkgs,
     ...
-  }: {
-    options.canivete.deploy.k3d = mkEnableOption "Deploy cluster locally with k3d";
-    config = mkIf config.canivete.deploy.k3d {
-      canivete.deploy.fetchKubeconfig = "${getExe pkgs.k3d} kubeconfig get ${name}";
+  }: let
+    inherit (config.dotship) deploy;
+
+    k3d = getExe pkgs.k3d;
+  in {
+    options.dotship.deploy.k3d = mkEnableOptioon "deploy cluster locally with k3d";
+
+    config = mkIf deploy.k3d {
+      dotship.deploy.fetchKubeConfig = "${k3d} kubeconfig get ${name}";
     };
   };
 }

@@ -1,40 +1,59 @@
 {config, ...}: let
-  flakeConfig = config;
+  inherit (config.dotship.meta) domain root;
+  inherit (config.dotship.deploy) hosts;
 in {
-  canivete.deploy.canivete.modules.nixos = {
+  dotship.deploy.dotship.modules.nixos = {
     config,
     lib,
-    node,
+    host,
     pkgs,
     ...
   }: let
-    inherit (lib) attrValues mkEnableOption mkOption mkIf mkMerge mkDefault types;
-    inherit (flakeConfig.canivete.meta) domain root;
-    cfg = config.canivete.kubernetes;
-    cfg_k3s = config.services.k3s;
-    isRoot = node.name == root;
+    inherit
+      (lib)
+      attrValues
+      mkDefault
+      mkEnableOption
+      mkIf
+      mkMerge
+      mkOption
+      types
+      ;
+
+    inherit (config.dotship) kubernetes;
+    inherit (config.services) k3s;
+
+    isRoot = host.name == root;
+    yaml = pkgs.formats.yaml {};
   in {
-    options.canivete.kubernetes = {
+    options.dotship.kubernetes = {
       enable = mkEnableOption "kubernetes as a service";
+
       images = mkOption {
-        type = types.attrsOf types.package;
+        type = types.lazyAttrsOf types.package;
         default = {};
         description = "Images to load on root";
       };
+
       k3s = mkOption {
-        inherit (pkgs.formats.yaml {}) type;
-        description = "Settings for /etc/rancher/k3s/config.yaml";
+        inherit (yaml) type;
         default = {};
+        description = ''
+          Configuration written to {file}`/etc/rancher/k3s/config.yaml`;
+        '';
       };
     };
-    config = mkIf cfg.enable (mkMerge [
+
+    config = mkIf kubernetes.enable (mkMerge [
       {
-        sops.secrets."passwords/k3s-token" = {};
-        canivete.kubernetes.k3s = {
+        sops.secrets."passwords.k3s-token" = {};
+
+        dotship.kubernetes.k3s = {
           selinux = true;
           token-file = config.sops.secrets."passwords/k3s-token".path;
         };
-        environment.etc."rancher/k3s/config.yaml".source = pkgs.writers.writeYAML "k3s.yaml" cfg.k3s;
+
+        environment.etc."rancher/k3s/config.yaml".source = yaml.generate "k3s.yaml" kubernetes.k3s;
         environment.systemPackages = [pkgs.k3s];
         services.k3s = {
           enable = true;
@@ -48,37 +67,50 @@ in {
         services.k3s = {
           clusterInit = true;
           role = "server";
-          images = attrValues cfg.images;
+          images = attrValues kubernetes.images;
         };
       })
-      (mkIf (!isRoot) {canivete.kubernetes.k3s.server = "https://${domain}:6443";})
-      (mkIf (cfg_k3s.role == "server") {
-        canivete.kubernetes.k3s = {
-          # Barebones
-          disable = ["traefik" "servicelb" "local-storage" "metrics-server" "coredns"];
+      (mkIf (!isRoot) {
+        dotship.kubernetes.k3s.server = "https://${domain}:6443";
+      })
+      (mkIf (k3s.roll == "server") {
+        dotship.kubernetes.k3s = {
+          # NOTE: barebones
+          disable = ["traefik" "servicelib" "local-storage" "metrics-server" "coredns"];
           flannel-backend = "none";
           disable-kube-proxy = true;
           disable-network-policy = true;
           disable-helm-controller = true;
-          # Server only
+          # NOTE: server only
           etcd-expose-metrics = true;
           tls-san = [domain];
         };
       })
     ]);
   };
+
   perSystem = {
     config,
     lib,
     ...
   }: let
-    inherit (lib) any attrValues filterAttrs mkIf pipe;
-    hasKubernetesNode = pipe flakeConfig.canivete.deploy.nodes [
-      (filterAttrs (_: node: node.canivete.os == "nixos"))
+    inherit
+      (lib)
+      any
       attrValues
-      (any (cfg: cfg.profiles.system.canivete.configuration.config.canivete.kubernetes.enable))
+      filterAttrs
+      mkIf
+      pipe
+      ;
+
+    hasNode = pipe hosts [
+      (filterAttrs (_: host: host.dotship.os == "nixos"))
+      attrValues
+      (any (host: host.profiles.system.dotship.configuration.config.dotship.kubernetes.enable))
     ];
   in {
-    canivete = mkIf (hasKubernetesNode && config.canivete.opentofu.enable) {opentofu.workspaces.deploy.passwords.k3s-token.length = 21;};
+    dotship = mkIf (hasNode && config.dotship.opentofu.enable) {
+      opentofu.workspaces.deploy.passwords.k3s-token.length = 21;
+    };
   };
 }

@@ -6,75 +6,86 @@
   inherit (config) perInput;
 in {
   perSystem = {
-    canivete,
+    dotship,
     config,
     lib,
     pkgs,
     system,
     ...
   }: let
-    inherit (lib) replaceStrings attrValues mkDefault mkOption types mkEnableOption mkIf;
-    inherit (types) lazyAttrsOf submodule raw package;
+    inherit (config.dotship) arion;
+    inherit (dotship.lib.options) mkFlakeOption mkModulesOption;
 
-    # Containers rely on the Linux kernel, so for this to work on a Darwin client, configure distributed builds
-    system'' = replaceStrings ["darwin"] ["linux"] system;
+    inherit
+      (lib)
+      attrValues
+      getExe
+      mkDefault
+      mkEnableOption
+      mkIf
+      mkOption
+      replaceStrings
+      types
+      ;
 
-    cfg = config.canivete.arion;
-    inherit (inputs.self.canivete.${system''}.pkgs) pkgs;
-    modules = attrValues cfg.modules;
+    modules = attrValues arion.modules;
+    system' = replaceStrings ["darwin"] ["linux"] system;
+
+    inherit (inputs.self.dotship.${system'}.pkgs) pkgs;
   in {
-    options.canivete.arion = {
-      enable = mkEnableOption "arion docker compose projects" // {default = inputs ? arion;};
-      flake = mkOption {
-        type = raw;
-        description = "Arion flake input";
-        default = inputs.arion;
-      };
+    options.dotship.arion = {
+      enable = mkEnableOption "arion docker-compose projects" // {default = inputs ? arion;};
+      flake = mkFlakeOption "arion" {};
+
       projects = mkOption {
-        type = lazyAttrsOf (submodule ({
+        type = types.lazyAttrsOf (types.submodule ({
           name,
           config,
           ...
         }: {
           options = {
-            modules = canivete.mkModulesOption {};
+            modules = mkModulesOption {};
+
             composition = mkOption {
-              type = raw;
+              type = types.raw;
+              default = arion.flake.lib.eval {inherit modules pkgs;};
               description = "Evaluated arion configuration";
-              default = cfg.flake.lib.eval {inherit modules pkgs;};
             };
+
             yaml = mkOption {
-              type = package;
-              description = "docker-compose YAML output";
+              type = types.package;
               default = config.composition.config.out.dockerComposeYaml;
+              description = "docker-compose YAML output";
             };
+
             basePackage = mkOption {
-              type = package;
+              type = types.package;
+              default = arion.flake.packages.${system}.arion;
               description = "Base arion package to use";
-              default = cfg.flake.packages.${system}.arion;
             };
+
             finalPackage = mkOption {
-              type = package;
-              description = "Final arion executable";
+              type = types.package;
               default = pkgs.wrapProgram config.basePackage "arion" "arion" "--add-flags \"--prebuilt-file ${config.yaml}\"" {};
+              description = "Final arion executable";
             };
           };
-          config.modules.builtin = {
-            # Mismatched systems should buildLayeredImage to allow running on host
+
+          config.modules.builtins = {
             options.services = mkOption {
-              type = lazyAttrsOf (submodule {config.image.asStream = system == system'';});
+              type = types.lazyAttrsOf (types.submodule {config.image.asStream = system == system';});
               default = {};
             };
-            # Also share self' of the Linux system variant
-            config._module.args.self'' = perInput system'' inputs.self;
+
+            config._module.args.self = perInput system' inputs.self;
             config.project.name = mkDefault name;
           };
         }));
       };
     };
-    config = mkIf cfg.enable {
-      # TODO why does this cause a nix daemon disconnection? move-docs.sh missing? cross platform is HARD
-      # config.canivete.just.recipes."arion *ARGS" = "${getExe cfg.finalPackage} {{ ARGS }}";
+
+    config = mkIf (arion.enable && config.dotship.just.enable) {
+      dotship.just.recipes."arion *ARGS" = "${getExe arion.finalPackage} {{ ARGS }}";
     };
   };
 }

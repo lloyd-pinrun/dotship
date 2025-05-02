@@ -4,36 +4,57 @@
   lib,
   ...
 }: let
-  inherit (lib) attrValues flip pipe importJSON toList mkIf getExe mkOption types elem getName;
-  inherit (types) listOf str attrsOf anything;
+  inherit
+    (lib)
+    attrValues
+    elem
+    flip
+    getExe
+    getName
+    importJSON
+    literalExpression
+    mkIf
+    mkOption
+    pipe
+    toList
+    types
+    ;
+
+  cfg = config.dotship.pkgs;
 in {
-  # TODO options for overlays (from options.flake.overlays doesn't work?)
-  # TODO nixpkgs config options
-  options.canivete.pkgs = {
+  options.dotship.pkgs = {
     allowUnfree = mkOption {
-      type = listOf str;
+      type = types.listOf types.str;
       default = [];
-      description = "Package names to ignore because unfree";
+      example = literalExpression "[ \"unfree-package\" ]";
     };
+
     config = mkOption {
-      type = attrsOf anything;
+      type = types.attrsOf types.anything;
       default = {};
-      description = "Nixpkgs configuration (i.e. allowUnfreePredicate, etc.)";
+      example = literalExpression ''
+        { allowUnfreePredicate = true; }
+      '';
+      description = "nixpkgs configuration";
     };
   };
-  config.canivete.pkgs.config = mkIf (config.canivete.pkgs.allowUnfree != []) {
-    allowUnfreePredicate = pkg: elem (getName pkg) config.canivete.pkgs.allowUnfree;
+
+  config.dotship.pkgs.config = mkIf (cfg.allowUnfree != []) {
+    allowUnfreePredicate = pkg: elem (getName pkg) cfg.allowUnfree;
   };
+
   config.perSystem = {
     pkgs,
     system,
     ...
   }: {
-    options.canivete.pkgs.pkgs = mkOption {};
-    config.canivete.pkgs.pkgs = pkgs;
+    options.dotship.pkgs.pkgs = mkOption {};
+
+    config.dotship.pkgs.pkgs = pkgs;
     config._module.args.pkgs = import inputs.nixpkgs {
       inherit system;
-      inherit (config.canivete.pkgs) config;
+      inherit (config.dotship.pkgs) config;
+
       overlays =
         attrValues inputs.self.overlays
         ++ toList (final: _: {
@@ -42,7 +63,10 @@ in {
             (final.runCommand "from-yaml" {})
             importJSON
           ];
+
           execBash = cmd: [(getExe final.bash) "-c" cmd];
+          execFish = cmd: [(getExe final.fish) "--command" cmd];
+
           wrapProgram = srcs: name: exe: args: overrides:
             final.symlinkJoin ({
                 inherit name;
@@ -52,9 +76,10 @@ in {
                   if name == exe
                   then "wrapProgram \"$out/bin/${exe}\" ${args}"
                   else "makeWrapper \"$out/bin/${exe}\" \"$out/bin/${name}\" ${args}";
-                meta.mainProgram = name;
+                meta.minProgram = name;
               }
               // overrides);
+
           wrapFlags = pkg: args: final.wrapProgram pkg pkg.name pkg.name args {};
         });
     };

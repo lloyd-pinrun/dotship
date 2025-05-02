@@ -1,108 +1,131 @@
 {
-  canivete,
+  dotship,
   config,
   inputs,
   lib,
   ...
 }: let
-  inherit (builtins) functionArgs isAttrs isFunction isString mapAttrs;
-  inherit (canivete) mkFlakeOption mkNullableOption;
   inherit (config) systems;
-  inherit (config.canivete) schemas;
-  inherit (lib) filterAttrsRecursive getExe mkEnableOption mkIf mkMerge mkOption types;
-  inherit (types) anything attrsOf bool either enum functionTo listOf package str submodule;
+  inherit (config.dotship) schemas;
+
+  inherit
+    (builtins)
+    functionArgs
+    isAttrs
+    isFunction
+    isString
+    ;
+
+  inherit
+    (lib)
+    filterAttrsRecursive
+    getExe
+    mapAttrs
+    mkEnableOption
+    mkIf
+    mkMerge
+    mkOption
+    types
+    ;
+
+  inherit (dotship.lib.options) mkFlakeOption mkNullableOption;
 in {
-  options.canivete.schemas = {
+  options.dotship.schemas = {
     enable = mkEnableOption "flake-schemas support" // {default = schemas.flakes.schemas != null && schemas.flakes.nix != null;};
     flakes.schemas = mkFlakeOption "flake-schemas" {};
     flakes.nix = mkFlakeOption "nix-flake-schemas" {};
+
     lib = mkOption {
       type = let
-        recursive = attrsOf (either (functionTo anything) recursive);
+        recursive = types.attrsOf (types.either (types.functionTo types.anything) recursive);
       in
         recursive;
       default = {};
       description = "Helper functions";
     };
+
     schemas = mkOption {
-      default = {};
-      type = attrsOf (submodule ({config, ...}: {
+      type = types.lazyAttrsOf (types.submodule ({config, ...}: {
         options = let
-          children = attrsOf (submodule {
+          children = types.lazyAttrsOf (types.submodule {
             options = {
-              forSystems = mkNullableOption (listOf (enum systems)) {description = "system parents";};
-              shortDescription = mkNullableOption str {description = "short description";};
-              derivation = mkNullableOption package {description = "actual derivation";};
-              evalChecks = mkNullableOption (attrsOf bool) {description = "evaluation checks";};
-              what = mkNullableOption str {description = "basic type description";};
-              isFlakeCheck = mkNullableOption bool {description = "whether to test with flake check";};
+              forSystems = mkNullableOption (types.listOf (types.enum systems)) {description = "system parents";};
+              shortDescription = mkNullableOption types.str {description = "short description";};
+              derivation = mkNullableOption types.package {description = "actual derivation";};
+              evalChecks = mkNullableOption (types.attrsOf types.bool) {description = "evaluation checks";};
+              what = mkNullableOption types.str {description = "base type description";};
+              isFlakeCheck = mkNullableOption types.bool {description = "whether to test with flake check";};
               children = mkNullableOption children {description = "further tree keys";};
             };
           });
         in {
           version = mkOption {
-            type = enum [1];
+            type = types.enum [1];
             default = 1;
             description = "flake-schemas version";
           };
+
           doc = mkOption {
-            type = str;
+            type = types.str;
             default = "";
             description = "schema description";
           };
-          allowIFD = mkNullableOption bool {description = "allow import-from-derivation";};
-          canivete.children = mkOption {
+
+          allowIFD = mkNullableOption types.bool {description = "allow import-from-derivation";};
+
+          dotship.children = mkOption {
             type = children;
             default = {};
             description = "actual tree keys";
           };
+
           inventory = mkOption {
-            description = "how to derive schema hierarchy";
-            default = _: config.canivete.children;
-            type = functionTo (submodule {
+            type = types.functionTo (types.submodule {
               options.children = mkOption {
                 type = children;
                 description = "tree keys";
               };
             });
+            default = _: config.dotship.children;
+            description = "how to derive schema hierarchy";
           };
         };
       }));
     };
   };
+
   config = mkIf schemas.enable {
-    # TODO do I need to further sanitize this output to avoid schema conflicts with flake-schemas?
-    flake.schemas = filterAttrsRecursive (name: value: name != "canivete" && value != null) schemas.schemas;
-    canivete.schemas.lib = mkMerge [
+    flake.schemas = filterAttrsRecursive (name: value: name != "dotship" && value != null) schemas.schemas;
+    dotship.schemas.lib = mkMerge [
       inputs.flake-schemas.lib
       {
         checkDerivation = drv:
-          drv.type
-          or null
+          (drv.type or null)
           == "derivation"
           && drv ? drvPath
           && drv ? name
           && isString drv.name;
-        checkModule = func: module:
+
+        checkModule = fn: module:
           isAttrs module
-          || (isFunction module && func module);
-        eachChild = func: output: schemas.lib.mkChildren (mapAttrs func output);
+          || (isFunction module && fn module);
+
+        eachChild = fn: output: schemas.lib.mkChildren (mapAttrs fn output);
       }
     ];
-    # TODO is it possible to autogenerate every schema recursively up until functions?
-    canivete.schemas.schemas = mkMerge [
+
+    dotship.schemas.schemas = mkMerge [
       inputs.flake-schemas.schemas
       {
-        # TODO why is this giving me null children?!
         flakeModules.inventory = schemas.lib.eachChild (_: module: {
           what = "flake-parts module";
           evalChecks.isModule = schemas.lib.checkModule (mod: (functionArgs mod) ? flake-parts-lib) module;
         });
       }
     ];
+
     perSystem = {system, ...}: {
-      # TODO why does this not use the right version of nix from flake-schemas?
-      canivete.just.recipes.inspect = "${getExe schemas.flakes.nix.packages.${system}.default} -- flake show";
+      dotship.just.recipes.inspect = "${getExe schemas.flakes.nix.packages.${system}.default} -- flake show";
     };
   };
 }

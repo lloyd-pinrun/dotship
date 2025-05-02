@@ -1,314 +1,386 @@
 flake @ {
-  canivete,
+  dotship,
   config,
   inputs,
   lib,
   withSystem,
   ...
 }: let
-  inherit (canivete) mkFlakeOption mkModuleOption mkNullableOption mkSystemOption;
-  inherit (config.canivete.meta) root people;
-  inherit (config.canivete.deploy) nodes;
-  inherit (config.canivete.deploy.canivete) flakes modules;
-  inherit (lib) attrNames evalModules filterAttrsRecursive flip getExe mapAttrs mkDefault mkIf mkMerge mkOption optional optionalAttrs types;
-  inherit (types) attrsOf bool deferredModule enum functionTo int listOf package path pathInStore raw str submodule;
-  genericModule.options = {
-    sshUser = mkNullableOption str {description = "User to connect with";};
-    user = mkNullableOption str {description = "User to deploy to";};
-    sudo = mkNullableOption str {description = "Sudo command";};
-    interactiveSudo = mkNullableOption bool {description = "interactive sudo";};
-    sshOpts = mkNullableOption (listOf str) {description = "SSH CLI args";};
-    fastConnection = mkNullableOption bool {description = "fast connection";};
-    autoRollback = mkNullableOption bool {description = "reactivation of previous profile on failure";};
-    magicRollback = mkNullableOption bool {description = "magic rollback";};
-    tempPath = mkNullableOption path {description = "Temporary file location for inotify watcher";};
-    remoteBuild = mkNullableOption bool {description = "remote build on target system";};
-    activationTimeout = mkNullableOption int {description = "Timeout for profile activation";};
-    confirmTimeout = mkNullableOption int {description = "Timeout for profile activation confirmation";};
+  inherit
+    (dotship.lib.options)
+    mkFlakeOption
+    mkListOption
+    mkModuleOption
+    mkNullableOption
+    mkSystemOption
+    ;
+
+  inherit (config.dotship.meta) root users;
+  inherit (config.dotship.deploy) hosts;
+  inherit (config.dotship.deploy.dotship) flakes modules;
+
+  inherit
+    (lib)
+    attrNames
+    filterAttrsRecursive
+    flip
+    getExe
+    mapAttrs
+    mkDefault
+    mkIf
+    mkMerge
+    mkOption
+    optionalAttrs
+    types
+    ;
+
+  sshOpts = {
+    options.args = mkListOption types.str {description = "SSH CLI args";};
+    options.user = mkNullableOption types.str {description = "user to connect with";};
   };
-  profileModule = profile @ {
+
+  sudoOpts = {
+    options.command = mkNullableOption types.str {description = "sudo command";};
+    options.interactive = mkNullableOption types.bool {description = "interactive sudo";};
+  };
+
+  timeoutOpts = {
+    options.activation = mkNullableOption types.int {description = "timeout for profile activation";};
+    options.confirm = mkNullableOption types.int {description = "timeout for profile activation confirmation";};
+  };
+
+  genericOpts = {
+    options = {
+      remoteBuild = mkNullableOption types.bool {description = "remote build on target system";};
+      ssh = mkOption {type = types.lazyAttrsOf (types.submodule sshOpts);};
+      sudo = mkOption {type = types.lazyAttrsOf (types.submodule sudoOpts);};
+      tempPath = mkNullableOption types.path {description = "Temporary file location for inotify watcher";};
+      timeout = mkOption {type = types.lazyAttrsOf (types.submodule timeoutOpts);};
+      user = mkNullableOption types.str {description = "User to deploy to";};
+    };
+  };
+
+  profileOpts = profile @ {
     config,
     name,
-    node,
+    host,
     ...
   }: let
-    inherit (config.canivete) activator builder configuration type;
-    inherit (flakes.deploy.lib.${node.config.canivete.system}) activate;
-    inherit (node.config.canivete) os system;
+    inherit (config.dotship) activator builder configuration type;
+    inherit (flakes.deploy.lib.${host.config.dotship.system}) activate;
+    inherit (host.config.dotship) os system;
   in {
-    imports = [genericModule];
+    imports = [genericOpts];
+
     options.path = mkOption {
-      type = pathInStore;
+      type = types.pathInStore;
       default = activator configuration;
-      description = "Path to activation script for given derivation";
+      description = "path to activation script for the given derivation";
     };
-    options.profilePath = mkNullableOption path {description = "Profile installation path";};
-    options.canivete = {
+
+    options.profilePath = mkNullableOption types.path {description = "profile installation path";};
+
+    options.dotship = {
       type = mkOption {
-        type = enum ["home-manager" "nixos" "darwin" "droid" "custom"];
+        type = types.enum ["darwin" "home-manager" "nixos"];
+
         default =
           {
-            nixos = "nixos";
-            macos = "darwin";
-            windows = "nixos";
             linux = "home-manager";
-            android = "droid";
+            macos = "darwin";
+            nixos = "nixos";
           }
-          .${os};
-        description = "Configuration module class (type of derivation)";
+          .${
+            os
+          };
+
+        description = "configuration module class (type derivation)";
       };
+
       activator = mkOption {
-        type = functionTo pathInStore;
-        default =
-          {
-            inherit (activate) nixos darwin home-manager;
-            droid = base: (activate.custom // {dryActivate = "$PROFILE/activate switch --dry-run";}) base.activationPackage "$PROFILE/activate switch";
-            custom = base: activate.custom base.canivete.activationPackage (getExe base.canivete.activationPackage);
-          }
-          .${type};
+        type = types.functionTo types.pathInStore;
+        default = {inherit (activate) darwin nixos home-manager;}.${type};
         description = "How to build activation script for a derivation";
       };
+
       builder = mkOption {
-        type = functionTo raw;
+        type = types.functionTo types.raw;
+
         default =
           {
-            nixos = modules: flakes.nixos.lib.nixosSystem {modules = [modules];};
             darwin = modules: flakes.darwin.lib.darwinSystem {modules = [modules];};
-            droid = modules:
-              withSystem system ({pkgs, ...}:
-                flakes.droid.lib.nixOnDroidConfiguration {
-                  inherit pkgs;
-                  modules = [modules];
-                });
             home-manager = modules:
               withSystem system ({pkgs, ...}:
                 flakes.home-manager.lib.homeManagerConfiguration {
                   inherit pkgs;
                   modules = [modules];
                 });
-            custom = modules: evalModules {modules = [modules];};
+            nixos = modules: flakes.nixos.lib.nixosSystem {modules = [modules];};
           }
-          .${type};
-        description = "Convert modules to configurations";
+          .${
+            type
+          };
+
+        description = "convert modules to configurations";
       };
+
       configuration = mkOption {
-        type = deferredModule;
+        type = types.deferredModule;
         default = {};
-        description = "Central module and configuration derivation for profile";
+        description = "central module and configuration derivation for profile";
         apply = builder;
       };
+
       opentofu = mkOption {
-        type = deferredModule;
+        type = types.deferredModule;
         default = {};
-        description = "Extra module to be injected in OpenTofu workspace for the node";
+        description = "extra module to be injected in OpenTofu workspace for the host";
       };
     };
+
     config.user = mkDefault ({
         home-manager = name;
         nixos = "root";
-      }
-      .${type}
-      or null);
-    config.canivete.configuration.imports = [
-      (withSystem system (perSystem: {_module.args = {inherit canivete flake node perSystem profile;};}))
-      (modules.${type}
+      }.${
+        type
+      } or null);
+
+    config.dotship.configuration.imports = [
+      (withSystem system (perSystem: {_module.args = {inherit dotship flake host perSystem profile;};}))
+      (modules.${
+          type
+        }
         or {
-          options.canivete.activationPackage = mkOption {
-            type = package;
+          options.dotship.activationPackage = mkOption {
+            type = types.package;
             description = "Final package for custom profile";
           };
         })
       (optionalAttrs (type == "home-manager") {home.username = name;})
-      # TODO when should I replace this with nixos-facter, etc.?
       (optionalAttrs (type != "custom") {nixpkgs.hostPlatform = system;})
     ];
-    config.canivete.opentofu = {
+
+    config.dotship.opentofu = {
       config,
       pkgs,
       ...
     }: let
       inherit (config.resource) null_resource;
-      resource_name = "${type}_${node.name}_${name}";
-      nixFlags =
-        if type == "droid"
-        then "--impure"
-        else "";
+      resource_name = "${type}_${host.name}_${name}";
     in {
       config = mkMerge [
         {
-          data.external.${resource_name}.program = pkgs.execBash "nix eval .#canivete.deploy.nodes.${node.name}.profiles.${name}.path.drvPath | ${getExe pkgs.jq} '{drvPath:.}'";
+          data.external.${resource_name}.program = pkgs.execBash ''
+            nix eval .#dotship.deploy.hosts.${host.name}.profiles.${name}.path.drvPath | ${getExe pkgs.jq} '{drvPath:.}'
+          '';
+
           resource.null_resource.${resource_name} = {
             triggers.drvPath = "\${ data.external.${resource_name}.result.drvPath }";
-            # deploy-rs currently runs all flake checks, which can fail when correctly deploying
-            # TODO submit issue report to only run checks that deploy-rs creates
-            provisioner.local-exec.command = "${getExe flakes.deploy.packages.${pkgs.system}.default} --skip-checks .#\"${node.name}\".\"${name}\" ${nixFlags}";
+            provisioner.local-exec.command = ''
+              ${getExe flakes.deploy.packages.${pkgs.system}.default} --skip-checks .#\"${host.name}\".\"${name}\"";
+            '';
           };
         }
-        # TODO support installation of nix system manager on every platform
         (mkIf (type == "nixos") {
-          module."${resource_name}_install" = mkMerge [
+          modules."${resource_name}_install" = mkMerge [
             {
               source = "${flakes.anywhere}//terraform/install";
-              target_host = node.config.hostname;
-              flake = ".#${node.name}";
+              target_host = host.config.hostname;
+              flake = ".#${host.name}";
             }
             (mkIf (flakes.disko == null) {phases = ["kexec" "install" "reboot"];})
             (mkIf (null_resource ? sops) {depends_on = ["null_resource.sops"];})
-            # TODO make this dynamic. should system be a default?
-            (mkIf (node.name != root) {depends_on = ["module.nixos_${root}_system_install"];})
+            (mkIf (host.name != root) {depends_on = ["module.nixos_${root}_system_install"];})
           ];
           data.external.${resource_name}.depends_on = ["module.${resource_name}_install"];
         })
       ];
     };
   };
-  nodeModule = node @ {
+
+  hostOpts = host @ {
     config,
     name,
     ...
   }: {
-    imports = [genericModule];
+    imports = [genericOpts];
+
     options = {
-      hostname = mkOption {
-        type = str;
+      name = mkOption {
+        type = types.str;
         default = name;
-        description = "Server hostname";
+        description = "server/machine hostname";
       };
-      profiles = mkOption {
-        type = attrsOf (submodule {
-          imports = [profileModule];
-          _module.args = {inherit node;};
-        });
-        default = {};
-        description = "All possible profiles to deploy on node";
+
+      profiles = {
+        profiles = mkOption {
+          type = types.lazyAttrsOf (types.submodule {
+            imports = [profileOpts];
+            _module.args = {inherit host;};
+          });
+          default = {};
+          description = "all possible profiles to deploy on the host";
+        };
+
+        order = mkListOption (types.enum (attrNames config.profiles.profiles)) {description = "first profiles to deploy";};
       };
-      profilesOrder = mkNullableOption (listOf (enum (attrNames config.profiles))) {description = "First profiles to deploy";};
-      canivete.os = mkOption {
-        type = enum ["nixos" "macos" "windows" "linux" "android"];
+
+      dotship.os = mkOption {
+        type = types.enum ["linux" "macos" "nixos"];
         default = "nixos";
-        description = "Node operating system";
+        description = "host operating system";
       };
-      canivete.system = mkSystemOption {
-        default =
-          {
-            macos = "aarch64-darwin";
-            android = "aarch64-linux";
-          }
-          .${config.canivete.os}
-          or "x86_64-linux";
+
+      dotship.system = mkSystemOption {
+        default = {macos = "aarch64-darwin";}.${config.dotship.os} or "x86_64-linux";
       };
     };
   };
 in {
-  options.canivete.deploy = mkOption {
-    type = submodule {
-      imports = [genericModule];
-      options.nodes = mkOption {
-        type = attrsOf (submodule nodeModule);
-        default = {};
-        description = "Nodes to deploy profiles to";
-      };
-      options.canivete = {
-        flakes = {
-          deploy = mkFlakeOption "deploy-rs" {};
-          nixos = mkFlakeOption "nixpkgs" {};
-          darwin = mkFlakeOption "nix-darwin" {};
-          droid = mkFlakeOption "nix-on-droid" {};
-          home-manager = mkFlakeOption "home-manager" {};
-          anywhere = mkFlakeOption "nixos-anywhere" {};
-          disko = mkFlakeOption "disko" {};
+  options.dotship.deploy = mkOption {
+    type = types.submodule {
+      imports = [genericOpts];
+
+      options = {
+        hosts = mkOption {
+          type = types.lazyAttrsOf (types.submodule hostOpts);
+          default = {};
+          description = "Host to deploy profiles to";
         };
-        modules = {
-          home-manager = mkModuleOption {};
-          nixos = mkModuleOption {};
-          darwin = mkModuleOption {};
-          droid = mkModuleOption {};
-          system = mkModuleOption {};
-          shared = mkModuleOption {};
+
+        dotship = {
+          flakes = {
+            anywhere = mkFlakeOption "nixos-anywhere" {};
+            darwin = mkFlakeOption "nix-darwing" {};
+            deploy = mkFlakeOption "deploy-rs" {};
+            disko = mkFlakeOption "disko" {};
+            home-manager = mkFlakeOption "home-manager" {};
+            nixos = mkFlakeOption "nixpkgs" {};
+          };
+
+          modules = {
+            darwin = mkModuleOption {};
+            home-manager = mkModuleOption {};
+            nixos = mkModuleOption {};
+            shared = mkModuleOption {};
+            system = mkModuleOption {};
+          };
         };
       };
-      config.canivete.modules = let
-        hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
+
+      config.dotship.modules = let
+        hostnameModule = {host, ...}: {networking.hostName = host.config.name;};
       in {
         home-manager.imports = [modules.shared];
+
         system = mkMerge [
           modules.shared
-          # TODO can I do this for other systems too?
-          # deadnix: skip
-          (mkIf (flakes.home-manager != null) (systemConfiguration @ {pkgs, ...}: {
+          (mkIf (flakes.home-manager != null) (systemConfiguration: {
             home-manager.sharedModules = [
               {
                 imports = [modules.home-manager];
                 _module.args = {inherit systemConfiguration;};
               }
             ];
-            home-manager.users = mapAttrs (username: _: {home = {inherit username;};}) people.users;
+
+            home-manager.users = mapAttrs (username: _: {home = {inherit username;};}) users.users;
           }))
         ];
+
         nixos = mkMerge [
           {
-            imports = [
-              hostnameModule
-              modules.system
-            ];
-            users.users = flip mapAttrs people.users (username: person: {
+            imports = [hostnameModule modules.system];
+
+            users.users = flip mapAttrs users.users (username: person: {
               isNormalUser = true;
-              home = "/home/${username}";
+              home = "/home/" + username;
               description = person.name;
-              extraGroups = ["tty"] ++ (optional (username == people.me) "wheel");
+              extraGroups = ["tty"] ++ person.groups;
             });
           }
+
           (mkIf (flakes.disko != null) flakes.disko.nixosModules.default)
-          # TODO can I do this for other systems too?
           (mkIf (flakes.home-manager != null) ({utils, ...}: {
             imports = [flakes.home-manager.nixosModules.home-manager];
             home-manager.sharedModules = [{_module.args = {inherit utils;};}];
           }))
         ];
-        droid.imports = [modules.system flakes.home-manager.nixosModules.home-manager];
-        # TODO figure out home-manager inside nix-darwin
-        darwin.imports = [hostnameModule modules.system];
+
+        darwin = mkMerge [
+          {imports = [hostnameModule modules.system];}
+          (mkIf (flakes.home-manager != null) ({utils, ...}: {
+            imports = [flakes.home-manager.darwinModules.home-manager];
+            home-manager.sharedModules = [{_module.args = {inherit utils;};}];
+          }))
+        ];
       };
     };
+
     default = {};
     description = "Deployment with deploy-rs and nixos-anywhere";
   };
+
   config = let
-    inherit (lib) flatten flip getAttr getAttrFromPath mapAttrsToList pipe;
-    typeNodes = type: let
-      inherit (lib) attrValues filterAttrs getAttrFromPath head length mapAttrs pipe;
-      typeProfiles = funcs: node: pipe node.profiles ([(filterAttrs (_: profile: profile.canivete.type == type)) attrValues] ++ funcs);
+    inherit
+      (lib)
+      attrValues
+      filterAttrs
+      flatten
+      flip
+      getAttr
+      getAttrFromPath
+      head
+      length
+      mapAttrs
+      mapAttrsToList
+      pipe
+      ;
+
+    typeHosts = type: let
+      typeProfiles = funcs: host:
+        pipe host.profiles (
+          [
+            (filterAttrs (_: profile: profile.dotship.type == type))
+            attrValues
+          ]
+          ++ funcs
+        );
     in
-      pipe nodes [
-        # TODO what happens if there are multiple "system"-type configurations?!
+      pipe hosts [
         (filterAttrs (_: typeProfiles [length (l: l == 1)]))
-        (mapAttrs (_: typeProfiles [head (getAttrFromPath ["canivete" "configuration"])]))
+        (mapAttrs (_: typeProfiles [head (getAttrFromPath ["dotship" "configuration"])]))
       ];
-    nixosConfigurations = typeNodes "nixos";
-    darwinConfigurations = typeNodes "darwin";
-    nixOnDroidConfigurations = typeNodes "droid";
-    homeManagerConfigurations = typeNodes "home-manager";
+
+    nixosConfigurations = typeHosts "nixos";
+    darwinConfigurations = typeHosts "darwin";
+    homeManagerConfigurations = typeHosts "home-manager";
   in
-    mkIf (nodes != {}) {
+    mkIf (hosts != {}) {
       flake = mkMerge [
-        {deploy = filterAttrsRecursive (name: value: name != "canivete" && value != null) config.canivete.deploy;}
+        {deploy = filterAttrsRecursive (name: value: name != "dotship" && value != null) config.dotship.deploy;}
         (mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
         (mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
-        (mkIf (nixOnDroidConfigurations != {}) {inherit nixOnDroidConfigurations;})
         (mkIf (homeManagerConfigurations != {}) {inherit homeManagerConfigurations;})
       ];
+
       perSystem = {system, ...}: {
         checks = flakes.deploy.lib.${system}.deployChecks inputs.self.deploy;
-        canivete.opentofu.workspaces.deploy = {
-          modules.imports = pipe nodes [
-            (mapAttrsToList (_:
-              flip pipe [
-                (getAttr "profiles")
-                (mapAttrsToList (_: getAttrFromPath ["canivete" "opentofu"]))
-              ]))
+        dotship.opentofu.workspaces.deploy = {
+          modules.imports = pipe hosts [
+            (mapAttrsToList (
+              _:
+                flip pipe [
+                  (getAttr "profiles")
+                  (mapAttrsToList (
+                    _:
+                      getAttrFromPath ["dotship" "opentofu"]
+                  ))
+                ]
+            ))
             flatten
           ];
-          plugins = ["hashicorp/null" "hashicorp/external"];
+
+          plugins = ["hashicorp/pull" "hashicorp/external"];
         };
       };
     };

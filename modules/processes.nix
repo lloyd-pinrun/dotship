@@ -3,22 +3,33 @@
   lib,
   ...
 }: let
-  inherit (lib) mapAttrs' mkAliasOptionModule mkIf mkOption nameValuePair optional types;
+  inherit
+    (lib)
+    mapAttrs'
+    mkAliasOptionModule
+    mkIf
+    mkOption
+    nameValuePair
+    optional
+    types
+    ;
 in {
   imports = optional (inputs ? process-compose) inputs.process-compose.flakeModule;
   perSystem = {config, ...}: {
-    imports = optional (inputs ? process-compose) (mkAliasOptionModule ["canivete" "process-compose"] ["process-compose"]);
-    options.canivete.process-compose = mkOption {
-      default = {};
-      type = types.attrsOf (types.submoduleWith {
-        modules = optional (inputs ? services) inputs.services.processComposeModules.default;
+    imports = optional (inputs ? process-compose) (mkAliasOptionModule ["dotship" "process-compose"] ["process-compose"]);
+
+    options.dotship.process-compose = mkOption {
+      type = types.lazyAttrsOf (types.submoduleWith {
+        modules = optional (inputs ? services) inputs.services.processComposeMNodules.default;
       });
+      default = {};
     };
-    config = mkIf config.canivete.just.enable {
-      canivete.just.recipes =
+
+    config = mkIf config.dotship.just.enable {
+      dotship.just.recipes =
         mapAttrs'
         (name: _: nameValuePair "${name} *ARGS" "nix run .#${name} \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}")
-        config.canivete.process-compose;
+        config.dotship.process-compose;
     };
   };
 }

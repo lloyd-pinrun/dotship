@@ -1,69 +1,89 @@
 {
   perSystem = {
-    canivete,
+    dotship,
     config,
     lib,
     pkgs,
     self',
     ...
   }: let
-    inherit (lib) mkOption types mkMerge mkIf mapAttrs getAttr pipe filterAttrs;
-    inherit (types) str listOf package submodule lines attrsOf;
-    cfg = config.canivete.devShells;
+    inherit (dotship.lib.options) mkEnabledOption;
+
+    inherit
+      (lib)
+      filterAttrs
+      getAttr
+      mapAttrs
+      mkIf
+      mkMerge
+      mkOption
+      pipe
+      types
+      ;
+
+    inherit (pkgs) mkShell;
+
+    inherit (config.dotship) devShells;
   in {
-    options.canivete.devShells = {
-      enable = canivete.mkEnabledOption "Modularized Dev Shell configuration";
+    options.dotship.devShells = {
+      enable = mkEnabledOption "modularized devshell configuration";
+
       shells = mkOption {
-        default = {};
-        type = attrsOf (submodule ({
-          name,
+        type = types.lazyAttrsOf (types.submodule ({
           config,
+          name,
           ...
         }: {
           options = {
             name = mkOption {
-              type = str;
+              type = types.str;
               readOnly = true;
               default = name;
               description = "Name of the primary project executable";
             };
+
             packages = mkOption {
-              type = listOf package;
+              type = types.listOf types.package;
               default = [];
               description = "Packages to include in development shell";
             };
+
             inputsFrom = mkOption {
-              type = listOf package;
+              type = types.listOf types.package;
               default = [];
               description = "Development shells to include in the default";
             };
+
             shellHook = mkOption {
-              type = lines;
+              type = types.lines;
               default = "";
               description = "Hook to run in devshell";
             };
+
             shell = mkOption {
-              type = package;
+              type = types.package;
+              default = mkShell {inherit (config) name packages inputsFrom shellHook;};
               description = "actual shell";
-              default = pkgs.mkShell {inherit (config) name packages inputsFrom shellHook;};
             };
           };
         }));
       };
     };
-    config = mkIf cfg.enable {
-      devShells = pipe cfg.shells [
+
+    config = mkIf devShells.enable {
+      devShells = pipe devShells.shells [
         (filterAttrs (name: _: name != "shared"))
         (mapAttrs (_: getAttr "shell"))
       ];
-      canivete.devShells.shells = mkMerge [
+
+      dotship.devShells.shells = mkMerge [
         {
           shared = {};
-          default.inputsFrom = [cfg.shells.shared.shell];
+          default.inputsFrom = [devShells.shells.shared.shell];
         }
         (pipe self'.packages [
           (filterAttrs (name: _: name != "default"))
-          (mapAttrs (_: _: {inputsFrom = [cfg.shells.shared.shell];}))
+          (mapAttrs (_: _: {inputsFrom = [devShells.shells.shared.shell];}))
         ])
       ];
     };
