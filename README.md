@@ -6,6 +6,12 @@ This implementation was forked from: [@schradert's](https://github.com/schradert
 
 They have obviously an incredible understanding of Nix & NixOS, and their code provided a great foundation from which I could learn the language and ecosystem.
 
+As per [canivete](https://github.com/schradert/canivete)'s `README`, you can start a new project with:
+
+```bash
+nix flake init --template github:schradert/canivete
+```
+
 ## About
 
 Nix framework for common development and infrastructure tooling like:
@@ -26,7 +32,7 @@ Nix framework for common development and infrastructure tooling like:
 
 ## Usage
 
-1. Start a new project with `nix flake init --template github:schradert/canivete`
+1. Start a new project with `nix flake init --template github:lloyd-pinrun/dotship`
 2. Open the project shell by entering project directory and running `nix develop`
 3. See available commands by running `just`
 
