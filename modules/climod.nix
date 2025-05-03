@@ -52,11 +52,12 @@
             config.module.name = mkDefault name;
           };
         }));
+        default = {};
       };
     };
 
-    config = mkIf (config.dotship.just.enable && climod.enable) {
-      dotship.just.recipes = mapAttrs' climodToJust climod.programs;
+    config = mkIf (climod.enable && config.just.enable) {
+      just.recipes = mapAttrs' climodToJust climod.programs;
     };
   };
 }

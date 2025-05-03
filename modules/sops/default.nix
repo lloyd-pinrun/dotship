@@ -22,6 +22,7 @@
     (lib)
     mkEnableOption
     mkIf
+    mkMerge
     mkOption
     mkPackageOption
     readFile
@@ -103,10 +104,16 @@ in {
       };
     };
 
-    config.dotship = mkIf sops.enable {
-      devShells.shells.default.packages = [sops.package];
-      just.recipes."sops-setup *ARGS" = "nix run .#dotship.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
-      pre-commit.settings.excludes = ["${directory}/.+"];
-    };
+    config = mkIf sops.enable (mkMerge [
+      (mkIf config.just.enable {
+        just.recipes."sops-setup *ARGS" = "nix run .#dotship.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
+      })
+      {
+        dotship = {
+          devShells.shells.default.packages = [sops.package];
+          pre-commit.settings.excludes = ["${directory}/.+"];
+        };
+      }
+    ]);
   };
 }

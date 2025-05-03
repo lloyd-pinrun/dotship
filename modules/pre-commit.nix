@@ -30,8 +30,8 @@
     };
 
     config = mkMerge [
-      (mkIf config.dotship.just.enable {
-        dotship.just.recipes."check *ARGS" = "pre-commit run --all-files --hook-stage manual {{ ARGS }}";
+      (mkIf config.just.enable {
+        just.recipes."check *ARGS" = "pre-commit run --all-files --hook-stage manual {{ ARGS }}";
       })
       (mkIf config.dotship.devShells.enable {
         dotship.devShells.shells.shared.inputsFrom = [pre-commit.devShell];
@@ -84,7 +84,10 @@
 
               # nix hooks
               alejandra.enable = true;
-              deadnix.enable = true;
+              deadnix = {
+                enable = true;
+                settings.edit = true;
+              };
 
               statix = {config, ...}: {
                 options.toml = mkOption {

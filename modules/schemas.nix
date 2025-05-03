@@ -124,8 +124,14 @@ in {
       }
     ];
 
-    perSystem = {system, ...}: {
-      dotship.just.recipes.inspect = "${getExe schemas.flakes.nix.packages.${system}.default} -- flake show";
+    perSystem = {
+      config,
+      system,
+      ...
+    }: {
+      config = mkIf config.just.enable {
+        just.recipes.inspect = "${getExe schemas.flakes.nix.packages.${system}.default} -- flake show";
+      };
     };
   };
 }

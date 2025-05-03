@@ -8,6 +8,12 @@
     systems.url = "github:nix-systems/default";
 
     # -- Development --
+    just.url = "github:lloyd-pinrun/just.nix";
+    just.inputs = {
+      flake-parts.follows = "flake-parts";
+      nixpkgs.follows = "nixpkgs";
+      pre-commit.follows = "pre-commit";
+    };
     pre-commit.url = "github:cachix/git-hooks.nix";
   };
 

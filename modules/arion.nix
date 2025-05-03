@@ -19,11 +19,10 @@ in {
     inherit
       (lib)
       attrValues
-      getExe
       mkDefault
       mkEnableOption
-      mkIf
       mkOption
+      mkPackageOption
       replaceStrings
       types
       ;
@@ -58,16 +57,27 @@ in {
               description = "docker-compose YAML output";
             };
 
-            basePackage = mkOption {
-              type = types.package;
-              default = arion.flake.packages.${system}.arion;
-              description = "Base arion package to use";
+            package = mkPackageOption pkgs "arion" {
+              nullable = true;
+              default =
+                if inputs ? arion
+                then arion.flake.packages.${system}.arion
+                else null;
             };
 
             finalPackage = mkOption {
-              type = types.package;
-              default = pkgs.wrapProgram config.basePackage "arion" "arion" "--add-flags \"--prebuilt-file ${config.yaml}\"" {};
-              description = "Final arion executable";
+              type = types.nullOr types.package;
+              readOnly = true;
+
+              default = let
+                inherit (config) package yaml;
+                inherit (pkgs) wrapProgram;
+              in
+                if package != null
+                then wrapProgram package "arion" "arion" "--add-flags \"--prebuilt-file ${yaml}\"" {}
+                else null;
+
+              description = "Final arion package";
             };
           };
 
@@ -81,11 +91,11 @@ in {
             config.project.name = mkDefault name;
           };
         }));
+        default = {};
       };
     };
 
-    config = mkIf (arion.enable && config.dotship.just.enable) {
-      dotship.just.recipes."arion *ARGS" = "${getExe arion.finalPackage} {{ ARGS }}";
-    };
+    # config = mkIf (arion.enable && config.just.enable) (mkMerge [
+    # ]);
   };
 }

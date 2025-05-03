@@ -48,7 +48,9 @@ flake @ {inputs, ...}: {
     };
 
     config = mkIf opentofu.enable {
-      dotship.just.recipes."tofu *ARGS" = "nix run .#dotship.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
+      just.recipes = mkIf config.just.enable {
+        "tofu *ARGS" = "nix run .#dotship.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
+      };
 
       dotship.opentofu.sharedModules = {workspaces, ...}: let
         inherit (workspaces.config) encryptedState plugins;

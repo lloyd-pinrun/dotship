@@ -25,8 +25,8 @@ in {
       default = {};
     };
 
-    config = mkIf config.dotship.just.enable {
-      dotship.just.recipes =
+    config = mkIf config.just.enable {
+      just.recipes =
         mapAttrs'
         (name: _: nameValuePair "${name} *ARGS" "nix run .#${name} \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}")
         config.dotship.process-compose;
