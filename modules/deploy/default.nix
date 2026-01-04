@@ -5,7 +5,8 @@ flake @ {
   lib,
   ...
 }: let
-  inherit (config.dotship) sudoer users;
+  inherit (config.dotship) vars;
+
   inherit (config.dotship.deploy) nodes;
   inherit (config.dotship.deploy.dotship) flakes modules;
 in {
@@ -15,116 +16,131 @@ in {
     imports = [./generic.nix];
 
     options = {
-      nodes = dot.options.submoduleWith "nodes to deploy profiles to" {inherit flake;} ./node.nix;
+      nodes = dot.options.attrs.submoduleWith "target nodes for deployment" {inherit flake;} ./node.nix;
 
-      dotship.flakes = {
-        deploy = dot.options.flake inputs "deploy-rs" {};
-        nixos = dot.options.flake inputs "nixpkgs" {};
-        darwin = dot.options.flake inputs "nix-darwin" {};
-        home-manager = dot.options.flake inputs "home-manager" {};
-        anywhere = dot.options.flake inputs "nixos-anywhere" {};
-        disko = dot.options.flake inputs "disko" {};
-      };
+      dotship = {
+        flakes = {
+          deploy = dot.options.flake inputs "deploy-rs" {};
+          nixos = dot.options.flake inputs "nixos" {};
+          darwin = dot.options.flake inputs "nix-darwin" {};
+          home-manager = dot.options.flake inputs "home-manager" {};
+          anywhere = dot.options.flake inputs "nixos-anywhere" {};
+          disko = dot.options.flake inputs "disko" {};
+          # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L23
+        };
 
-      dotship.modules = {
-        home-manager = dot.options.module "home-manager modules" {};
-        nixos = dot.options.module "nixos modules" {};
-        darwin = dot.options.module "nix-darwin modules" {};
-        system = dot.options.module "shared modules for system deployment (e.g. nixos, darwin)" {};
-        shared = dot.options.module "shared modules for all deployments (including home-manager)" {};
+        modules = {
+          nixos = dot.options.module "nixos modules" {};
+          darwin = dot.options.module "nix-darwin modules" {};
+          home-manager = dot.options.module "home-manager modules" {};
+          system = dot.options.module "shared modules for system deployments (nixos & darwin)" {};
+          shared = dot.options.module "shared modules for all deployments (home-manager)" {};
+          # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L32
+        };
       };
     };
 
-    config = {
-      dotship.modules = let
-        hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
-      in {
-        shared = {pkgs, ...}: {
-          # NOTE: must instantiate within module; can't supply specialArgs because deploy-rs eagerly evaluates
-          _module.args.perSystem = flake.withSystem pkgs.stdenv.hostPlatform.system lib.id;
-        };
-
-        home-manager = {profile, ...}: {
-          imports = [modules.shared];
-          config = lib.mkIf (profile.config.dotship.type == "home-manager") {
-            home.username = lib.mkDefault profile.name;
-          };
-        };
-
-        system = systemConfiguration @ {
-          node,
-          perSystem,
-          profile,
-          ...
-        }: {
-          imports = [modules.shared];
-          nixpkgs.hostPlatform = node.config.dotship.system;
-          home-manager = lib.mkIf (flakes.home-manager != null) {
-            extraSpecialArgs = {inherit dot flake node perSystem profile systemConfiguration;};
-            sharedModules = [modules.home-manager];
-            users = builtins.mapAttrs (username: _: {home.username = lib.mkDefault username;}) users;
-          };
-        };
-
-        nixos = lib.mkMerge [
-          {
-            imports = [hostnameModule modules.system];
-            users.users = lib.flip builtins.mapAttrs users (username: user: {
-              isNormalUser = true;
-              home = "/home/${username}";
-              description = user.name;
-              extraGroups = ["tty"] ++ lib.optional (username == sudoer.username) "wheel";
-            });
-          }
-          (lib.mkIf (flakes.disko != null) flakes.disko.nixosModules.default)
-          (lib.mkIf (flakes.home-manager != null) ({utils, ...}: {
-            imports = [flakes.home-manager.nixosModules.home-manager];
-            home-manager.extraSpecialArgs = {inherit utils;};
-          }))
-        ];
-
-        darwin = lib.mkMerge [
-          {
-            imports = [hostnameModule modules.system];
-            users.users = lib.flip builtins.mapAttrs users (username: user: {
-              home = "/Users/${username}";
-              description = user.name;
-            });
-          }
-          (lib.mkIf (flakes.home-manager != null) flakes.home-manager.darwinModules.home-manager)
-        ];
+    config.dotship.modules = let
+      hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
+    in {
+      shared = {pkgs, ...}: {
+        # WARN: must instantiate within module (can't pass through `specialArgs` because `deploy-rs` eagerly evaluates)
+        _module.args.perSystem = flake.withSystem pkgs.stdenv.hostplatform.system lib.id;
       };
+
+      system = systemConfiguration @ {
+        node,
+        perSystem,
+        profile,
+        ...
+      }: {
+        imports = [modules.shared];
+        nixpkgs.hostPlatform = node.config.dotship.system;
+
+        home-manager = lib.mkIf (flakes.home-manager != null) {
+          extraSpecialArgs = {inherit dot flake node perSystem profile systemConfiguration;};
+          sharedModules = [modules.home-manager];
+          users = builtins.mapAttrs (username: _: {home.username = lib.mkDefault username;}) vars.users;
+        };
+      };
+
+      home-manager = {profile, ...}: let
+        inherit (profile) name;
+        inherit (profile.config.dotship) type;
+      in {
+        imports = [modules.shared];
+        config = lib.mkIf (type == "home-manager") {
+          home.username = lib.mkDefault name;
+        };
+      };
+
+      nixos = lib.mkMerge [
+        {
+          imports = [hostnameModule modules.system];
+          users.users = lib.flip builtins.mapAttrs vars.users (username: user: {
+            inherit (user) description;
+            home = "/home/${username}";
+            isNormalUser = true;
+            extraGroups = lib.mkDefault ["tty"] ++ (lib.optionals (username == vars.sudoer.username) ["wheel"]);
+          });
+        }
+        (lib.mkIf (dot.trivial.notNull flakes.disko) flakes.disko.nixosModules.default)
+        (lib.mkIf (dot.trivial.notNull flakes.home-manager) ({utils, ...}: {
+          imports = [flakes.home-manager.nixosModules.home-manager];
+          home-manager.extraSpecialArgs = {inherit utils;};
+        }))
+      ];
+
+      darwin = lib.mkMerge [
+        {
+          imports = [hostnameModule modules.system];
+          users.users = lib.flip builtins.mapAttrs vars.users (username: user: {
+            inherit (user) description;
+            home = "/Users/${username}";
+          });
+        }
+        (lib.mkIf (dot.trivial.notNull flakes.home-manager) ({utils, ...}: {
+          imports = [flakes.home-manager.darwinModules.home-manager];
+          home-manager.extraSpecialArgs = {inherit utils;};
+        }))
+      ];
+
+      # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L83
     };
   };
 
   config = let
+    inherit (dot) attrsets trivial;
+
     typeNodes = type: let
       isType = lib.filterAttrs (_: profile: profile.dotship.type == type);
+      profilesExist = node: node ? profiles;
       typeProfiles = funs: node: lib.pipe node.profiles ([isType builtins.attrValues] ++ funs);
     in
       lib.pipe nodes [
-        # TODO:
-        #   What happens if there are multiple "system"-type configurations?
-        #   https://github.com/schradert/canivete/trunk/modules/deploy/default.nix#L103
-        (lib.filterAttrs (_: typeProfiles [builtins.length (len: len == 1)]))
-        (builtins.mapAttrs (_: typeProfiles [builtins.head (lib.genAttrFromPath ["dotship" "configuratiuon"])]))
+        (lib.filterAttrs (_: profilesExist))
+        # WARN: what happens if there are multiple "system"-type configurations?
+        # TODO: track https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L103
+        (lib.filterAttrs (_: typeProfiles [builtins.length (_length: _length == 1)]))
+        (builtins.mapAttrs (_: typeProfiles [builtins.head (lib.getAttrFromPath ["dotship" "configuration"])]))
       ];
 
     nixosConfigurations = typeNodes "nixos";
     darwinConfigurations = typeNodes "darwin";
     homeManagerConfigurations = typeNodes "home-manager";
+    # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L109
   in
-    lib.mkIf (nodes != {}) {
+    lib.mkIf (! attrsets.isEmpty nodes) {
       flake = lib.mkMerge [
-        {deploy = lib.filterAttrsRecursive (name: value: name != "dotship" && value != null) config.dotship.deploy;}
-        (lib.mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
-        (lib.mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
-        (lib.mkIf (homeManagerConfigurations != {}) {inherit homeManagerConfigurations;})
+        {deploy = lib.filterAttrsRecursive (name: value: name != "dotship" && (! trivial.isNull value)) config.dotship.deploy;}
+        (lib.mkIf (! attrsets.isEmpty nixosConfigurations) {inherit nixosConfigurations;})
+        (lib.mkIf (! attrsets.isEmpty darwinConfigurations) {inherit darwinConfigurations;})
+        (lib.mkIf (! attrsets.isEmpty homeManagerConfigurations) {inherit homeManagerConfigurations;})
       ];
 
       perSystem = {system, ...}: {
-        checks = flakes.deploy.lib.${system}.deployChecks inputs.self.deploy;
-        dotship.devenv.shells.default.packages = [flakes.deploy.packages.${system}.default];
+        checks = lib.mkIf (! dot.trivial.isNull flakes.deploy) (flakes.deploy.lib.${system}.deployChecks inputs.self.deploy);
+        dotship.devenv.shells.default.packages = lib.optionals (! dot.trivial.isNull flakes.deploy) [flakes.deploy.packages.${system}.default];
       };
     };
 }

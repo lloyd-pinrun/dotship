@@ -35,10 +35,10 @@ in {
             package = wrapper;
             settings.formatters = with pkgs;
               [keep-sorted]
-              ++ optionals languages.nix.enable [alejandra deadnix nixf-diagnose statix]
-              ++ optionals languages.shell.enable [shfmt shellcheck]
-              ++ optionals languages.python.enable [ruff ruff-format]
-              ++ optionals languages.lua.enable [stylua];
+              ++ lib.optionals languages.nix.enable [alejandra deadnix nixf-diagnose statix]
+              ++ lib.optionals languages.shell.enable [shfmt shellcheck]
+              ++ lib.optionals languages.python.enable [ruff ruff-format]
+              ++ lib.optionals languages.lua.enable [stylua];
           };
         }
       ];

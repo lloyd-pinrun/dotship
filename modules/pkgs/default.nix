@@ -7,7 +7,7 @@
 }: {
   options.dotship.pkgs = dot.options.submodule "high-level pkgs configuration" ({config, ...}: {
     options.allowUnfree = dot.options.list.package "packages to ignore because unfree" {};
-    options.config = dot.attrs.anything "nixpkgs configuration (e.g. allowUnfreePredicate, etc.)" {};
+    options.config = dot.options.attrs.anything "nixpkgs configuration (e.g. allowUnfreePredicate, etc.)" {};
     options.overlays = dot.options.overlay "nixpkgs overlays" {};
 
     config = {
@@ -61,7 +61,7 @@
     options.dotship.pkgs.pkgs = dot.options.anything "exposes upstream packages to flake" {};
 
     config.dotship.pkgs.pkgs = pkgs;
-    config._module.args.pkgs = import inputs.nipkgs {
+    config._module.args.pkgs = import inputs.nixpkgs {
       inherit system;
       inherit (config.dotship.pkgs) config;
       overlays = [config.dotship.pkgs.overlays];

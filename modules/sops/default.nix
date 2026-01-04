@@ -5,7 +5,8 @@
   lib,
   ...
 }: let
-  inherit (config.dotship) sops sudoer;
+  inherit (config.dotship) sops;
+  inherit (config.dotship.vars) sudoer;
   inherit (inputs) sops-nix;
 
   getFilepathHomeRelative = home: pkgs: let

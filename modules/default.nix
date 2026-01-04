@@ -7,8 +7,12 @@
 }: {
   imports = [
     # keep-sorted start
+    ./deploy
     ./development
-    ./users.nix
+    ./opentofu
+    ./pkgs
+    ./sops
+    ./vars.nix
     # keep-sorted end
   ];
 
@@ -18,6 +22,10 @@
   flake.dotship = lib.mergeAttrsList [
     (config.dotship or {})
     (builtins.mapAttrs (_: builtins.getAttr "dotship") config.allSystems)
-    {inherit inputs;}
+    {
+      inherit inputs;
+      # NOTE: `dot.options` accessible via `dotship.lib.options`
+      lib = { inherit (dot) options; };
+    }
   ];
 }

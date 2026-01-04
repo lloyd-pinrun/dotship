@@ -6,7 +6,7 @@ flake @ {
 }: let
   inherit (config.dotship.opentofu) enable;
 in {
-  options.dotships.opentofu.enable = dot.options.enable "OpenTofu workspaces" {default = inputs ? terranix;};
+  options.dotship.opentofu.enable = dot.options.enable "OpenTofu workspaces" {default = inputs ? terranix;};
 
   config.perSystem = perSystem @ {
     config,

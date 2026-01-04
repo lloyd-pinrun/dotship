@@ -49,12 +49,11 @@ in {
               # -- third-party --
               # keep-sorted start block=yes newline_separated=no
               commitizen.enable = true;
-              gitleaks.enable = true;
-              gitleaks.entry = "${lib.getExe pkgs.gitleaks} protect --redact";
-              mardownlint = {
+              gitleaks = {
                 enable = true;
-                settings.configuration.MD013.line_length = -1;
+                entry = "${lib.getExe pkgs.gitleaks} protect --redact";
               };
+              mardownlint.enable = true;
               mdsh.enable = true;
               typos.enable = true;
               # keep-sorted end
