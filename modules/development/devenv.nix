@@ -53,7 +53,13 @@ in {
                 enable = true;
                 entry = "${lib.getExe pkgs.gitleaks} protect --redact";
               };
-              mardownlint.enable = true;
+              markdownlint = {
+                enable = true;
+                settings.configuration = {
+                  MD033.allowed_elemets = ["h1" "code"];
+                  MD013.line_length = -1;
+                };
+              };
               mdsh.enable = true;
               typos.enable = true;
               # keep-sorted end

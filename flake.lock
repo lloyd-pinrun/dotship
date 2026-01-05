@@ -46,11 +46,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767442681,
-        "narHash": "sha256-MOPkJOIrWuj/pnsIOn3W6J5BSrNT+G6QrA8pGA0+OdA=",
+        "lastModified": 1767628994,
+        "narHash": "sha256-65xxjamhc0g1zrVZcCSU5bicmWh83erpVk/ohhG1Tbs=",
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "2f48604a0a850d000812d94cf5f3d04ad6ae66ce",
+        "rev": "5a0a51a2c1b02b78d93ae33952a7ab8fc5120deb",
         "type": "github"
       },
       "original": {
@@ -103,11 +103,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1765835352,
-        "narHash": "sha256-XswHlK/Qtjasvhd1nOa1e8MgZ8GS//jBoTqWtrS1Giw=",
+        "lastModified": 1767609335,
+        "narHash": "sha256-feveD98mQpptwrAEggBQKJTYbvwwglSbOv53uCfH9PY=",
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "rev": "a34fae9c08a15ad73f295041fec82323541400a9",
+        "rev": "250481aafeb741edfe23d29195671c19b36b6dca",
         "type": "github"
       },
       "original": {
@@ -179,6 +179,21 @@
         "type": "github"
       }
     },
+    "mk-shell-bin": {
+      "locked": {
+        "lastModified": 1677004959,
+        "narHash": "sha256-/uEkr1UkJrh11vD02aqufCxtbF5YnhRTIKlx5kyvf+I=",
+        "owner": "rrbutani",
+        "repo": "nix-mk-shell-bin",
+        "rev": "ff5d8bd4d68a347be5042e2f16caee391cd75887",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrbutani",
+        "repo": "nix-mk-shell-bin",
+        "type": "github"
+      }
+    },
     "nix": {
       "inputs": {
         "flake-compat": [
@@ -216,6 +231,26 @@
         "owner": "cachix",
         "ref": "devenv-2.32",
         "repo": "nix",
+        "type": "github"
+      }
+    },
+    "nix2container": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1767430085,
+        "narHash": "sha256-SiXJ6xv4pS2MDUqfj0/mmG746cGeJrMQGmoFgHLS25Y=",
+        "owner": "nlewo",
+        "repo": "nix2container",
+        "rev": "66f4b8a47e92aa744ec43acbb5e9185078983909",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nlewo",
+        "repo": "nix2container",
         "type": "github"
       }
     },
@@ -266,6 +301,8 @@
       "inputs": {
         "devenv": "devenv",
         "flake-parts": "flake-parts_2",
+        "mk-shell-bin": "mk-shell-bin",
+        "nix2container": "nix2container",
         "nixpkgs": "nixpkgs",
         "systems": "systems",
         "treefmt": "treefmt"
