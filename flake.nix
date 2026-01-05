@@ -33,7 +33,7 @@
       flake = {
         inherit dot;
         lib.mkFlake = args: module: let
-          _args = lib.mergeAttrs (builtins.removeAttrs args ["everything"]) {
+          _args = lib.mergeAttrs (removeAttrs args ["everything"]) {
             inputs = inputs // args.inputs;
             specialArgs = specialArgs // (args.specialArgs or {});
           };
