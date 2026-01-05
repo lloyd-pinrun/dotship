@@ -153,6 +153,7 @@ lib: let
           inherit (types.functionTo (types.functionTo (types.attrsOf types.anything))) check;
           merge = _: defs: builtins.foldl' (acc: fun: item: acc (fun item)) overlayDefault (map (item: item.value) defs);
         };
+
         # NOTE: `str` options with specific regex
         subdomain = types.strMatching "^[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]$";
         domain = types.strMatching "^([a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]\.)+[a-z]{2,10}$";
@@ -170,11 +171,14 @@ lib: let
             specialArgs = args // {inherit dot;};
           };
 
+        attrTag = tags: types.attrTag tags;
+
         mkOption' = type: defaults: description: _rest:
           option (wrapper type) description (defaults // rest // _rest);
       in
         lib.mergeAttrs prev {
           # keep-sorted start
+          attrTag = description: tags: mkOption' (attrTag tags) {default = {};} description {};
           enable = mkOption' types.bool {default = false;};
           enabled = mkOption' types.bool {default = true;};
           enum = values: mkOption' (types.enum values) {};
