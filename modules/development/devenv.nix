@@ -56,7 +56,7 @@ in {
               markdownlint = {
                 enable = true;
                 settings.configuration = {
-                  MD033.allowed_elemets = ["h1" "code"];
+                  MD033.allowed_elements = ["h1" "code"];
                   MD013.line_length = -1;
                 };
               };
