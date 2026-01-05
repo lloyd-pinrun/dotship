@@ -32,7 +32,7 @@
             inputs = inputs // args.inputs;
             specialArgs = specialArgs // (args.specialArgs or {});
           };
-          imports = lib.concat [module ./modules] (dot.fileset.nix.everything (args.everything or []));
+          imports = lib.concat [module ./modules] (dot.filesets.nix.everything (args.everything or []));
         in
           inputs.flake-parts.lib.mkFlake _args {inherit imports;};
       };
