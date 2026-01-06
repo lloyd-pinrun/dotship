@@ -36,7 +36,7 @@
           (! dotlib.trivial.isNull)
         ];
     in
-      dotlib.filesets.everything
+      dotlib.filesystem.everything
       (name: _: isYAML name && isMatch name)
       (config.src + "/" + prefix);
   });
