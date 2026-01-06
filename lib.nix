@@ -3,7 +3,7 @@ lib: let
 
   # -- dotlib.trivial
   trivial = {
-    get = obj: attr: obj.${attr};
+    get = set: attr: set.${attr};
     pipe' = lib.flip lib.pipe;
     evalWith = arg: fun: fun arg;
     majorMinorVersion = trivial.pipe' [
