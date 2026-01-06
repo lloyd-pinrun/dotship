@@ -6,7 +6,7 @@
     };
 
     ssh = {
-      user = dotlib.options.opt.str "user to connect with";
+      user = dotlib.options.opt.str "user to connect with" {};
       args = dotlib.options.opt.list.str "ssh cli args" {};
     };
 
