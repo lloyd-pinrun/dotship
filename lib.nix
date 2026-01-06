@@ -114,12 +114,19 @@ lib: let
   };
 
   wrapped = wrapper: nested: rest: let
-    option = type: description: rest: lib.mkOption ({inherit type description;} // rest);
+    option = type: description: rest:
+      lib.pipe {inherit type description;} [
+        lib.singleton
+        (lib.concat (lib.optional (builtins.isAttrs rest) rest))
+        lib.mergeAttrsList
+        lib.mkOption
+      ];
+
     overlayDefault = _: _: {};
 
     # NOTE: Fixes nested option wrapping
     wrapOptions = value:
-      if lib.isFunction value
+      if builtins.isFunction value
       then arg: wrapOptions (value arg)
       else if builtins.isList value
       then map wrapOptions value
@@ -175,7 +182,14 @@ lib: let
         attrTag = tags: types.attrTag tags;
 
         mkOption' = type: defaults: description: _rest:
-          option (wrapper type) description (defaults // rest // _rest);
+          option (wrapper type) description (
+            lib.pipe defaults [
+              lib.singleton
+              (lib.concat (lib.optional (builtins.isAttrs rest) rest))
+              (lib.concat (lib.optional (builtins.isAttrs _rest) _rest))
+              lib.mergeAttrsList
+            ]
+          );
       in
         lib.mergeAttrs prev {
           # keep-sorted start
