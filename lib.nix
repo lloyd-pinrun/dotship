@@ -161,7 +161,8 @@ lib: let
       })
       (builtins.mapAttrs (_: wrapper))
       (builtins.mapAttrs (_: option))
-      # TODO: https://github.com/schradert/canivete/trunk/lib.nix#L187
+      # TODO: write these overrides more ergonomically!
+      # TRACK: https://github.com/schradert/canivete/trunk/lib.nix#L187
       (builtins.mapAttrs (_: _option: description: _rest: _option description (rest // _rest)))
       (prev: let
         submoduleWith = args: module:
