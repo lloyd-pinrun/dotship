@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   flake,
   lib,
   nixidy,
@@ -9,7 +9,7 @@
   inherit (flake.config.dotship.vars) root;
   inherit (nixidy.config) package;
 in {
-  options.build.scripts.kubeconfig = dot.options.package "connect command for cluster" {internal = true;};
+  options.build.scripts.kubeconfig = dotlib.options.package "connect command for cluster" {internal = true;};
 
   config.build.scripts.kubeconfig = pkgs.mkShellApplication {
     name = "kubeconfig";

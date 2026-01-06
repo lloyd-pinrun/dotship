@@ -21,17 +21,17 @@
   };
 
   outputs = inputs: let
-    specialArgs.dot = import ./lib.nix inputs.nixpkgs.lib;
+    specialArgs.dotlib = import ./lib.nix inputs.nixpkgs.lib;
   in
     inputs.flake-parts.lib.mkFlake {inherit inputs specialArgs;} ({
-      dot,
+      dotlib,
       lib,
       ...
     }: {
       imports = [./modules];
 
       flake = {
-        inherit dot;
+        inherit dotlib;
 
         lib.mkFlake = args: module: let
           _args = lib.mergeAttrs (removeAttrs args ["everything"]) {
@@ -41,7 +41,7 @@
 
           imports = lib.pipe [module ./modules] [
             lib.lists.flatten
-            (lib.concat (dot.filesets.nix.everything (args.everything or [])))
+            (lib.concat (dotlib.filesets.nix.everything (args.everything or [])))
           ];
         in
           inputs.flake-parts.lib.mkFlake _args {inherit imports;};

@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   config,
   lib,
   perSystem,
@@ -7,7 +7,7 @@
 }: let
   inherit (config) nixidy;
 in {
-  options.build.scripts.nixidy = dot.options.package "nixidy executable" {internal = true;};
+  options.build.scripts.nixidy = dotlib.options.package "nixidy executable" {internal = true;};
 
   config.build.scripts.nixidy = perSystem.inputs'.nixidy.packages.default;
   config.nixidy = {

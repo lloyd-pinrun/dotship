@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   config,
   lib,
   ...
@@ -7,8 +7,8 @@
   inherit (config.dotship.deploy) dotship targets;
 in {
   dotship.deploy = _: {
-    options.targets = dot.options.attrs.withSubmodule {
-      options.profiles = dot.options.attrs.withSubmodule ({
+    options.targets = dotlib.options.attrs.withSubmodule {
+      options.profiles = dotlib.options.attrs.withSubmodule ({
         config,
         name,
         target,
@@ -20,7 +20,7 @@ in {
         resourceName = "${type}_${target.name}_${name}";
       in {
         dotship.configuration = {
-          options.dotship.opentofu = dot.options.module "opentofu modules for profile" {};
+          options.dotship.opentofu = dotlib.options.module "opentofu modules for profile" {};
 
           config.dotship.opentofu = {
             config,
@@ -54,7 +54,7 @@ in {
                     target_host = target.config.hostname;
                     flake = ".#${target.name}";
                   }
-                  (lib.mkIf (dot.trivial.isNull flakes.disko) {phases = ["kexec" "install" "reboot"];})
+                  (lib.mkIf (dotlib.trivial.isNull flakes.disko) {phases = ["kexec" "install" "reboot"];})
                   (lib.mkIf (config.resource.null_resource ? sops) {depends_on = ["null_resource.sops"];})
                 ];
               })

@@ -1,12 +1,12 @@
 flake @ {
-  dot,
+  dotlib,
   config,
   inputs,
   ...
 }: let
   inherit (config.dotship.opentofu) enable;
 in {
-  options.dotship.opentofu.enable = dot.options.enable "OpenTofu workspaces" {default = inputs ? terranix;};
+  options.dotship.opentofu.enable = dotlib.options.enable "OpenTofu workspaces" {default = inputs ? terranix;};
 
   config.perSystem = perSystem @ {
     config,
@@ -21,9 +21,9 @@ in {
     };
 
     options.dotship.opentofu = {
-      directory = dot.options.str "path relative to project root to store OpenTofu state" {default = ".dotship/opentofu";};
+      directory = dotlib.options.str "path relative to project root to store OpenTofu state" {default = ".dotship/opentofu";};
 
-      script = dot.options.package "activation script" {
+      script = dotlib.options.package "activation script" {
         default = pkgs.writeShellApplication {
           name = "opentofu";
           runtimeInputs = with pkgs; [git gum usage yq] ++ [pkgs.dotship pkgs.vals];
@@ -31,25 +31,25 @@ in {
         };
       };
 
-      sharedModules = dot.options.module "shared OpenTofu modules" {};
-      workspaces = dot.options.attrs.submodule "OpenTofu workspaces" (workspace @ {config, ...}: {
+      sharedModules = dotlib.options.module "shared OpenTofu modules" {};
+      workspaces = dotlib.options.attrs.submodule "OpenTofu workspaces" (workspace @ {config, ...}: {
         options = {
           encrypted-state = {
-            enable = dot.options.enable "encrypted state (alpha prerelease)" {};
-            passphrase = dot.options.str "vals reference to decrypt state" {default = dot.vals.sops.default "opentofu_pw";};
+            enable = dotlib.options.enable "encrypted state (alpha prerelease)" {};
+            passphrase = dotlib.options.str "vals reference to decrypt state" {default = dotlib.vals.sops.default "opentofu_pw";};
           };
 
-          package = dot.options.package "final package with plugins" {default = pkgs.opentofu.withPlugins (_: config.plugins);};
+          package = dotlib.options.package "final package with plugins" {default = pkgs.opentofu.withPlugins (_: config.plugins);};
 
-          json = dot.options.package "opentofu configuration file for workspace" {
+          json = dotlib.options.package "opentofu configuration file for workspace" {
             default = (pkgs.formats.json {}).generate "config.tf.json" config.modules.config;
           };
 
-          modules = dot.options.module "workspace modules to configuration" {
+          modules = dotlib.options.module "workspace modules to configuration" {
             apply = modules:
               inputs.terranix.lib.terranixConfigurationAst {
                 inherit pkgs;
-                extraArgs = {inherit workspace dot flake perSystem;};
+                extraArgs = {inherit workspace dotlib flake perSystem;};
                 modules = [opentofu.sharedModules modules];
               };
           };
@@ -69,14 +69,14 @@ in {
 
                 # NOTE: Target system version (latest by default)
                 version = let
-                  upstreamOwner = dot.trivial.turnary (owner == "hashicorp") "opentofu" owner;
+                  upstreamOwner = dotlib.trivial.turnary (owner == "hashicorp") "opentofu" owner;
                   file = inputs.opentofu-registry + "/providers/${builtins.substring 0 1 upstreamOwner}/${upstreamOwner}/${repo}.json";
                   inherit (lib.importJSON file) versions;
                   hasSpecificVersion = (builtins.length providerParts) == 3;
                   specificVersion = builtins.head (builtins.filter (v: v.version == lib.elemAt providerParts 2) versions);
                   latestVersion = builtins.head versions;
                 in
-                  dot.trivial.turnary hasSpecificVersion specificVersion latestVersion;
+                  dotlib.trivial.turnary hasSpecificVersion specificVersion latestVersion;
                 target = builtins.head (builtins.filter (t: t.arch == go.GOARCH && t.os == go.GOOS) version.targets);
               in
                 pkgs.stdenv.mkDerivation {

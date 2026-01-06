@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   config,
   inputs,
   lib,
@@ -10,16 +10,16 @@
   inherit (inputs) sops-nix;
 
   getFilepathHomeRelative = home: pkgs: let
-    configDir = dot.trivial.turnary pkgs.stdenv.hostPlatform.isDarwin "Library/Application Support" ".config";
+    configDir = dotlib.trivial.turnary pkgs.stdenv.hostPlatform.isDarwin "Library/Application Support" ".config";
   in "${home}/${configDir}/sops/age/keys.txt";
 in {
   options.dotship.sops = {
-    enable = dot.options.enable "sops" {default = inputs ? sops-nix;};
-    directory = dot.options.str "path relative to project root to store sops secrets" {default = ".dotship/sops";};
+    enable = dotlib.options.enable "sops" {default = inputs ? sops-nix;};
+    directory = dotlib.options.str "path relative to project root to store sops secrets" {default = ".dotship/sops";};
 
-    default = dot.options.str "path relative to sops directory for storing sops secrets by default in yaml" {
+    default = dotlib.options.str "path relative to sops directory for storing sops secrets by default in yaml" {
       default = "default.yaml";
-      apply = dot.strings.prefix "${sops.directory}/";
+      apply = dotlib.strings.prefix "${sops.directory}/";
     };
   };
 
@@ -61,7 +61,7 @@ in {
       options.dotship.sops = {
         package = lib.mkPackageOption pkgs "sops" {};
 
-        scripts.setup = dot.options.package "bootstrap repository sops" {
+        scripts.setup = dotlib.options.package "bootstrap repository sops" {
           default = pkgs.writeShellApplication {
             name = "sops-setup";
             runtimeInputs = with pkgs; [openssh age ssh-to-age gum usage];

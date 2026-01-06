@@ -1,28 +1,28 @@
 {
-  dot,
+  dotlib,
   config,
   lib,
   perSystem,
   ...
 }: {
-  options.dotship.crds = dot.options.attrs.submodule "k8s CRD" ({
+  options.dotship.crds = dotlib.options.attrs.submodule "k8s CRD" ({
     config,
     name,
     ...
   }: {
     options = {
-      enable = dot.options.enable "install CRDs" {};
+      enable = dotlib.options.enable "install CRDs" {};
 
-      src = dot.options.package "package to pull CRDs from" {};
-      name = dot.options.str "name of CRD installation" {default = name;};
-      namePrefix = dot.options.str "prefix to apply to CRD modules" {default = "";};
-      attrNameOverrides = dot.options.attrs.str "override CRD names" {};
-      crds = dot.options.list.str "all CRD files" {internal = true;};
+      src = dotlib.options.package "package to pull CRDs from" {};
+      name = dotlib.options.str "name of CRD installation" {default = name;};
+      namePrefix = dotlib.options.str "prefix to apply to CRD modules" {default = "";};
+      attrNameOverrides = dotlib.options.attrs.str "override CRD names" {};
+      crds = dotlib.options.list.str "all CRD files" {internal = true;};
 
-      targetApp = dot.options.str "target application to install CRDs into" {default = name;};
+      targetApp = dotlib.options.str "target application to install CRDs into" {default = name;};
 
-      prefix = dot.options.str "location in src with CRDs" {default = "";};
-      pattern = dot.options.str "regex match of CRD files" {default = ".+";};
+      prefix = dotlib.options.str "location in src with CRDs" {default = "";};
+      pattern = dotlib.options.str "regex match of CRD files" {default = ".+";};
     };
 
     config.crds = let
@@ -33,10 +33,10 @@
       isMatch = fileName:
         lib.pipe fileName [
           (builtins.match pattern)
-          (! dot.trivial.isNull)
+          (! dotlib.trivial.isNull)
         ];
     in
-      dot.filesets.everything
+      dotlib.filesets.everything
       (name: _: isYAML name && isMatch name)
       (config.src + "/" + prefix);
   });

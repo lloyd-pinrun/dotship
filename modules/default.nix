@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   config,
   inputs,
   lib,
@@ -18,7 +18,7 @@
   ];
 
   systems = lib.mkDefault (import inputs.systems);
-  perSystem._module.args = {inherit dot;};
+  perSystem._module.args = {inherit dotlib;};
 
   flake.dotship = lib.mergeAttrsList [
     (config.dotship or {})

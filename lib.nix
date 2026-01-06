@@ -168,7 +168,7 @@ lib: let
           types.submoduleWith {
             modules = [module];
             shorthandOnlyDefinesConfig = true;
-            specialArgs = args // {inherit dot;};
+            specialArgs = args // {inherit dotlib;};
           };
 
         attrTag = tags: types.attrTag tags;
@@ -227,7 +227,7 @@ lib: let
     yaml.generate = pkgs: (pkgs.formats.yaml {}).generate;
   };
 
-  dot = {
+  dotlib = {
     inherit
       # keep-sorted start
       attrsets
@@ -241,4 +241,4 @@ lib: let
       ;
   };
 in
-  dot
+  dotlib

@@ -1,5 +1,5 @@
 flake @ {
-  dot,
+  dotlib,
   config,
   inputs,
   lib,
@@ -7,22 +7,22 @@ flake @ {
 }: let
   inherit (config.dotship) nixidy;
 in {
-  options.dotship.nixidy = dot.options.submodule "nixidy" (nixidy: {
+  options.dotship.nixidy = dotlib.options.submodule "nixidy" (nixidy: {
     options = {
-      enable = dot.options.enable "nixidy" {default = inputs ? nixidy;};
+      enable = dotlib.options.enable "nixidy" {default = inputs ? nixidy;};
 
-      shared = dot.options.module "shared modules" {};
-      envs = dot.options.attrs.module "environment configs" {};
+      shared = dotlib.options.module "shared modules" {};
+      envs = dotlib.options.attrs.module "environment configs" {};
 
-      args = dot.options.attrs.anything "nixidy args" {};
-      charts = dot.options.attrs.anything "nixidy charts" {};
+      args = dotlib.options.attrs.anything "nixidy args" {};
+      charts = dotlib.options.attrs.anything "nixidy charts" {};
 
-      libOverlay = dot.options.overlay "extra lib functions" {};
-      k8s = dot.options.enum ["k3s" "rke2"] "kubernetes distribution" {default = "k3s";};
+      libOverlay = dotlib.options.overlay "extra lib functions" {};
+      k8s = dotlib.options.enum ["k3s" "rke2"] "kubernetes distribution" {default = "k3s";};
     };
 
     config = {
-      args = {inherit dot flake nixidy;};
+      args = {inherit dotlib flake nixidy;};
       shared = ./nixidy;
       envs.prod = {};
     };

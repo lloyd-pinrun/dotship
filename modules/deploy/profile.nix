@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   flake,
   config,
   lib,
@@ -69,21 +69,21 @@ in {
   imports = [./generic.nix];
 
   options = {
-    path = dot.options.pathInStore "path to activation script for given derivation" {default = activator configuration;};
-    profile-path = dot.options.opt.path "profile installation path" {};
+    path = dotlib.options.pathInStore "path to activation script for given derivation" {default = activator configuration;};
+    profile-path = dotlib.options.opt.path "profile installation path" {};
 
     dotship = {
-      args = dot.options.attrs.anything "arguments based to configuration" {};
-      activator = dot.options.function.pathInStore "build instructions for derivation activation script" {default = module.activators.${type};};
-      builder = dot.options.function.raw "convert modules to configurations" {default = module.builders.${type};};
-      configuration = dot.options.module "central module and configuration derivation for profile" {apply = builder;};
-      type = dot.options.enum ["home-manager" "nixos" "darwin" "custom"] "config module type" {default = module.types.${os};};
+      args = dotlib.options.attrs.anything "arguments based to configuration" {};
+      activator = dotlib.options.function.pathInStore "build instructions for derivation activation script" {default = module.activators.${type};};
+      builder = dotlib.options.function.raw "convert modules to configurations" {default = module.builders.${type};};
+      configuration = dotlib.options.module "central module and configuration derivation for profile" {apply = builder;};
+      type = dotlib.options.enum ["home-manager" "nixos" "darwin" "custom"] "config module type" {default = module.types.${os};};
     };
   };
 
   config = let
     defaultConfiguration = {
-      options.dotship.activation-package = dot.options.package "final package for custom profile" {};
+      options.dotship.activation-package = dotlib.options.package "final package for custom profile" {};
     };
     configuration = dotship.modules.${type} or defaultConfiguration;
 
@@ -104,7 +104,7 @@ in {
 
     dotship = {
       inherit configuration;
-      args = {inherit dot flake profile target;};
+      args = {inherit dotlib flake profile target;};
     };
   };
 }

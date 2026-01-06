@@ -1,14 +1,14 @@
 {
-  dot,
+  dotlib,
   config,
   inputs,
   lib,
   ...
 }: {
-  options.dotship.pkgs = dot.options.submodule "high-level pkgs configuration" ({config, ...}: {
-    options.allowUnfree = dot.options.list.package "packages to ignore because unfree" {};
-    options.config = dot.options.attrs.anything "nixpkgs configuration (e.g. allowUnfreePredicate, etc.)" {};
-    options.overlays = dot.options.overlay "nixpkgs overlays" {};
+  options.dotship.pkgs = dotlib.options.submodule "high-level pkgs configuration" ({config, ...}: {
+    options.allowUnfree = dotlib.options.list.package "packages to ignore because unfree" {};
+    options.config = dotlib.options.attrs.anything "nixpkgs configuration (e.g. allowUnfreePredicate, etc.)" {};
+    options.overlays = dotlib.options.overlay "nixpkgs overlays" {};
 
     config = {
       config = lib.mkIf (config.allowUnfree != []) {
@@ -22,7 +22,7 @@
           text = builtins.readFile ./utils.sh;
         };
 
-        fromYAML = dot.trivial.pipe' [
+        fromYAML = dotlib.trivial.pipe' [
           (file: "${final.yq}/bin/yq '.' ${file} > $out")
           (final.runCommand "from-yaml" {})
           lib.importJSON
@@ -35,7 +35,7 @@
             {
               inherit name;
               buildInputs = [final.makeWrapper];
-              postBuild = dot.trivial.turnary (name == exe) "wrapProgram \"$out/bin/${exe}\" ${args}" "makeWrapper \"$out/bin/${exe}\" \"$out/bin/${name}\" ${args}";
+              postBuild = dotlib.trivial.turnary (name == exe) "wrapProgram \"$out/bin/${exe}\" ${args}" "makeWrapper \"$out/bin/${exe}\" \"$out/bin/${name}\" ${args}";
               meta.mainProgram = name;
             }
             // overrides
@@ -58,7 +58,7 @@
     system,
     ...
   }: {
-    options.dotship.pkgs.pkgs = dot.options.anything "exposes upstream packages to flake" {};
+    options.dotship.pkgs.pkgs = dotlib.options.anything "exposes upstream packages to flake" {};
 
     config.dotship.pkgs.pkgs = pkgs;
     config._module.args.pkgs = import inputs.nixpkgs {

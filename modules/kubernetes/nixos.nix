@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   config,
   flake,
   lib,
@@ -19,8 +19,8 @@
   isServer = service.role == "server";
 in {
   options.dotship.kubernetes = {
-    enable = dot.options.enable "kubernetes" {};
-    settings = dot.options.yaml pkgs "settings for config.yaml" {};
+    enable = dotlib.options.enable "kubernetes" {};
+    settings = dotlib.options.yaml pkgs "settings for config.yaml" {};
   };
 
   config = lib.mkIf kubernetes.enable (lib.mkMerge [
@@ -30,7 +30,7 @@ in {
         token-file = secrets."passwords/k8s-token".path;
       };
 
-      environment.etc."rancher/${k8s}/config.yaml".source = dot.yaml.generate "${k8s}.yaml" kubernetes.settings;
+      environment.etc."rancher/${k8s}/config.yaml".source = dotlib.yaml.generate "${k8s}.yaml" kubernetes.settings;
       environment.systemPackages = [pkgs.${k8s}];
 
       services.${k8s} = {

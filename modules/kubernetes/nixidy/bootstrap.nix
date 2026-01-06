@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   config,
   lib,
   pkgs,
@@ -10,14 +10,14 @@
 
   concatObjectInfo = object: builtins.concatStringsSep "/" [object.apiVersion object.kind object.metadata.name];
 in {
-  options.build.scripts.bootstrap = dot.options.package "bootstrap command for cluster" {internal = true;};
+  options.build.scripts.bootstrap = dotlib.options.package "bootstrap command for cluster" {internal = true;};
 
   config = {
     nixidy.applicationImports = [
       (_: {
         options.dotship.bootstrap = {
-          enable = dot.options.enable "importing resources into cluster bootstrap" {};
-          exclude = dot.options.list.str "resources to exclude from bootstrap" {};
+          enable = dotlib.options.enable "importing resources into cluster bootstrap" {};
+          exclude = dotlib.options.list.str "resources to exclude from bootstrap" {};
         };
       })
     ];

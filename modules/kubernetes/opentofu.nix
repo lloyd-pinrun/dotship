@@ -1,5 +1,5 @@
 {
-  dot,
+  dotlib,
   flake,
   lib,
   perSystem,
@@ -15,7 +15,7 @@
       target.dotship.os == "nixos" && enable)
     deploy.targets;
 in {
-  config = lib.mkIf ((! dot.attrsets.isEmpty targets) && opentofu.enable) {
+  config = lib.mkIf ((! dotlib.attrsets.isEmpty targets) && opentofu.enable) {
     passwords.k8s-token.length = 21;
     plugins = ["hashicorp/null"];
 
