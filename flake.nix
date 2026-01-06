@@ -33,15 +33,19 @@
       flake = {
         inherit dotlib;
 
-        lib.mkFlake = args: module: let
+        lib.mkFlake = args: modules: let
           _args = lib.mergeAttrs (removeAttrs args ["everything"]) {
             inputs = inputs // args.inputs;
             specialArgs = specialArgs // (args.specialArgs or {});
           };
 
-          imports = lib.pipe [module ./modules] [
-            lib.lists.flatten
-            (lib.concat (dotlib.filesets.nix.everything (args.everything or [])))
+          imports = lib.pipe ./modules [
+            lib.singleton
+            # MAYBE:
+            #   Depending on use-cases this should maybe include `lib.toList modules`, e.g.:
+            #     `inputs.dotship.lib.mkFlake ./path` this would break with current logic
+            (lib.concat modules)
+            (lib.concat (dotlib.filesystem.nix.everything (args.everything or [])))
           ];
         in
           inputs.flake-parts.lib.mkFlake _args {inherit imports;};
