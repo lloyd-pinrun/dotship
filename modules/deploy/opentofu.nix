@@ -7,8 +7,8 @@
   inherit (config.dotship.deploy) dotship targets;
 in {
   dotship.deploy = _: {
-    options.targets = dotlib.options.attrs.withSubmodule {
-      options.profiles = dotlib.options.attrs.withSubmodule ({
+    options.targets = dotlib.options.attrs.submodule' {
+      options.profiles = dotlib.options.attrs.submodule' ({
         config,
         name,
         target,
