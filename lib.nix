@@ -72,8 +72,8 @@ lib: let
       builtins.concatStringsSep "" (first ++ [rest]);
   };
 
-  # -- dotship.lib.filesets --
-  filesets = rec {
+  # -- dotship.lib.filesystem --
+  filesystem = rec {
     # DOC: List absolute path of files in <root> that satisfy <fun>
     _filter = fun: root:
       lib.pipe root [
@@ -252,7 +252,7 @@ lib: let
     inherit
       # keep-sorted start
       attrsets
-      filesets
+      filesystem
       formats
       options
       strings
