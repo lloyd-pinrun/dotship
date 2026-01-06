@@ -21,7 +21,7 @@
           runtimeInputs = with final; [gum usage];
           text = builtins.readFile ./utils.sh;
         };
-        
+
         fromYAML = dot.trivial.pipe' [
           (file: "${final.yq}/bin/yq '.' ${file} > $out")
           (final.runCommand "from-yaml" {})

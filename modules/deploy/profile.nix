@@ -4,12 +4,12 @@
   config,
   lib,
   name,
-  node,
+  target,
   ...
 }: let
   inherit (config.dotship) activator args builder configuration type;
 
-  inherit (node.config.dotship) os system;
+  inherit (target.config.dotship) os system;
 
   inherit (flake.config.dotship.deploy) dotship;
   inherit (flake.deploy.lib.${system}) activate;
@@ -104,7 +104,7 @@ in {
 
     dotship = {
       inherit configuration;
-      args = {inherit dot flake profile node;};
+      args = {inherit dot flake profile target;};
     };
   };
 }

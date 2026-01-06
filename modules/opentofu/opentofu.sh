@@ -2,7 +2,7 @@
 set -eo pipefail
 
 # USAGE arg "<args>" var=#true
-# USAGE flag "-w --workpace <workspace>" env="DOTSHIP_OPENTOFU_WORKSPACE"
+# USAGE flag "-w --workspace <workspace>" env="DOTSHIP_OPENTOFU_WORKSPACE"
 
 # shellcheck disable=SC2154
 opentofu_args="$usage_args"
@@ -17,7 +17,7 @@ declare -A valid_opentofu_workspaces
 readarry -t valid_opentofu_workspaces < <(nix eval --json --apply builtins.attrNames "$opentofu_workspaces_path" | jq --raw-output ".[]")
 
 function parse-args {
-  [[ -z "$opentofu_workspace" ]] && opentofu_workspace="$(gum choose "${valid_opentofu_workspaces[@]}")"
+  [[ -z $opentofu_workspace ]] && opentofu_workspace="$(gum choose "${valid_opentofu_workspaces[@]}")"
 
   if ! dotship has-duplicates "$opentofu_workspace" "${valid_opentofu_workspaces[@]}"; then
     gum log --level error "No valid workspace selected. Options are: ${valid_opentofu_workspaces[*]}"
@@ -45,5 +45,5 @@ function main {
   "${opentofu_command[@]}" "$opentofu_args"
 }
 
-parse-args 
+parse-args
 main

@@ -9,6 +9,7 @@
     # keep-sorted start
     ./deploy
     ./development
+    ./kubernetes
     ./opentofu
     ./pkgs
     ./sops
@@ -25,7 +26,7 @@
     {
       inherit inputs;
       # NOTE: `dot.options` accessible via `dotship.lib.options`
-      lib = { inherit (dot) options; };
+      lib = {inherit (dot) options;};
     }
   ];
 }

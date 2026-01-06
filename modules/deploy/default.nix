@@ -7,7 +7,7 @@ flake @ {
 }: let
   inherit (config.dotship) vars;
 
-  inherit (config.dotship.deploy) nodes;
+  inherit (config.dotship.deploy) targets;
   inherit (config.dotship.deploy.dotship) flakes modules;
 in {
   imports = [./opentofu.nix];
@@ -16,7 +16,7 @@ in {
     imports = [./generic.nix];
 
     options = {
-      nodes = dot.options.attrs.submoduleWith "target nodes for deployment" {inherit flake;} ./node.nix;
+      targets = dot.options.attrs.submoduleWith "targets for deployment" {inherit flake;} ./target.nix;
 
       dotship = {
         flakes = {
@@ -41,7 +41,7 @@ in {
     };
 
     config.dotship.modules = let
-      hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
+      hostnameModule = {target, ...}: {networking.hostName = target.config.hostname;};
     in {
       shared = {pkgs, ...}: {
         # WARN: must instantiate within module (can't pass through `specialArgs` because `deploy-rs` eagerly evaluates)
@@ -49,16 +49,16 @@ in {
       };
 
       system = systemConfiguration @ {
-        node,
+        target,
         perSystem,
         profile,
         ...
       }: {
         imports = [modules.shared];
-        nixpkgs.hostPlatform = node.config.dotship.system;
+        nixpkgs.hostPlatform = target.config.dotship.system;
 
         home-manager = lib.mkIf (flakes.home-manager != null) {
-          extraSpecialArgs = {inherit dot flake node perSystem profile systemConfiguration;};
+          extraSpecialArgs = {inherit dot flake target perSystem profile systemConfiguration;};
           sharedModules = [modules.home-manager];
           users = builtins.mapAttrs (username: _: {home.username = lib.mkDefault username;}) vars.users;
         };
@@ -112,12 +112,12 @@ in {
   config = let
     inherit (dot) attrsets trivial;
 
-    typeNodes = type: let
+    targetForType = type: let
       isType = lib.filterAttrs (_: profile: profile.dotship.type == type);
-      profilesExist = node: node ? profiles;
-      typeProfiles = funs: node: lib.pipe node.profiles ([isType builtins.attrValues] ++ funs);
+      profilesExist = target: target ? profiles;
+      typeProfiles = funs: target: lib.pipe target.profiles ([isType builtins.attrValues] ++ funs);
     in
-      lib.pipe nodes [
+      lib.pipe targets [
         (lib.filterAttrs (_: profilesExist))
         # WARN: what happens if there are multiple "system"-type configurations?
         # TODO: track https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L103
@@ -125,12 +125,12 @@ in {
         (builtins.mapAttrs (_: typeProfiles [builtins.head (lib.getAttrFromPath ["dotship" "configuration"])]))
       ];
 
-    nixosConfigurations = typeNodes "nixos";
-    darwinConfigurations = typeNodes "darwin";
-    homeManagerConfigurations = typeNodes "home-manager";
+    nixosConfigurations = targetForType "nixos";
+    darwinConfigurations = targetForType "darwin";
+    homeManagerConfigurations = targetForType "home-manager";
     # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L109
   in
-    lib.mkIf (! attrsets.isEmpty nodes) {
+    lib.mkIf (! attrsets.isEmpty targets) {
       flake = lib.mkMerge [
         {deploy = lib.filterAttrsRecursive (name: value: name != "dotship" && (! trivial.isNull value)) config.dotship.deploy;}
         (lib.mkIf (! attrsets.isEmpty nixosConfigurations) {inherit nixosConfigurations;})

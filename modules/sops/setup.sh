@@ -26,5 +26,5 @@ function main {
   gum log --level info "Public age key is: $(age-keygen -y "$age_key_file")"
 }
 
-parse-args 
+parse-args
 main

@@ -1,23 +1,23 @@
-flake @ {
+{
   dot,
   config,
   lib,
   ...
 }: let
-  inherit (config.dotship.deploy) dotship nodes;
+  inherit (config.dotship.deploy) dotship targets;
 in {
   dotship.deploy = _: {
-    options.nodes = dot.options.attrs.withSubmodule {
+    options.targets = dot.options.attrs.withSubmodule {
       options.profiles = dot.options.attrs.withSubmodule ({
         config,
         name,
-        node,
+        target,
         ...
       }: let
         inherit (dotship) flakes;
         inherit (config.dotship) type;
 
-        resourceName = "${type}_${node.name}_${name}";
+        resourceName = "${type}_${target.name}_${name}";
       in {
         dotship.configuration = {
           options.dotship.opentofu = dot.options.module "opentofu modules for profile" {};
@@ -30,7 +30,7 @@ in {
             config = lib.mkMerge [
               {
                 data.external.${resourceName}.program = pkgs.execBash ''
-                  nix eval .#dotship.deploy.nodes.${node.name}.profiles.${name}.path.drvPath | ${lib.getExe pkgs.jq} '{drvPath:.}'
+                  nix eval .#dotship.deploy.targets.${target.name}.profiles.${name}.path.drvPath | ${lib.getExe pkgs.jq} '{drvPath:.}'
                 '';
 
                 resources.null_resource.${resourceName} = {
@@ -41,7 +41,7 @@ in {
                   provisioner.local-exec.command = let
                     inherit (flakes.deploy.packages.${pkgs.system}) default;
                   in ''
-                    ${lib.getExe default} --skip-checks .#\"${node.name}\".\"${name}\"
+                    ${lib.getExe default} --skip-checks .#\"${target.name}\".\"${name}\"
                   '';
                 };
               }
@@ -51,8 +51,8 @@ in {
                 module."${resourceName}_install" = lib.mkMerge [
                   {
                     source = "${flakes.anywhere}//terraform/install";
-                    target_host = node.config.hostname;
-                    flake = ".#${node.name}";
+                    target_host = target.config.hostname;
+                    flake = ".#${target.name}";
                   }
                   (lib.mkIf (dot.trivial.isNull flakes.disko) {phases = ["kexec" "install" "reboot"];})
                   (lib.mkIf (config.resource.null_resource ? sops) {depends_on = ["null_resource.sops"];})
@@ -70,8 +70,8 @@ in {
 
     modules.imports = let
       getProfileImport = lib.getAttrFromPath ["dotship" "configuration" "config" "dotship" "opentofu"];
-      getNodeImports = node: builtins.map getProfileImport (builtins.attrValues node.profiles);
+      getTargetImports = target: map getProfileImport (builtins.attrValues target.profiles);
     in
-      lib.pipe nodes [builtins.attrValues (builtins.concatMap getNodeImports)];
+      lib.pipe targets [builtins.attrValues (builtins.concatMap getTargetImports)];
   };
 }
