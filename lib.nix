@@ -200,11 +200,20 @@ lib: let
       (lib.mergeAttrs (builtins.mapAttrs (_: trivial.pipe' [(trivial.evalWith attrs) wrapOptions]) nested))
     ];
 
+  # DOC:
+  #   wrapped nestable option types, e.g.:
+  #     * `dotlib.options.attrs.str`             -> `types.attrsOf types.str`
+  #     * `dotlib.options.nullable.attrs.str`    -> `types.nullOr (types.attrsOf types.str)`
+  #     * `dotlib.options.function.str`          -> `types.functionTo types.str`
+  #     * `dotlib.options.nullable.function.str` -> `types.nullOr (types.functionTo types.str)`
+  #     * `dotlib.options.list.str`              -> `types.listOf types.str`
+  #     * `dotlib.options.nullable.list.str`     -> `types.nullOr (types.listOf types.str)`
+
   # keep-sorted start
-  attrs = wrapped types.nullOr {inherit attrs function list opt;};
-  function = wrapped types.functionTo {inherit attrs function list opt;};
-  list = wrapped types.listOf {inherit attrs function list opt;};
-  opt = wrapped types.nullOr {inherit attrs function list;};
+  attrs = wrapped types.nullOr {inherit attrs function list nullable;};
+  function = wrapped types.functionTo {inherit attrs function list nullable;};
+  list = wrapped types.listOf {inherit attrs function list nullable;};
+  nullable = wrapped types.nullOr {inherit attrs function list;};
   # keep-sorted end
 
   # -- dotship.lib.options --
@@ -214,7 +223,7 @@ lib: let
       attrs = attrs {default = {};};
       function = function {};
       list = list {default = [];};
-      opt = opt {default = null;};
+      nullable = nullable {default = null;};
     };
 
   # -- dotship.lib.options --

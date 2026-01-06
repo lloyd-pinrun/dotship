@@ -70,7 +70,7 @@ in {
 
   options = {
     path = dotlib.options.pathInStore "path to activation script for given derivation" {default = activator configuration;};
-    profile-path = dotlib.options.opt.path "profile installation path" {};
+    profile-path = dotlib.options.nullable.path "profile installation path" {};
 
     dotship = {
       args = dotlib.options.attrs.anything "arguments based to configuration" {};
