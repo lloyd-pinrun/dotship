@@ -199,9 +199,8 @@ lib: let
           option = type: mkOption' type {};
           overlay = description: _rest: prev.overlay description ({default = overlayDefault;} // rest // _rest);
           submodule = description: module: mkOption' (submoduleWith {} module) {default = {};} description {};
+          submodule' = module: lib.mkOption {type = wrapper (types.submodule module);};
           submoduleWith = description: args: module: mkOption' (submoduleWith args module) {default = {};} description {};
-          tag = description: tags: mkOption' (types.attrTag tags) {default = {};} description {};
-          withSubmodule = module: lib.mkOption {type = wrapper (types.submodule module);};
           # keep-sorted end
 
           # keep-sorted start block=yes newline_separated=no
