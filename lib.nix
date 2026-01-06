@@ -26,6 +26,12 @@ lib: let
     prefixNames = trivial.pipe' [lib.prefix lib.mapNames];
   };
 
+  # -- dotlib.lists --
+  lists = rec {
+    append = list: item: (lib.concat list (lib.singleton item));
+    prepend = lib.flip append;
+  };
+
   # -- dotlib.strings --
   strings = {
     first = builtins.substring 0 1;
@@ -255,6 +261,7 @@ lib: let
       attrsets
       filesystem
       formats
+      lists
       options
       strings
       trivial
