@@ -23,10 +23,6 @@
   flake.dotship = lib.mergeAttrsList [
     (config.dotship or {})
     (builtins.mapAttrs (_: builtins.getAttr "dotship") config.allSystems)
-    {
-      inherit inputs;
-      # NOTE: `dot.options` accessible via `dotship.lib.options`
-      lib = {inherit (dot) options;};
-    }
+    {inherit inputs;}
   ];
 }

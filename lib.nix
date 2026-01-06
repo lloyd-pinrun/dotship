@@ -192,14 +192,8 @@ lib: let
           # keep-sorted end
 
           # keep-sorted start block=yes newline_separated=no
-          toml = {
-            option = pkgs: mkOption' (pkgs.formats.toml {}).type {default = {};};
-            generate = pkgs: (pkgs.formats.toml {}).generate;
-          };
-          yaml = {
-            option = pkgs: mkOption' (pkgs.formats.yaml {}).type {default = {};};
-            generate = pkgs: (pkgs.formats.yaml {}).generate;
-          };
+          toml = pkgs: mkOption' (pkgs.formats.toml {}).type {default = {};};
+          yaml = pkgs: mkOption' (pkgs.formats.yaml {}).type {default = {};};
           # keep-sorted end
         })
       (lib.mergeAttrs (builtins.mapAttrs (_: trivial.pipe' [(trivial.evalWith attrs) wrapOptions]) nested))
@@ -228,11 +222,17 @@ lib: let
     sops.default = config: attr: "ref+sops://${config.dotship.sops.default}#/${attr}+";
   };
 
+  formats = {
+    toml.generate = pkgs: (pkgs.formats.toml {}).generate;
+    yaml.generate = pkgs: (pkgs.formats.yaml {}).generate;
+  };
+
   dot = {
     inherit
       # keep-sorted start
       attrsets
       filesets
+      formats
       options
       strings
       trivial
