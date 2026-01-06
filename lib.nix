@@ -179,8 +179,6 @@ lib: let
             specialArgs = args // {inherit dotlib;};
           };
 
-        attrTag = tags: types.attrTag tags;
-
         mkOption' = type: defaults: description: _rest:
           option (wrapper type) description (
             lib.pipe defaults [
@@ -193,7 +191,6 @@ lib: let
       in
         lib.mergeAttrs prev {
           # keep-sorted start
-          attrTag = description: tags: mkOption' (attrTag tags) {default = {};} description {};
           enable = mkOption' types.bool {default = false;};
           enabled = mkOption' types.bool {default = true;};
           enum = values: mkOption' (types.enum values) {};
@@ -203,6 +200,7 @@ lib: let
           overlay = description: _rest: prev.overlay description ({default = overlayDefault;} // rest // _rest);
           submodule = description: module: mkOption' (submoduleWith {} module) {default = {};} description {};
           submoduleWith = description: args: module: mkOption' (submoduleWith args module) {default = {};} description {};
+          tag = description: tags: mkOption' (types.attrTag tags) {default = {};} description {};
           withSubmodule = module: lib.mkOption {type = wrapper (types.submodule module);};
           # keep-sorted end
 
