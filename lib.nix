@@ -1,7 +1,7 @@
 lib: let
   inherit (lib) types;
 
-  # -- dotship.lib.trivial
+  # -- dotlib.trivial
   trivial = {
     get = obj: attr: obj.${attr};
     pipe' = lib.flip lib.pipe;
@@ -19,14 +19,14 @@ lib: let
       else no;
   };
 
-  # -- dotship.lib.attrsets --
+  # -- dotlib.attrsets --
   attrsets = {
     isEmpty = attrs: attrs == {};
     mapNames = fun: lib.mapAttrs' (name: lib.nameValuePair (fun name));
     prefixNames = trivial.pipe' [lib.prefix lib.mapNames];
   };
 
-  # -- dotship.lib.strings --
+  # -- dotlib.strings --
   strings = {
     first = builtins.substring 0 1;
     rest = str: builtins.substring 1 (builtins.stringLength str - 1) str;
@@ -72,7 +72,7 @@ lib: let
       builtins.concatStringsSep "" (first ++ [rest]);
   };
 
-  # -- dotship.lib.filesystem --
+  # -- dotlib.filesystem --
   filesystem = rec {
     # DOC: List absolute path of files in <root> that satisfy <fun>
     _filter = fun: root:
@@ -227,7 +227,7 @@ lib: let
   nullable = wrapped types.nullOr {inherit attrs function list;};
   # keep-sorted end
 
-  # -- dotship.lib.options --
+  # -- dotlib.options --
   options =
     (wrapped lib.id {} {})
     // {
@@ -237,12 +237,13 @@ lib: let
       nullable = nullable {default = null;};
     };
 
-  # -- dotship.lib.options --
+  # -- dotlib.vals --
   vals = {
     sops.custom = config: file: attr: "ref+sops://${config.dotship.sops.directory}/${file}${attr}+";
     sops.default = config: attr: "ref+sops://${config.dotship.sops.default}#/${attr}+";
   };
 
+  # -- dotlib.formats --
   formats = {
     toml.generate = pkgs: (pkgs.formats.toml {}).generate;
     yaml.generate = pkgs: (pkgs.formats.yaml {}).generate;
