@@ -18,25 +18,23 @@ in {
     options = {
       targets = dotlib.options.attrs.submoduleWith "targets for deployment" {inherit flake;} ./target.nix;
 
-      dotship = {
-        flakes = {
-          deploy = dotlib.options.flake inputs "deploy-rs" {};
-          nixos = dotlib.options.flake inputs "nixos" {};
-          darwin = dotlib.options.flake inputs "nix-darwin" {};
-          home-manager = dotlib.options.flake inputs "home-manager" {};
-          anywhere = dotlib.options.flake inputs "nixos-anywhere" {};
-          disko = dotlib.options.flake inputs "disko" {};
-          # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L23
-        };
+      dotship.flakes = {
+        deploy = dotlib.options.flake inputs "deploy-rs" {};
+        nixos = dotlib.options.flake inputs "nixos" {};
+        darwin = dotlib.options.flake inputs "nix-darwin" {};
+        home-manager = dotlib.options.flake inputs "home-manager" {};
+        anywhere = dotlib.options.flake inputs "nixos-anywhere" {};
+        disko = dotlib.options.flake inputs "disko" {};
+        # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L23
+      };
 
-        modules = {
-          nixos = dotlib.options.module "nixos modules" {};
-          darwin = dotlib.options.module "nix-darwin modules" {};
-          home-manager = dotlib.options.module "home-manager modules" {};
-          system = dotlib.options.module "shared modules for system deployments (nixos & darwin)" {};
-          shared = dotlib.options.module "shared modules for all deployments (home-manager)" {};
-          # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L32
-        };
+      dotship.modules = {
+        nixos = dotlib.options.module "nixos modules" {};
+        darwin = dotlib.options.module "nix-darwin modules" {};
+        home-manager = dotlib.options.module "home-manager modules" {};
+        system = dotlib.options.module "shared modules for system deployments (nixos & darwin)" {};
+        shared = dotlib.options.module "shared modules for all deployments (home-manager)" {};
+        # MAYBE: introduce android https://github.com/schradert/canivete/blob/38c1937c3ce88599338746bd21ae94234f265c54/modules/deploy/default.nix#L32
       };
     };
 
