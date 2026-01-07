@@ -3,7 +3,8 @@ lib: let
 
   # -- dotlib.trivial
   trivial = {
-    get = set: attr: set.${attr};
+    # DOC: `get :: attrs -> str -> any`
+    get = attrs: name: attrs.${name};
     pipe' = lib.flip lib.pipe;
     evalWith = arg: fun: fun arg;
     majorMinorVersion = trivial.pipe' [
@@ -21,6 +22,9 @@ lib: let
 
   # -- dotlib.attrsets --
   attrsets = {
+    # DOC: `isMember :: attrs -> str -> bool`
+    isMember = set: _attr: set ? attr;
+    # DOC: `isEmpty :: attrs -> bool`
     isEmpty = attrs: attrs == {};
     mapNames = fun: lib.mapAttrs' (name: lib.nameValuePair (fun name));
     prefixNames = trivial.pipe' [lib.prefix lib.mapNames];
@@ -138,7 +142,7 @@ lib: let
       then map wrapOptions value
       else if builtins.isAttrs value
       then
-        if (value._type or null) == "option" && (value ? type)
+        if (value._type or null) == "option" && (attrsets.isMember value "type")
         then value // {type = wrapper value.type;}
         else builtins.mapAttrs (_: wrapOptions) value
       else value;
