@@ -6,7 +6,7 @@ lib: let
     # DOC: `get :: attrs -> str -> any`
     get = attrs: name: attrs.${name};
     pipe' = lib.flip lib.pipe;
-    evalWith = arg: fun: fun arg;
+    apply = arg: fun: fun arg;
     majorMinorVersion = trivial.pipe' [
       builtins.splitVersion
       (lib.sublist 0 2)
@@ -218,7 +218,7 @@ lib: let
           yaml = pkgs: mkOption' (pkgs.formats.yaml {}).type {default = {};};
           # keep-sorted end
         })
-      (lib.mergeAttrs (builtins.mapAttrs (_: trivial.pipe' [(trivial.evalWith attrs) wrapOptions]) nested))
+      (lib.mergeAttrs (builtins.mapAttrs (_: trivial.pipe' [(trivial.apply attrs) wrapOptions]) nested))
     ];
 
   # DOC:
