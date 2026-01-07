@@ -1,5 +1,6 @@
 # TODO: expand config to support additional languages: rust, elixir, erlang & fish
 {
+  dotlib,
   inputs,
   lib,
   ...
@@ -52,6 +53,14 @@ in {
               gitleaks = {
                 enable = true;
                 entry = "${lib.getExe pkgs.gitleaks} protect --redact";
+              };
+              lychee = {config, ...}: {
+                options.toml = dotlib.options.toml pkgs "contents of lychee.toml" {};
+
+                config = {
+                  enable = true;
+                  settings.configPath = toString (dotlib.formats.toml.generate pkgs "lychee.toml" config.toml);
+                };
               };
               markdownlint = {
                 enable = true;
