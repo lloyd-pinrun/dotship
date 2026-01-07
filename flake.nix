@@ -45,6 +45,7 @@
             #   Depending on use-cases this should maybe include `lib.toList modules`, e.g.:
             #     `inputs.dotship.lib.mkFlake ./path` this would break with current logic
             (lib.concat modules)
+            lib.debug.traceVal
             (lib.concat (dotlib.filesystem.nix.everything (args.everything or [])))
           ];
         in
