@@ -44,8 +44,44 @@ lib: let
     prefix = _prefix: str: lib.concatStrings [_prefix str];
     prefixJoin = _prefix: sep: lib.concatMapStringsSep sep (option: _prefix + option);
 
-    pascalToCamel = str: lib.toLower (strings.first str) + strings.rest str;
-    camelToPascal = str: lib.toUpper (strings.first str) + strings.rest str;
+    /**
+    Converts all characters in a string to lowercase.
+
+    # Type
+
+    ```
+    downcase :: string -> string
+    ```
+
+    :::
+    */
+    downcase = lib.toLower;
+
+    /**
+    Converts the first character in a string to uppercase.
+
+    # Type
+
+    ```
+    capitalize :: string -> string
+    ```
+
+    :::
+    */
+    capitalize = str: lib.toUpper (strings.first str) + strings.rest str;
+
+    /**
+    Converts all characters in a string to uppercase.
+
+    # Type
+
+    ```
+    upcase :: string -> string
+    ```
+
+    :::
+    */
+    upcase = lib.toUpper;
 
     # NOTE: taken from https://gist.github.com/manveru/74eb41d850bc146b7e78c4cb059507e2
     toBase64 = text: let
