@@ -22,7 +22,7 @@ in {
       devenv.modules = [
         ({pkgs, ...}: {
           inherit languages;
-          packages = lib.optionals languages.nix.enable [pkgs.nix-inspect];
+          packages = lib.optionals languages.nix.enable (with pkgs; [nix-inspect nix-prefetch-docker]);
 
           git-hooks.default_stages = lib.mkDefault ["pre-push" "manual"];
           git-hooks.excludes = [".dotship"];

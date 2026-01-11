@@ -8,6 +8,12 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
 
+    dotlib.url = "github:lloyd-pinrun/dotlib.nix";
+    dotlib.inputs = {
+      flake-parts.follows = "flake-parts";
+      nixpkgs.follows = "nixpkgs";
+    };
+
     nix2container.url = "github:nlewo/nix2container";
     nix2container.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -21,33 +27,32 @@
   };
 
   outputs = inputs: let
-    specialArgs.dotlib = import ./lib.nix inputs.nixpkgs.lib;
+    specialArgs = {inherit (inputs) dotlib;};
   in
-    inputs.flake-parts.lib.mkFlake {inherit inputs specialArgs;} ({
-      dotlib,
-      lib,
-      ...
-    }: {
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} ({lib, ...}: {
       imports = [./modules];
 
       flake = {
-        inherit dotlib;
-
         lib.mkFlake = args: modules: let
           _args = lib.mergeAttrs (removeAttrs args ["everything"]) {
             inputs = inputs // args.inputs;
             specialArgs = specialArgs // (args.specialArgs or {});
           };
 
-          imports = lib.pipe ./modules [
-            lib.singleton
-            # MAYBE:
-            #   Depending on use-cases this should maybe include `lib.toList modules`, e.g.:
-            #     `inputs.dotship.lib.mkFlake ./path` this would break with current logic
-            (lib.concat modules)
-            lib.debug.traceVal
-            (lib.concat (dotlib.filesystem.nix.everything (args.everything or [])))
+          _modules = lib.pipe modules [
+            (map inputs.dotlib.lib.fileset.nix.files.all)
+            lib.lists.flatten
           ];
+
+          imports = [./modules _modules];
+          # imports = lib.pipe ./modules [
+          #   lib.singleton
+          #   # MAYBE:
+          #   #   Depending on use-cases this should maybe include `lib.toList modules`, e.g.:
+          #   #     `inputs.dotship.lib.mkFlake ./path` this would break with current logic
+          #   (lib.concat modules)
+          #   (lib.concat (inputs.dotlib.lib.filesystem.nix.everything (args.everything or [])))
+          #   ];
         in
           inputs.flake-parts.lib.mkFlake _args {inherit imports;};
       };

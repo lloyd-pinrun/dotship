@@ -1,11 +1,11 @@
 {
-  dotlib,
   config,
   inputs,
   lib,
   ...
 }: {
   imports = [
+    inputs.dotlib.flakeModule
     # keep-sorted start
     ./deploy
     ./development
@@ -18,7 +18,6 @@
   ];
 
   systems = lib.mkDefault (import inputs.systems);
-  perSystem._module.args = {inherit dotlib;};
 
   flake.dotship = lib.mergeAttrsList [
     (config.dotship or {})
